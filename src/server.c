@@ -1,4 +1,4 @@
-
+#define m_server 1
 
 #include <winsock2.h>
 #include <stdio.h>
@@ -120,6 +120,8 @@ int main(int argc, char** argv)
 
 					s_peer_list_add(&peers, event.peer);
 
+					make_player(event.peer->connectID);
+
 				} break;
 
 				case ENET_EVENT_TYPE_DISCONNECT:
@@ -158,6 +160,10 @@ func void update()
 	for(int i = 0; i < c_num_threads; i++)
 	{
 		move_system(i * c_entities_per_thread, c_entities_per_thread);
+	}
+	for(int i = 0; i < c_num_threads; i++)
+	{
+		bounds_check_system(i * c_entities_per_thread, c_entities_per_thread);
 	}
 }
 
@@ -202,7 +208,5 @@ func void parse_packet(ENetEvent event)
 			}
 
 		} break;
-
-		invalid_default_case;
 	}
 }

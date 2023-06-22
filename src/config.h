@@ -10,3 +10,5 @@ global s_v2 c_base_res = {1366, 768};
 
 #define delta (1.0f / c_updates_per_second)
 #define c_invalid_entity (-1)
+#define c_gravity 500
+#define c_jump_strength -400

@@ -108,12 +108,18 @@ func void create_window()
 		window_class.hCursor = LoadCursor(null, IDC_ARROW);
 		check(RegisterClassEx(&window_class));
 
+		DWORD style = (WS_OVERLAPPEDWINDOW | WS_VISIBLE) & ~WS_MAXIMIZEBOX & ~WS_SIZEBOX;
+		RECT rect = zero;
+		rect.right = (int)c_base_res.x;
+		rect.bottom = (int)c_base_res.y;
+		AdjustWindowRect(&rect, style, false);
+
 		g_window.handle = CreateWindowEx(
 			0,
 			class_name,
 			"Epic Online Thing",
-			(WS_OVERLAPPEDWINDOW | WS_VISIBLE) & ~WS_MAXIMIZEBOX & ~WS_SIZEBOX,
-			CW_USEDEFAULT, CW_USEDEFAULT, (int)c_base_res.x, (int)c_base_res.y,
+			style,
+			CW_USEDEFAULT, CW_USEDEFAULT, rect.right - rect.left, rect.bottom - rect.top,
 			null,
 			null,
 			instance,
@@ -209,7 +215,8 @@ LRESULT window_proc(HWND window, UINT msg, WPARAM wparam, LPARAM lparam)
 		{
 			int key = (int)remap_key_if_necessary(wparam, lparam);
 			b8 is_down = !(b32)((HIWORD(lparam) >> 15) & 1);
-			if(key < c_max_keys)
+			int is_echo = is_down && ((lparam >> 30) & 1);
+			if(key < c_max_keys && !is_echo)
 			{
 				s_stored_input si = zero;
 				si.key = key;

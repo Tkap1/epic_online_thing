@@ -24,8 +24,8 @@ if %debug%==2 (
 	set comp=%comp% -Od -Dm_debug -Zi -MTd
 )
 
-tasklist /fi "ImageName eq client.exe" /fo csv 2>NUL | find /I "client.exe">NUL
-tasklist /fi "ImageName eq server.exe" /fo csv 2>NUL | find /I "server.exe">NUL
+taskkill /IM "client.exe" > NUL 2> NUL
+taskkill /IM "server.exe" > NUL 2> NUL
 
 pushd build
 	stamp_timer.exe start

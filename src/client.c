@@ -1,3 +1,4 @@
+#define m_client 1
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -193,11 +194,19 @@ func void update()
 {
 	for(int i = 0; i < c_num_threads; i++)
 	{
+		gravity_system(i * c_entities_per_thread, c_entities_per_thread);
+	}
+	for(int i = 0; i < c_num_threads; i++)
+	{
 		input_system(i * c_entities_per_thread, c_entities_per_thread);
 	}
 	for(int i = 0; i < c_num_threads; i++)
 	{
 		move_system(i * c_entities_per_thread, c_entities_per_thread);
+	}
+	for(int i = 0; i < c_num_threads; i++)
+	{
+		bounds_check_system(i * c_entities_per_thread, c_entities_per_thread);
 	}
 
 	int my_player = find_player_by_id(my_id);
@@ -287,6 +296,8 @@ func void input_system(int start, int count)
 {
 	b8 go_left = is_key_down(key_a) || is_key_down(key_left);
 	b8 go_right = is_key_down(key_d) || is_key_down(key_right);
+	b8 jump = is_key_pressed(key_space) || is_key_pressed(key_w) || is_key_pressed(key_up);
+	b8 jump_released = is_key_released(key_space) || is_key_released(key_w) || is_key_released(key_up);
 
 	for(int i = 0; i < count; i++)
 	{
@@ -302,6 +313,19 @@ func void input_system(int start, int count)
 		if(go_left)
 		{
 			e.dir_x[ii] -= 1;
+		}
+
+		b8 can_jump = e.jumps_done[ii] < 2;
+		if(can_jump && jump)
+		{
+			float jump_multiplier = e.jumps_done[ii] == 0 ? 1.0f : 0.9f;
+			e.vel_y[ii] = c_jump_strength * jump_multiplier;
+			e.jumping[ii] = true;
+			e.jumps_done[ii] += 1;
+		}
+		else if(e.jumping[ii] && jump_released && e.vel_y[ii] < 0)
+		{
+			e.vel_y[ii] *= 0.5f;
 		}
 	}
 }
@@ -358,22 +382,4 @@ func void parse_packet(ENetEvent event)
 
 		invalid_default_case;
 	}
-}
-
-func int make_player(u32 player_id)
-{
-	int entity = make_entity();
-	e.x[entity] = 100;
-	e.y[entity] = 100;
-	e.sx[entity] = 64;
-	e.sy[entity] = 64;
-	e.player_id[entity] = player_id;
-	e.speed[entity] = 400;
-	e.flags[entity][e_entity_flag_move] = true;
-	e.flags[entity][e_entity_flag_draw] = true;
-	if(player_id == my_id)
-	{
-		e.flags[entity][e_entity_flag_input] = true;
-	}
-	return entity;
 }

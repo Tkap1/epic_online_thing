@@ -15,6 +15,8 @@ typedef enum e_entity_flag
 	e_entity_flag_input,
 	e_entity_flag_draw,
 	e_entity_flag_count,
+	e_entity_flag_gravity,
+	e_entity_flag_bounds_check,
 } e_entity_flag;
 
 typedef struct s_entities
@@ -24,17 +26,21 @@ typedef struct s_entities
 
 	b8 active[c_max_entities];
 	b8 flags[c_max_entities][e_entity_flag_count];
+	b8 jumping[c_max_entities];
 	int id[c_max_entities];
+	int jumps_done[c_max_entities];
 	u32 player_id[c_max_entities];
 	float x[c_max_entities];
 	float y[c_max_entities];
 	float sx[c_max_entities];
 	float sy[c_max_entities];
 	float dir_x[c_max_entities];
-	float dir_y[c_max_entities];
+	float vel_y[c_max_entities];
 	float speed[c_max_entities];
 } s_entities;
 
 func int make_entity();
 func void zero_entity(int index);
 func int find_player_by_id(u32 id);
+func void gravity_system(int start, int count);
+func int make_player(u32 player_id);

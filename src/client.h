@@ -77,4 +77,3 @@ func b8 check_for_shader_errors(u32 id, char* out_error);
 func void input_system(int start, int count);
 func void draw_system(int start, int count);
 func void parse_packet(ENetEvent event);
-func int make_player(u32 player_id);
