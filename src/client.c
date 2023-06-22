@@ -139,7 +139,7 @@ int main(int argc, char** argv)
 			DispatchMessage(&msg);
 		}
 
-		update_timer += delta;
+		update_timer += time_passed;
 		while(update_timer >= c_update_delay)
 		{
 			update_timer -= c_update_delay;
@@ -155,7 +155,6 @@ int main(int argc, char** argv)
 		frame_arena.used = 0;
 
 		SwapBuffers(g_window.dc);
-
 
 		time_passed = (float)(get_seconds() - start_of_frame_seconds);
 		total_time += time_passed;
