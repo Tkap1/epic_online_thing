@@ -76,8 +76,6 @@ int main(int argc, char** argv)
 		error(false);
 	}
 
-	printf("Client: loop\n");
-
 	create_window();
 
 	if(wglSwapIntervalEXT)
@@ -146,7 +144,6 @@ int main(int argc, char** argv)
 
 				case ENET_EVENT_TYPE_RECEIVE:
 				{
-					printf("Client: Got a packet!\n");
 					parse_packet(event);
 					enet_packet_destroy(event.packet);
 				} break;
