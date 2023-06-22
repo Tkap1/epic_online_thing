@@ -223,19 +223,19 @@ func void update()
 {
 	spawn_system(levels[current_level]);
 
-	b8 one_alive = false;
+	b8 at_least_one_player_alive = false;
 	for(int peer_i = 0; peer_i < peers.count; peer_i++)
 	{
 		ENetPeer* peer = peers.elements[peer_i];
 		int entity = find_player_by_id(peer->connectID);
 		if(entity != c_invalid_entity && !e.dead[entity])
 		{
-			one_alive = true;
+			at_least_one_player_alive = true;
 			break;
 		}
 	}
 	level_timer += delta;
-	if(level_timer >= c_level_duration && one_alive)
+	if(level_timer >= c_level_duration && at_least_one_player_alive)
 	{
 		begin_packet(e_packet_beat_level);
 			buffer_write(&write_cursor, &current_level, sizeof(current_level));
@@ -249,7 +249,7 @@ func void update()
 		revive_every_player();
 		level_timer = 0;
 	}
-	if(!one_alive)
+	if(!at_least_one_player_alive)
 	{
 		log("Level restarted");
 		reset_level();
