@@ -242,7 +242,7 @@ func void update()
 			buffer_write(&write_cursor, &rng.seed, sizeof(rng.seed));
 		broadcast_packet(host, ENET_PACKET_FLAG_RELIABLE);
 
-		log("Level beaten");
+		log("Level %i beaten", current_level + 1);
 
 		current_level += 1;
 		reset_level();
@@ -251,7 +251,7 @@ func void update()
 	}
 	if(!at_least_one_player_alive)
 	{
-		log("Level restarted");
+		log("Level %i restarted", current_level + 1);
 		reset_level();
 		revive_every_player();
 
