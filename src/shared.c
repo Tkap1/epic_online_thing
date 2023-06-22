@@ -102,7 +102,7 @@ func int make_player(u32 player_id)
 	e.sx[entity] = 32;
 	e.sy[entity] = 64;
 	e.player_id[entity] = player_id;
-	e.speed[entity] = 300;
+	e.speed[entity] = 400;
 	e.flags[entity][e_entity_flag_draw] = true;
 
 	#ifdef m_client

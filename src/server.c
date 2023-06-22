@@ -151,6 +151,7 @@ int main(int argc, char** argv)
 							if(to_move > 0)
 							{
 								memmove(&peers.elements[peer_i], &peers.elements[peer_i + 1], sizeof(peers.elements[0]) * to_move);
+								memmove(&peer_ids[peer_i], &peer_ids[peer_i + 1], sizeof(peer_ids[0]) * to_move);
 							}
 						}
 					}

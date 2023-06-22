@@ -144,14 +144,15 @@ int main(int argc, char** argv)
 		{
 			update_timer -= c_update_delay;
 			update();
+
+			for(int k_i = 0; k_i < c_max_keys; k_i++)
+			{
+				g_input.keys[k_i].count = 0;
+			}
 		}
 
 		render(program);
 
-		for(int k_i = 0; k_i < c_max_keys; k_i++)
-		{
-			g_input.keys[k_i].count = 0;
-		}
 		frame_arena.used = 0;
 
 		SwapBuffers(g_window.dc);
