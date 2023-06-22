@@ -7,6 +7,7 @@ typedef enum e_packet
 	e_packet_welcome,
 	e_packet_another_player_connected,
 	e_packet_player_update,
+	e_packet_player_disconnected,
 } e_packet;
 
 typedef enum e_entity_flag
@@ -14,9 +15,9 @@ typedef enum e_entity_flag
 	e_entity_flag_move,
 	e_entity_flag_input,
 	e_entity_flag_draw,
-	e_entity_flag_count,
 	e_entity_flag_gravity,
 	e_entity_flag_bounds_check,
+	e_entity_flag_count,
 } e_entity_flag;
 
 typedef struct s_entities

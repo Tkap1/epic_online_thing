@@ -124,40 +124,15 @@ int main(int argc, char** argv)
 
 		f64 start_of_frame_seconds = get_seconds();
 
-		ENetEvent event = zero;
-		while(enet_host_service(client, &event, 0) > 0)
-		{
-			switch(event.type)
-			{
-				case ENET_EVENT_TYPE_NONE:
-				{
-				} break;
-
-				case ENET_EVENT_TYPE_CONNECT:
-				{
-					printf("Client: connected!\n");
-				} break;
-
-				case ENET_EVENT_TYPE_DISCONNECT:
-				{
-					printf("Client: disconnected!\n");
-				} break;
-
-				case ENET_EVENT_TYPE_RECEIVE:
-				{
-					parse_packet(event);
-					enet_packet_destroy(event.packet);
-				} break;
-
-				invalid_default_case;
-			}
-		}
+		enet_loop(client, 0);
 
 		MSG msg = zero;
 		while(PeekMessage(&msg, null, 0, 0, PM_REMOVE) > 0)
 		{
 			if(msg.message == WM_QUIT)
 			{
+				enet_peer_disconnect(server, 0);
+				enet_loop(client, 1000);
 				running = false;
 			}
 			TranslateMessage(&msg);
@@ -380,6 +355,50 @@ func void parse_packet(ENetEvent event)
 
 		} break;
 
+		case e_packet_player_disconnected:
+		{
+			u32 disconnected_id = *(u32*)buffer_read(&cursor, sizeof(u32));
+			assert(disconnected_id != my_id);
+			int entity = find_player_by_id(disconnected_id);
+			if(entity != c_invalid_entity)
+			{
+				e.active[entity] = false;
+			}
+		} break;
+
 		invalid_default_case;
+	}
+}
+
+func void enet_loop(ENetHost* client, int timeout)
+{
+	ENetEvent event = zero;
+	while(enet_host_service(client, &event, timeout) > 0)
+	{
+		switch(event.type)
+		{
+			case ENET_EVENT_TYPE_NONE:
+			{
+			} break;
+
+			case ENET_EVENT_TYPE_CONNECT:
+			{
+				printf("Client: connected!\n");
+			} break;
+
+			case ENET_EVENT_TYPE_DISCONNECT:
+			{
+				printf("Client: disconnected!\n");
+				return;
+			} break;
+
+			case ENET_EVENT_TYPE_RECEIVE:
+			{
+				parse_packet(event);
+				enet_packet_destroy(event.packet);
+			} break;
+
+			invalid_default_case;
+		}
 	}
 }

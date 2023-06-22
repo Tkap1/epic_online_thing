@@ -19,6 +19,7 @@ make_list(s_peer_list, ENetPeer*, c_max_peers);
 global s_peer_list peers;
 global s_lin_arena frame_arena;
 global s_entities e;
+global u32 peer_ids[c_max_peers];
 
 #include "shared.c"
 #include "memory.c"
@@ -119,6 +120,7 @@ int main(int argc, char** argv)
 					}
 
 					s_peer_list_add(&peers, event.peer);
+					peer_ids[peers.count - 1] = event.peer->connectID;
 
 					make_player(event.peer->connectID);
 
@@ -126,7 +128,49 @@ int main(int argc, char** argv)
 
 				case ENET_EVENT_TYPE_DISCONNECT:
 				{
+					// @Note(tkap, 22/06/2023): Find out the ID of the peer that disconnected, because for some reason, enet seems to set it to 0 before we have
+					// a chance to read it.
+					u32 id = 0;
+					for(int peer_i = 0; peer_i < peers.count; peer_i++)
+					{
+						ENetPeer* peer = peers.elements[peer_i];
+						if(peer->connectID == 0)
+						{
+							id = peer_ids[peer_i];
+						}
+					}
+					assert(id != 0);
+
+					for(int peer_i = 0; peer_i < peers.count; peer_i++)
+					{
+						ENetPeer* peer = peers.elements[peer_i];
+						if(event.peer->connectID == peer->connectID)
+						{
+							peers.count -= 1;
+							int to_move = peers.count - peer_i;
+							if(to_move > 0)
+							{
+								memmove(&peers.elements[peer_i], &peers.elements[peer_i + 1], sizeof(peers.elements[0]) * to_move);
+							}
+						}
+					}
+
+					for(int peer_i = 0; peer_i < peers.count; peer_i++)
+					{
+						la_push(&frame_arena);
+						ENetPeer* peer = peers.elements[peer_i];
+						e_packet packet_id = e_packet_player_disconnected;
+						u8* data = la_get(&frame_arena, 1024);
+						u8* cursor = data;
+						buffer_write(&cursor, &packet_id, sizeof(packet_id));
+						buffer_write(&cursor, &id, sizeof(id));
+						ENetPacket* packet = enet_packet_create(data, cursor - data, ENET_PACKET_FLAG_RELIABLE);
+						enet_peer_send(peer, 0, packet);
+						la_pop(&frame_arena);
+					}
+
 					printf("Someone disconnected!\n");
+
 				} break;
 
 				case ENET_EVENT_TYPE_RECEIVE:

@@ -103,15 +103,15 @@ func int make_player(u32 player_id)
 	e.sy[entity] = 64;
 	e.player_id[entity] = player_id;
 	e.speed[entity] = 300;
-	e.flags[entity][e_entity_flag_move] = true;
 	e.flags[entity][e_entity_flag_draw] = true;
-	e.flags[entity][e_entity_flag_bounds_check] = true;
-	e.flags[entity][e_entity_flag_gravity] = true;
 
 	#ifdef m_client
 	if(player_id == my_id)
 	{
+		e.flags[entity][e_entity_flag_move] = true;
 		e.flags[entity][e_entity_flag_input] = true;
+		e.flags[entity][e_entity_flag_bounds_check] = true;
+		e.flags[entity][e_entity_flag_gravity] = true;
 	}
 	#endif // m_client
 
