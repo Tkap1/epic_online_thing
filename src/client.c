@@ -287,6 +287,7 @@ func void input_system(int start, int count)
 {
 	b8 go_left = is_key_down(key_a) || is_key_down(key_left);
 	b8 go_right = is_key_down(key_d) || is_key_down(key_right);
+	b8 go_down = is_key_down(key_s) || is_key_down(key_down);
 	b8 jump = is_key_pressed(key_space) || is_key_pressed(key_w) || is_key_pressed(key_up);
 	b8 jump_released = is_key_released(key_space) || is_key_released(key_w) || is_key_released(key_up);
 
@@ -304,6 +305,11 @@ func void input_system(int start, int count)
 		if(go_left)
 		{
 			e.dir_x[ii] -= 1;
+		}
+
+		if(go_down)
+		{
+			e.vel_y[ii] = max(e.vel_y[ii], c_fast_fall_speed);
 		}
 
 		b8 can_jump = e.jumps_done[ii] < 2;
