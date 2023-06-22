@@ -1,5 +1,7 @@
 
-
+global float spawn_timer[e_projectile_type_count];
+global int current_level;
+global float level_timer;
 
 func void move_system(int start, int count)
 {
@@ -46,6 +48,9 @@ func void zero_entity(int index)
 	e.jumps_done[index] = 0;
 	e.player_id[index] = 0;
 	e.jumping[index] = false;
+	e.dead[index] = false;
+	e.time_lived[index] = 0;
+	e.duration[index] = 0;
 }
 
 func int find_player_by_id(u32 id)
@@ -94,7 +99,7 @@ func void bounds_check_system(int start, int count)
 }
 
 
-func int make_player(u32 player_id)
+func int make_player(u32 player_id, b8 dead)
 {
 	int entity = make_entity();
 	e.x[entity] = 100;
@@ -103,7 +108,9 @@ func int make_player(u32 player_id)
 	e.sy[entity] = 64;
 	e.player_id[entity] = player_id;
 	e.speed[entity] = 400;
+	e.dead[entity] = dead;
 	e.flags[entity][e_entity_flag_draw] = true;
+	e.type[entity] = e_entity_type_player;
 
 	#ifdef m_client
 	if(player_id == my_id)
@@ -116,4 +123,89 @@ func int make_player(u32 player_id)
 	#endif // m_client
 
 	return entity;
+}
+
+func int make_projectile()
+{
+	int entity = make_entity();
+	assert(entity != c_invalid_entity);
+	e.type[entity] = e_entity_type_projectile;
+	e.flags[entity][e_entity_flag_move] = true;
+	e.flags[entity][e_entity_flag_draw_circle] = true;
+	e.flags[entity][e_entity_flag_expire] = true;
+	e.flags[entity][e_entity_flag_collide] = true;
+
+	return entity;
+}
+
+
+func void spawn_system(s_level level)
+{
+
+	for(int proj_i = 0; proj_i < e_projectile_type_count; proj_i++)
+	{
+		if(level.spawn_delay[proj_i] <= 0) { continue; }
+		spawn_timer[proj_i] += delta;
+		while(spawn_timer[proj_i] >= level.spawn_delay[proj_i])
+		{
+			spawn_timer[proj_i] -= level.spawn_delay[proj_i];
+			int entity = make_projectile();
+
+			switch(proj_i)
+			{
+				case e_projectile_type_top_basic:
+				{
+					e.x[entity] = randf32(&rng) * c_base_res.x;
+					e.vel_y[entity] = randf_range(&rng, 400, 500);
+					e.sx[entity] = randf_range(&rng, 48, 56);
+					e.color[entity] = v4(0.9f, 0.1f, 0.1f, 1.0f);
+				} break;
+
+				invalid_default_case;
+			}
+		}
+	}
+}
+
+func void init_levels()
+{
+	levels[0].spawn_delay[e_projectile_type_top_basic] = 0.5f;
+	levels[1].spawn_delay[e_projectile_type_top_basic] = 0.4f;
+	levels[2].spawn_delay[e_projectile_type_top_basic] = 0.3f;
+	levels[3].spawn_delay[e_projectile_type_top_basic] = 0.2f;
+	levels[4].spawn_delay[e_projectile_type_top_basic] = 0.1f;
+
+	current_level = 0;
+}
+
+func void reset_level()
+{
+	level_timer = 0;
+	memset(spawn_timer, 0, sizeof(spawn_timer));
+
+	// @Note(tkap, 22/06/2023): Remove projectiles
+	for(int i = 0; i < c_max_entities; i++)
+	{
+		if(!e.active[i]) { continue; }
+		if(e.type[i] == e_entity_type_projectile)
+		{
+			e.active[i] = false;
+		}
+	}
+}
+
+func void expire_system(int start, int count)
+{
+	for(int i = 0; i < count; i++)
+	{
+		int ii = start + i;
+		if(!e.active[ii]) { continue; }
+		if(!e.flags[ii][e_entity_flag_expire]) { continue; }
+
+		e.time_lived[ii] += delta;
+		if(e.time_lived[ii] >= e.duration[ii])
+		{
+			e.active[ii] = false;
+		}
+	}
 }

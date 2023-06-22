@@ -10,3 +10,5 @@ typedef uint8_t b8;
 typedef uint32_t b32;
 
 typedef double f64;
+
+#define c_max_u64 UINT64_MAX

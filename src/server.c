@@ -3,6 +3,8 @@
 #include <winsock2.h>
 #include <stdio.h>
 #include "external\enet\enet.h"
+#include <intrin.h>
+#include <math.h>
 #include "types.h"
 #include "memory.h"
 #include "utils.h"
@@ -11,6 +13,7 @@
 #include "types.h"
 #include "shared.h"
 #include "time.h"
+#include "rng.h"
 #include "server.h"
 
 #define c_max_peers 32
@@ -20,6 +23,8 @@ global s_peer_list peers;
 global s_lin_arena frame_arena;
 global s_entities e;
 global u32 peer_ids[c_max_peers];
+global ENetHost* host;
+global s_rng rng;
 
 #include "shared.c"
 #include "memory.c"
@@ -29,6 +34,9 @@ int main(int argc, char** argv)
 {
 	argc -= 1;
 	argv += 1;
+
+	init_levels();
+	rng.seed = (u32)__rdtsc();
 
 	init_performance();
 	frame_arena = make_lin_arena(1 * c_mb);
@@ -42,7 +50,7 @@ int main(int argc, char** argv)
 	address.host = ENET_HOST_ANY;
 	address.port = c_port;
 
-	ENetHost* host = enet_host_create(
+	host = enet_host_create(
 		&address, /* create a client host */
 		c_max_peers, /* only allow 1 outgoing connection */
 		2, /* allow up 2 channels to be used, 0 and 1 */
@@ -84,8 +92,17 @@ int main(int argc, char** argv)
 						e_packet packet_id = e_packet_another_player_connected;
 						u8* data = la_get(&frame_arena, 1024);
 						u8* cursor = data;
+						b8 dead = true;
+						{
+							int entity = find_player_by_id(id);
+							if(entity != c_invalid_entity)
+							{
+								dead = e.dead[entity];
+							}
+						}
 						buffer_write(&cursor, &packet_id, sizeof(packet_id));
 						buffer_write(&cursor, &id, sizeof(id));
+						buffer_write(&cursor, &dead, sizeof(dead));
 						ENetPacket* packet = enet_packet_create(data, cursor - data, ENET_PACKET_FLAG_RELIABLE);
 						enet_peer_send(event.peer, 0, packet);
 						la_pop(&frame_arena);
@@ -112,8 +129,10 @@ int main(int argc, char** argv)
 						e_packet packet_id = e_packet_another_player_connected;
 						u8* data = la_get(&frame_arena, 1024);
 						u8* cursor = data;
+						b8 dead = true;
 						buffer_write(&cursor, &packet_id, sizeof(packet_id));
 						buffer_write(&cursor, &event.peer->connectID, sizeof(event.peer->connectID));
+						buffer_write(&cursor, &dead, sizeof(dead));
 						ENetPacket* packet = enet_packet_create(data, cursor - data, ENET_PACKET_FLAG_RELIABLE);
 						enet_peer_send(peer, 0, packet);
 						la_pop(&frame_arena);
@@ -122,7 +141,7 @@ int main(int argc, char** argv)
 					s_peer_list_add(&peers, event.peer);
 					peer_ids[peers.count - 1] = event.peer->connectID;
 
-					make_player(event.peer->connectID);
+					make_player(event.peer->connectID, true);
 
 				} break;
 
@@ -184,7 +203,7 @@ int main(int argc, char** argv)
 			}
 		}
 
-		update_timer += delta;
+		update_timer += time_passed;
 		while(update_timer >= c_update_delay)
 		{
 			update_timer -= c_update_delay;
@@ -202,6 +221,46 @@ int main(int argc, char** argv)
 
 func void update()
 {
+	spawn_system(levels[current_level]);
+
+	b8 one_alive = false;
+	for(int peer_i = 0; peer_i < peers.count; peer_i++)
+	{
+		ENetPeer* peer = peers.elements[peer_i];
+		int entity = find_player_by_id(peer->connectID);
+		if(entity != c_invalid_entity && !e.dead[entity])
+		{
+			one_alive = true;
+			break;
+		}
+	}
+	level_timer += delta;
+	if(level_timer >= c_level_duration && one_alive)
+	{
+		begin_packet(e_packet_beat_level);
+			buffer_write(&write_cursor, &current_level, sizeof(current_level));
+			buffer_write(&write_cursor, &rng.seed, sizeof(rng.seed));
+		broadcast_packet(host, ENET_PACKET_FLAG_RELIABLE);
+
+		log("Level beaten");
+
+		current_level += 1;
+		reset_level();
+		revive_every_player();
+		level_timer = 0;
+	}
+	if(!one_alive)
+	{
+		log("Level restarted");
+		reset_level();
+		revive_every_player();
+
+		begin_packet(e_packet_reset_level);
+			buffer_write(&write_cursor, &current_level, sizeof(current_level));
+			buffer_write(&write_cursor, &rng.seed, sizeof(rng.seed));
+		broadcast_packet(host, ENET_PACKET_FLAG_RELIABLE);
+	}
+
 	for(int i = 0; i < c_num_threads; i++)
 	{
 		move_system(i * c_entities_per_thread, c_entities_per_thread);
@@ -253,5 +312,39 @@ func void parse_packet(ENetEvent event)
 			}
 
 		} break;
+
+		case e_packet_player_got_hit:
+		{
+			u32 got_hit_id = event.peer->connectID;
+			int entity = find_player_by_id(got_hit_id);
+			if(entity != c_invalid_entity)
+			{
+				e.dead[entity] = true;
+			}
+
+			for(int peer_i = 0; peer_i < peers.count; peer_i++)
+			{
+				ENetPeer* peer = peers.elements[peer_i];
+				if(peer->connectID == got_hit_id) { continue; }
+
+				begin_packet(e_packet_player_got_hit)
+					buffer_write(&write_cursor, &got_hit_id, sizeof(got_hit_id));
+				send_packet_peer(peer, ENET_PACKET_FLAG_RELIABLE);
+			}
+
+		} break;
+	}
+}
+
+func void revive_every_player()
+{
+	for(int peer_i = 0; peer_i < peers.count; peer_i++)
+	{
+		ENetPeer* peer = peers.elements[peer_i];
+		int entity = find_player_by_id(peer->connectID);
+		if(entity != c_invalid_entity)
+		{
+			e.dead[entity] = false;
+		}
 	}
 }

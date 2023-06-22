@@ -19,6 +19,12 @@
 #define true 1
 #define false 0
 
+#ifdef m_server
+#define log(...) printf("Server: "  __VA_ARGS__); printf("\n")
+#else // m_server
+#define log(...) printf("Client: " __VA_ARGS__); printf("\n")
+#endif
+
 #define make_list(name, type, max_elements) typedef struct name { \
 	int count; \
 	type elements[max_elements]; \

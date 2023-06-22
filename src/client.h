@@ -78,3 +78,6 @@ func void input_system(int start, int count);
 func void draw_system(int start, int count);
 func void parse_packet(ENetEvent event);
 func void enet_loop(ENetHost* client, int timeout);
+func void revive_every_player();
+func void draw_circle_system(int start, int count);
+func void collision_system(int start, int count);

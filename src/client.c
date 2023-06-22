@@ -9,6 +9,7 @@
 
 #include <winsock2.h>
 #include <stdio.h>
+#include <math.h>
 #include "external\enet\enet.h"
 #include "types.h"
 #include "utils.h"
@@ -20,6 +21,7 @@
 #include "memory.h"
 #include "file.h"
 #include "client.h"
+#include "rng.h"
 #include "shader_shared.h"
 
 make_list(s_transform_list, s_transform, 1024);
@@ -29,6 +31,7 @@ global s_entities e;
 global u32 my_id = 0;
 global ENetPeer* server;
 global s_lin_arena frame_arena;
+global s_rng rng;
 
 #include "draw.c"
 #include "memory.c"
@@ -41,6 +44,8 @@ int main(int argc, char** argv)
 {
 	argc -= 1;
 	argv += 1;
+
+	init_levels();
 
 	assert((c_max_entities % c_num_threads) == 0);
 
@@ -167,6 +172,10 @@ int main(int argc, char** argv)
 
 func void update()
 {
+	spawn_system(levels[current_level]);
+
+	level_timer += delta;
+
 	for(int i = 0; i < c_num_threads; i++)
 	{
 		gravity_system(i * c_entities_per_thread, c_entities_per_thread);
@@ -182,6 +191,10 @@ func void update()
 	for(int i = 0; i < c_num_threads; i++)
 	{
 		bounds_check_system(i * c_entities_per_thread, c_entities_per_thread);
+	}
+	for(int i = 0; i < c_num_threads; i++)
+	{
+		collision_system(i * c_entities_per_thread, c_entities_per_thread);
 	}
 
 	int my_player = find_player_by_id(my_id);
@@ -207,6 +220,7 @@ func void render(u32 program)
 	for(int i = 0; i < c_num_threads; i++)
 	{
 		draw_system(i * c_entities_per_thread, c_entities_per_thread);
+		draw_circle_system(i * c_entities_per_thread, c_entities_per_thread);
 	}
 
 	{
@@ -215,7 +229,7 @@ func void render(u32 program)
 		glClearDepth(0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glViewport(0, 0, g_window.width, g_window.height);
-		glEnable(GL_DEPTH_TEST);
+		// glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_GREATER);
 
 		int location = glGetUniformLocation(program, "window_size");
@@ -224,7 +238,8 @@ func void render(u32 program)
 		if(transforms.count > 0)
 		{
 			glEnable(GL_BLEND);
-			glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+			// glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+			glBlendFunc(GL_ONE, GL_ONE);
 			glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(*transforms.elements) * transforms.count, transforms.elements);
 			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, transforms.count);
 			transforms.count = 0;
@@ -311,10 +326,23 @@ func void draw_system(int start, int count)
 	{
 		int ii = start + i;
 		if(!e.active[ii]) { continue; }
+		if(e.dead[ii]) { continue; }
 		if(!e.flags[ii][e_entity_flag_draw]) { continue; }
 
 		draw_rect(v2(e.x[ii], e.y[ii]), 0, v2(e.sx[ii], e.sy[ii]), v41f(1), (s_transform)zero);
+	}
+}
 
+func void draw_circle_system(int start, int count)
+{
+	for(int i = 0; i < count; i++)
+	{
+		int ii = start + i;
+		if(!e.active[ii]) { continue; }
+		if(!e.flags[ii][e_entity_flag_draw_circle]) { continue; }
+
+		draw_circle(v2(e.x[ii], e.y[ii]), 0, e.sx[ii], e.color[ii], (s_transform)zero);
+		draw_circle(v2(e.x[ii], e.y[ii]), 1, e.sx[ii] * 0.7f, v41f(1), (s_transform)zero);
 	}
 }
 
@@ -329,14 +357,14 @@ func void parse_packet(ENetEvent event)
 		{
 			u32 player_id = *(u32*)buffer_read(&cursor, sizeof(player_id));
 			my_id = player_id;
-			make_player(player_id);
+			make_player(player_id, true);
 		} break;
 
 		case e_packet_another_player_connected:
 		{
 			u32 player_id = *(u32*)buffer_read(&cursor, sizeof(player_id));
-			int entity = make_player(player_id);
-			e.player_id[entity] = player_id;
+			b8 dead = *(b8*)buffer_read(&cursor, sizeof(dead));
+			make_player(player_id, dead);
 		} break;
 
 		case e_packet_player_update:
@@ -363,6 +391,35 @@ func void parse_packet(ENetEvent event)
 			if(entity != c_invalid_entity)
 			{
 				e.active[entity] = false;
+			}
+		} break;
+
+		case e_packet_beat_level:
+		{
+			current_level = *(int*)buffer_read(&cursor, sizeof(current_level)) + 1;
+			rng.seed = *(int*)buffer_read(&cursor, sizeof(rng.seed));
+			reset_level();
+			revive_every_player();
+			log("Beat level %i", current_level);
+		} break;
+
+		case e_packet_reset_level:
+		{
+			current_level = *(int*)buffer_read(&cursor, sizeof(current_level));
+			log("Reset level %i", current_level + 1);
+			rng.seed = *(int*)buffer_read(&cursor, sizeof(rng.seed));
+			reset_level();
+			revive_every_player();
+		} break;
+
+		case e_packet_player_got_hit:
+		{
+			u32 got_hit_id = *(u32*)buffer_read(&cursor, sizeof(u32));
+			assert(got_hit_id != my_id);
+			int entity = find_player_by_id(got_hit_id);
+			if(entity != c_invalid_entity)
+			{
+				e.dead[entity] = true;
 			}
 		} break;
 
@@ -400,5 +457,42 @@ func void enet_loop(ENetHost* client, int timeout)
 
 			invalid_default_case;
 		}
+	}
+}
+
+func void revive_every_player()
+{
+	for(int i = 0; i < c_max_entities; i++)
+	{
+		if(!e.active[i]) { continue; }
+		if(!e.player_id) { continue; }
+		e.dead[i] = false;
+	}
+}
+
+func void collision_system(int start, int count)
+{
+	for(int i = 0; i < count; i++)
+	{
+		int ii = start + i;
+		if(!e.active[ii]) { continue; }
+		if(!e.flags[ii][e_entity_flag_collide]) { continue; }
+
+		for(int j = 0; j < c_max_entities; j++)
+		{
+			if(!e.active[j]) { continue; }
+			if(e.type[j] != e_entity_type_player) { continue; }
+			if(e.player_id[j] != my_id) { continue; }
+
+			if(
+				rect_collides_circle(v2(e.x[j], e.y[j]), v2(e.sx[j], e.sy[j]), v2(e.x[ii], e.y[ii]), e.sx[ii] * 0.48f)
+			)
+			{
+				e.dead[j] = true;
+				begin_packet(e_packet_player_got_hit);
+				send_packet_peer(server, ENET_PACKET_FLAG_RELIABLE);
+			}
+		}
+
 	}
 }

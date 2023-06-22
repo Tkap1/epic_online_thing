@@ -20,6 +20,7 @@ typedef
 struct s_transform
 {
 	shader_bool do_clip;
+	shader_bool do_circle;
 	shader_bool use_texture;
 	shader_bool flip_x;
 	shader_int layer;

@@ -12,3 +12,5 @@ global s_v2 c_base_res = {1366, 768};
 #define c_invalid_entity (-1)
 #define c_gravity (1700)
 #define c_jump_strength (-700)
+#define c_max_levels (100)
+#define c_level_duration (10)
