@@ -35,6 +35,7 @@ typedef enum e_packet
 typedef enum e_entity_flag
 {
 	e_entity_flag_move,
+	e_entity_flag_player_movement,
 	e_entity_flag_input,
 	e_entity_flag_draw,
 	e_entity_flag_draw_circle,
@@ -70,6 +71,7 @@ typedef struct s_entities
 	float sx[c_max_entities];
 	float sy[c_max_entities];
 	float dir_x[c_max_entities];
+	float dir_y[c_max_entities];
 	float vel_y[c_max_entities];
 	float speed[c_max_entities];
 	float time_lived[c_max_entities];
@@ -82,6 +84,8 @@ typedef enum e_projectile_type
 	e_projectile_type_top_basic,
 	e_projectile_type_left_basic,
 	e_projectile_type_right_basic,
+	e_projectile_type_diagonal_left,
+	e_projectile_type_diagonal_right,
 	e_projectile_type_count,
 } e_projectile_type;
 

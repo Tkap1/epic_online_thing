@@ -1,5 +1,5 @@
 
-
+#define pi (3.141f)
 
 typedef struct s_v2
 {
@@ -77,4 +77,25 @@ func b8 rect_collides_circle(s_v2 rect_center, s_v2 rect_size, s_v2 center, floa
 	collision = (cornerDistanceSq <= (radius*radius));
 
 	return collision;
+}
+
+func s_v2 v2_from_angle(float angle)
+{
+	return v2(
+		cosf(angle),
+		sinf(angle)
+	);
+}
+
+func s_v2 v2_sub(s_v2 a, s_v2 b)
+{
+	s_v2 result;
+	result.x = a.x - b.x;
+	result.y = a.y - b.y;
+	return result;
+}
+
+func float v2_angle(s_v2 v)
+{
+	return atan2f(v.y, v.x);
 }

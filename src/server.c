@@ -264,6 +264,7 @@ func void update()
 	for(int i = 0; i < c_num_threads; i++)
 	{
 		move_system(i * c_entities_per_thread, c_entities_per_thread);
+		player_movement_system(i * c_entities_per_thread, c_entities_per_thread);
 	}
 	for(int i = 0; i < c_num_threads; i++)
 	{

@@ -3,6 +3,21 @@ global float spawn_timer[e_projectile_type_count];
 global int current_level;
 global float level_timer;
 
+func void player_movement_system(int start, int count)
+{
+	for(int i = 0; i < count; i++)
+	{
+		int ii = start + i;
+		if(!e.active[ii]) { continue; }
+		if(!e.flags[ii][e_entity_flag_player_movement]) { continue; }
+
+		e.x[ii] += e.dir_x[ii] * e.speed[ii] * delta;
+		e.y[ii] += e.vel_y[ii] * delta;
+
+		if(e.vel_y[ii] >= 0) { e.jumping[ii] = false; }
+	}
+}
+
 func void move_system(int start, int count)
 {
 	for(int i = 0; i < count; i++)
@@ -12,9 +27,7 @@ func void move_system(int start, int count)
 		if(!e.flags[ii][e_entity_flag_move]) { continue; }
 
 		e.x[ii] += e.dir_x[ii] * e.speed[ii] * delta;
-		e.y[ii] += e.vel_y[ii] * delta;
-
-		if(e.vel_y[ii] >= 0) { e.jumping[ii] = false; }
+		e.y[ii] += e.dir_y[ii] * e.speed[ii] * delta;
 	}
 }
 
@@ -44,6 +57,7 @@ func void zero_entity(int index)
 	e.sy[index] = 0;
 	e.speed[index] = 0;
 	e.dir_x[index] = 0;
+	e.dir_y[index] = 0;
 	e.vel_y[index] = 0;
 	e.jumps_done[index] = 0;
 	e.player_id[index] = 0;
@@ -115,7 +129,7 @@ func int make_player(u32 player_id, b8 dead)
 	#ifdef m_client
 	if(player_id == my_id)
 	{
-		e.flags[entity][e_entity_flag_move] = true;
+		e.flags[entity][e_entity_flag_player_movement] = true;
 		e.flags[entity][e_entity_flag_input] = true;
 		e.flags[entity][e_entity_flag_bounds_check] = true;
 		e.flags[entity][e_entity_flag_gravity] = true;
@@ -156,7 +170,8 @@ func void spawn_system(s_level level)
 				case e_projectile_type_top_basic:
 				{
 					e.x[entity] = randf32(&rng) * c_base_res.x;
-					e.vel_y[entity] = randf_range(&rng, 400, 500);
+					e.dir_y[entity] = 1;
+					e.speed[entity] = randf_range(&rng, 400, 500);
 					e.sx[entity] = randf_range(&rng, 48, 56);
 					e.color[entity] = v4(0.9f, 0.1f, 0.1f, 1.0f);
 				} break;
@@ -181,6 +196,38 @@ func void spawn_system(s_level level)
 					e.color[entity] = v4(0.1f, 0.9f, 0.1f, 1.0f);
 				} break;
 
+				case e_projectile_type_diagonal_left:
+				{
+					s_v2 pos = v2(0.0f, 0.0f);
+					e.x[entity] = 0;
+					e.y[entity] = 0;
+					s_v2 a = v2_sub(v2(c_base_res.x, c_base_res.y * 0.7f), pos);
+					s_v2 b = v2_sub(v2(0.0f, c_base_res.y), pos);
+					float angle = randf_range(&rng, v2_angle(a), v2_angle(b));
+					s_v2 dir = v2_from_angle(angle);
+					e.dir_x[entity] = dir.x;
+					e.dir_y[entity] = dir.y;
+					e.speed[entity] = randf_range(&rng, 400, 500);
+					e.sx[entity] = randf_range(&rng, 38, 46);
+					e.color[entity] = v4(0.9f, 0.9f, 0.1f, 1.0f);
+				} break;
+
+				case e_projectile_type_diagonal_right:
+				{
+					s_v2 pos = v2(c_base_res.x, 0.0f);
+					e.x[entity] = pos.x;
+					e.y[entity] = pos.y;
+					s_v2 a = v2_sub(v2(0.0f, c_base_res.y * 0.7f), pos);
+					s_v2 b = v2_sub(c_base_res, pos);
+					float angle = randf_range(&rng, v2_angle(a), v2_angle(b));
+					s_v2 dir = v2_from_angle(angle);
+					e.dir_x[entity] = dir.x;
+					e.dir_y[entity] = dir.y;
+					e.speed[entity] = randf_range(&rng, 400, 500);
+					e.sx[entity] = randf_range(&rng, 38, 46);
+					e.color[entity] = v4(0.9f, 0.9f, 0.1f, 1.0f);
+				} break;
+
 				invalid_default_case;
 			}
 		}
@@ -190,8 +237,9 @@ func void spawn_system(s_level level)
 func void init_levels()
 {
 	levels[0].spawn_delay[e_projectile_type_top_basic] = 0.4f;
+
 	levels[1].spawn_delay[e_projectile_type_left_basic] = 0.5f;
-	levels[2].spawn_delay[e_projectile_type_right_basic] = 0.4f;
+	levels[2].spawn_delay[e_projectile_type_diagonal_right] = 0.4f;
 
 	levels[3].spawn_delay[e_projectile_type_top_basic] = 0.5f;
 	levels[3].spawn_delay[e_projectile_type_left_basic] = 0.5f;
