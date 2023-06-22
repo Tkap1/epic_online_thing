@@ -203,6 +203,7 @@ func void update()
 	int my_player = find_player_by_id(my_id);
 	if(my_player != c_invalid_entity)
 	{
+		la_push(&frame_arena);
 		e_packet packet_id = e_packet_player_update;
 		u8* data = la_get(&frame_arena, 1024);
 		u8* cursor = data;
@@ -211,6 +212,7 @@ func void update()
 		buffer_write(&cursor, &e.y[my_player], sizeof(e.y[my_player]));
 		ENetPacket* packet = enet_packet_create(data, cursor - data, 0);
 		enet_peer_send(server, 0, packet);
+		la_pop(&frame_arena);
 	}
 
 }
@@ -366,7 +368,7 @@ func int make_player(u32 player_id)
 	e.sx[entity] = 64;
 	e.sy[entity] = 64;
 	e.player_id[entity] = player_id;
-	e.speed[entity] = 1000;
+	e.speed[entity] = 400;
 	e.flags[entity][e_entity_flag_move] = true;
 	e.flags[entity][e_entity_flag_draw] = true;
 	if(player_id == my_id)

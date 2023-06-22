@@ -78,6 +78,7 @@ int main(int argc, char** argv)
 					// @Note(tkap, 22/06/2023): Send all players to the new client
 					for(int peer_i = 0; peer_i < peers.count; peer_i++)
 					{
+						la_push(&frame_arena);
 						u32 id = peers.elements[peer_i]->connectID;
 						e_packet packet_id = e_packet_another_player_connected;
 						u8* data = la_get(&frame_arena, 1024);
@@ -86,10 +87,12 @@ int main(int argc, char** argv)
 						buffer_write(&cursor, &id, sizeof(id));
 						ENetPacket* packet = enet_packet_create(data, cursor - data, ENET_PACKET_FLAG_RELIABLE);
 						enet_peer_send(event.peer, 0, packet);
+						la_pop(&frame_arena);
 					}
 
 					// @Note(tkap, 22/06/2023): Welcome the new client
 					{
+						la_push(&frame_arena);
 						e_packet packet_id = e_packet_welcome;
 						u8* data = la_get(&frame_arena, 1024);
 						u8* cursor = data;
@@ -97,11 +100,13 @@ int main(int argc, char** argv)
 						buffer_write(&cursor, &event.peer->connectID, sizeof(event.peer->connectID));
 						ENetPacket* packet = enet_packet_create(data, cursor - data, ENET_PACKET_FLAG_RELIABLE);
 						enet_peer_send(event.peer, 0, packet);
+						la_pop(&frame_arena);
 					}
 
 					// @Note(tkap, 22/06/2023): Send every other client the new character
 					for(int peer_i = 0; peer_i < peers.count; peer_i++)
 					{
+						la_push(&frame_arena);
 						ENetPeer* peer = peers.elements[peer_i];
 						e_packet packet_id = e_packet_another_player_connected;
 						u8* data = la_get(&frame_arena, 1024);
@@ -110,6 +115,7 @@ int main(int argc, char** argv)
 						buffer_write(&cursor, &event.peer->connectID, sizeof(event.peer->connectID));
 						ENetPacket* packet = enet_packet_create(data, cursor - data, ENET_PACKET_FLAG_RELIABLE);
 						enet_peer_send(peer, 0, packet);
+						la_pop(&frame_arena);
 					}
 
 					s_peer_list_add(&peers, event.peer);
@@ -175,6 +181,7 @@ func void parse_packet(ENetEvent event)
 				ENetPeer* peer = peers.elements[peer_i];
 				if(peer->connectID == event.peer->connectID) { continue; }
 
+				la_push(&frame_arena);
 				e_packet packet_id_to_send = e_packet_player_update;
 				u8* data = la_get(&frame_arena, 1024);
 				u8* write_cursor = data;
@@ -184,6 +191,7 @@ func void parse_packet(ENetEvent event)
 				buffer_write(&write_cursor, &y, sizeof(y));
 				ENetPacket* packet = enet_packet_create(data, write_cursor - data, 0);
 				enet_peer_send(peer, 0, packet);
+				la_pop(&frame_arena);
 			}
 
 			int entity = find_player_by_id(event.peer->connectID);

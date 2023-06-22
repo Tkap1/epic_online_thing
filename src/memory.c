@@ -20,3 +20,15 @@ func void* la_get(s_lin_arena* arena, size_t in_requested)
 	arena->used += requested;
 	return result;
 }
+
+func void la_push(s_lin_arena* arena)
+{
+	assert(arena->push_count < c_max_arena_push);
+	arena->push[arena->push_count++] = arena->used;
+}
+
+func void la_pop(s_lin_arena* arena)
+{
+	assert(arena->push_count > 0);
+	arena->used = arena->push[--arena->push_count];
+}
