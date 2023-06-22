@@ -161,6 +161,26 @@ func void spawn_system(s_level level)
 					e.color[entity] = v4(0.9f, 0.1f, 0.1f, 1.0f);
 				} break;
 
+				case e_projectile_type_left_basic:
+				{
+					e.x[entity] = -100;
+					e.y[entity] = randf_range(&rng, c_base_res.y * 0.6f, c_base_res.y);
+					e.dir_x[entity] = 1;
+					e.speed[entity] = randf_range(&rng, 400, 500);
+					e.sx[entity] = randf_range(&rng, 38, 46);
+					e.color[entity] = v4(0.1f, 0.9f, 0.1f, 1.0f);
+				} break;
+
+				case e_projectile_type_right_basic:
+				{
+					e.x[entity] = c_base_res.x + 100;
+					e.y[entity] = randf_range(&rng, c_base_res.y * 0.6f, c_base_res.y);
+					e.dir_x[entity] = -1;
+					e.speed[entity] = randf_range(&rng, 400, 500);
+					e.sx[entity] = randf_range(&rng, 38, 46);
+					e.color[entity] = v4(0.1f, 0.9f, 0.1f, 1.0f);
+				} break;
+
 				invalid_default_case;
 			}
 		}
@@ -169,11 +189,17 @@ func void spawn_system(s_level level)
 
 func void init_levels()
 {
-	levels[0].spawn_delay[e_projectile_type_top_basic] = 0.5f;
-	levels[1].spawn_delay[e_projectile_type_top_basic] = 0.4f;
-	levels[2].spawn_delay[e_projectile_type_top_basic] = 0.3f;
-	levels[3].spawn_delay[e_projectile_type_top_basic] = 0.2f;
-	levels[4].spawn_delay[e_projectile_type_top_basic] = 0.1f;
+	levels[0].spawn_delay[e_projectile_type_top_basic] = 0.4f;
+	levels[1].spawn_delay[e_projectile_type_left_basic] = 0.5f;
+	levels[2].spawn_delay[e_projectile_type_right_basic] = 0.4f;
+
+	levels[3].spawn_delay[e_projectile_type_top_basic] = 0.5f;
+	levels[3].spawn_delay[e_projectile_type_left_basic] = 0.5f;
+
+	levels[4].spawn_delay[e_projectile_type_top_basic] = 0.4f;
+	levels[4].spawn_delay[e_projectile_type_right_basic] = 0.5f;
+
+	levels[5].spawn_delay[e_projectile_type_top_basic] = 0.1f;
 
 	current_level = 0;
 }

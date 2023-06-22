@@ -80,6 +80,8 @@ typedef struct s_entities
 typedef enum e_projectile_type
 {
 	e_projectile_type_top_basic,
+	e_projectile_type_left_basic,
+	e_projectile_type_right_basic,
 	e_projectile_type_count,
 } e_projectile_type;
 
