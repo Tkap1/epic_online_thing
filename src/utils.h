@@ -38,12 +38,6 @@ func void name##_add(name* list, type element) \
 
 func void on_failed_assert(char* cond, char* file, int line);
 
-func void buffer_read_array(u8** cursor, void* out, size_t size)
-{
-	memcpy(out, *cursor, size);
-	*cursor += size;
-}
-
 func void* buffer_read(u8** cursor, size_t size)
 {
 	void* result = *cursor;

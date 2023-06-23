@@ -392,6 +392,19 @@ func void send_packet_(ENetPeer* peer, e_packet packet_id, void* data, size_t si
 	enet_peer_send(peer, 0, packet);
 }
 
+func void broadcast_packet_(ENetHost* in_host, e_packet packet_id, void* data, size_t size, int flag)
+{
+	assert(flag == 0 || flag == ENET_PACKET_FLAG_RELIABLE);
+	assert(size <= 1024 - sizeof(packet_id));
+
+	u8 packet_data[1024];
+	u8* cursor = packet_data;
+	buffer_write(&cursor, &packet_id, sizeof(packet_id));
+	buffer_write(&cursor, data, size);
+	ENetPacket* packet = enet_packet_create(packet_data, cursor - packet_data, flag);
+	enet_host_broadcast(in_host, 0, packet);
+}
+
 func s_name str_to_name(char* str)
 {
 	s_name result = zero;

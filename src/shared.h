@@ -2,22 +2,6 @@
 // #define c_port 9417
 #define c_port 9417
 
-#define begin_packet(packet_id) { \
-	u8* packet_data = la_get(&frame_arena, 1024); \
-	u8* write_cursor = packet_data; \
-	e_packet packet_id_to_send = packet_id; \
-	buffer_write(&write_cursor, &packet_id_to_send, sizeof(packet_id_to_send));
-
-#define send_packet_peer(peer, flag) \
-	ENetPacket* packet = enet_packet_create(packet_data, write_cursor - packet_data, flag); \
-	enet_peer_send(peer, 0, packet); \
-}
-
-#define broadcast_packet(host, flag) \
-	ENetPacket* packet = enet_packet_create(packet_data, write_cursor - packet_data, flag); \
-	enet_host_broadcast(host, 0, packet); \
-}
-
 typedef struct s_name
 {
 	int len;
@@ -42,22 +26,126 @@ typedef enum e_packet
 } e_packet;
 
 #pragma pack(push, 1)
-typedef struct s_packet_welcome
+
+/////
+
+typedef struct s_welcome_from_server
 {
 	u32 id;
-} s_packet_welcome;
+} s_welcome_from_server;
 
-typedef struct s_already_connected_player
+typedef struct s_welcome_from_client
+{
+	int unused;
+} s_welcome_from_client;
+
+typedef struct s_already_connected_player_from_server
 {
 	u32 id;
 	b8 dead;
 	s_name name;
-} s_already_connected_player;
+} s_already_connected_player_from_server;
 
-typedef struct s_another_player_connected
+typedef struct s_already_connected_player_from_client
+{
+	int unused;
+} s_already_connected_player_from_client;
+
+typedef struct s_another_player_connected_from_server
 {
 	u32 id;
-} s_another_player_connected;
+	b8 dead;
+} s_another_player_connected_from_server;
+
+typedef struct s_another_player_connected_from_client
+{
+	int unused;
+} s_another_player_connected_from_client;
+
+typedef struct s_player_update_from_server
+{
+	u32 id;
+	float x;
+	float y;
+} s_player_update_from_server;
+
+typedef struct s_player_update_from_client
+{
+	float x;
+	float y;
+} s_player_update_from_client;
+
+typedef struct s_player_disconnected_from_server
+{
+	u32 id;
+} s_player_disconnected_from_server;
+
+typedef struct s_player_disconnected_from_client
+{
+	int unused;
+} s_player_disconnected_from_client;
+
+typedef struct s_player_died_from_server
+{
+	int unused;
+} s_player_died_from_server;
+
+typedef struct s_player_died_from_client
+{
+	int unused;
+} s_player_died_from_client;
+
+typedef struct s_start_level_from_server
+{
+	int unused;
+} s_start_level_from_server;
+
+typedef struct s_start_level_from_client
+{
+	int unused;
+} s_start_level_from_client;
+
+typedef struct s_set_level_from_server
+{
+	int unused;
+} s_set_level_from_server;
+
+typedef struct s_set_level_from_client
+{
+	int unused;
+} s_set_level_from_client;
+
+typedef struct s_beat_level_from_server
+{
+	int current_level;
+	u32 seed;
+} s_beat_level_from_server;
+
+typedef struct s_beat_level_from_client
+{
+	int unused;
+} s_beat_level_from_client;
+
+typedef struct s_reset_level_from_server
+{
+	int current_level;
+	u32 seed;
+} s_reset_level_from_server;
+
+typedef struct s_reset_level_from_client
+{
+	int unused;
+} s_reset_level_from_client;
+
+typedef struct s_player_got_hit_from_server
+{
+	u32 id;
+} s_player_got_hit_from_server;
+
+typedef struct s_player_got_hit_from_client
+{
+	int unused;
+} s_player_got_hit_from_client;
 
 typedef struct s_player_name_from_server
 {
@@ -69,6 +157,8 @@ typedef struct s_player_name_from_client
 {
 	s_name name;
 } s_player_name_from_client;
+
+
 #pragma pack(pop)
 
 typedef enum e_entity_flag
@@ -159,3 +249,6 @@ func s_name str_to_name(char* str);
 
 #define send_packet(peer, packet_id, data, flag) send_packet_(peer, packet_id, &data, sizeof(data), flag)
 func void send_packet_(ENetPeer* peer, e_packet packet_id, void* data, size_t size, int flag);
+
+#define broadcast_packet(host, packet_id, data, flag) broadcast_packet_(host, packet_id, &data, sizeof(data), flag)
+func void broadcast_packet_(ENetHost* in_host, e_packet packet_id, void* data, size_t size, int flag);

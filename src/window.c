@@ -38,7 +38,7 @@ m_gl_funcs
 
 global s_window g_window;
 global s_input g_input;
-make_list(s_char_event_list, s_char_event, 1024);
+make_list(s_char_event_list, s_char_event, 1024)
 s_char_event_list char_event_arr;
 
 func void create_window()

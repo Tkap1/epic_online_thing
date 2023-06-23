@@ -118,9 +118,8 @@ typedef struct s_font
 
 typedef struct s_main_menu
 {
-	int player_name_length;
 	char* error_str;
-	char player_name[max_player_name_length];
+	s_name player_name;
 } s_main_menu;
 
 

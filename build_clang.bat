@@ -4,8 +4,8 @@ cls
 
 stamp_timer.exe start
 
-set libs=-luser32 -lopengl32 -lgdi32 -lShlwapi -lOle32 -lShell32
-set comp=-std=c11 -Dm_internal -DDEBUG
+set libs=-luser32 -lopengl32 -lgdi32 -lShell32 -l"..\..\enet\enet64" -lWs2_32 -lWinmm
+set comp=-std=c11 -Dm_internal -DDEBUG -Dm_app
 
 set warn=-Wextra -Wpedantic -Wall
 set warn=%warn% -Wno-switch
@@ -32,6 +32,9 @@ set warn=%warn% -Wno-string-conversion
 set warn=%warn% -Wno-format-nonliteral
 set warn=%warn% -Wno-covered-switch-default
 set warn=%warn% -Wno-switch-enum
+set warn=%warn% -Wno-newline-eof
+set warn=%warn% -Wno-strict-prototypes
+set warn=%warn% -Wno-incompatible-pointer-types-discards-qualifiers
 
 @REM maybe we want these
 @REM set warn=%warn% -Wno-cast-align

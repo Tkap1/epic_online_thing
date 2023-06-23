@@ -28,7 +28,7 @@
 #define STBTT_assert assert
 #include "external/stb_truetype.h"
 
-make_list(s_transform_list, s_transform, 1024);
+make_list(s_transform_list, s_transform, 1024)
 s_transform_list transforms;
 s_transform_list text_arr[e_font_count];
 
@@ -52,8 +52,8 @@ global s_main_menu main_menu;
 
 int main(int argc, char** argv)
 {
-	argc -= 1;
-	argv += 1;
+	unreferenced(argc);
+	unreferenced(argv);
 
 	init_levels();
 
@@ -177,14 +177,14 @@ func void update()
 				{
 					if(c == key_backspace)
 					{
-						if(main_menu.player_name_length > 0)
+						if(main_menu.player_name.len > 0)
 						{
-							main_menu.player_name[--main_menu.player_name_length] = 0;
+							main_menu.player_name.data[--main_menu.player_name.len] = 0;
 						}
 					}
 					else if(c == key_enter)
 					{
-						if(main_menu.player_name_length < 3)
+						if(main_menu.player_name.len < 3)
 						{
 							main_menu.error_str = "Character name needs to be at least 3 characters";
 						}
@@ -201,9 +201,9 @@ func void update()
 				{
 					if(c >= 32 && c <= 126)
 					{
-						if(main_menu.player_name_length < max_player_name_length)
+						if(main_menu.player_name.len < max_player_name_length)
 						{
-							main_menu.player_name[main_menu.player_name_length++] = (char)c;
+							main_menu.player_name.data[main_menu.player_name.len++] = (char)c;
 						}
 					}
 				}
@@ -246,10 +246,10 @@ func void update()
 			int my_player = find_player_by_id(my_id);
 			if(my_player != c_invalid_entity)
 			{
-				begin_packet(e_packet_player_update);
-					buffer_write(&write_cursor, &e.x[my_player], sizeof(e.x[my_player]));
-					buffer_write(&write_cursor, &e.y[my_player], sizeof(e.y[my_player]));
-				send_packet_peer(server, 0);
+				s_player_update_from_client data = zero;
+				data.x = e.x[my_player];
+				data.y = e.y[my_player];
+				send_packet(server, e_packet_player_update, data, 0);
 			}
 		} break;
 	}
@@ -265,9 +265,9 @@ func void render(u32 program)
 			pos.y -= 100;
 			draw_text("Enter character name", pos, 0, v41f(1), e_font_medium, true, (s_transform)zero);
 			pos.y += 100;
-			if(main_menu.player_name_length > 0)
+			if(main_menu.player_name.len > 0)
 			{
-				draw_text(main_menu.player_name, pos, 0, v41f(1), e_font_medium, true, (s_transform)zero);
+				draw_text(main_menu.player_name.data, pos, 0, v41f(1), e_font_medium, true, (s_transform)zero);
 				pos.y += 100;
 			}
 
@@ -411,15 +411,19 @@ func void draw_system(int start, int count)
 			e.x[ii], e.y[ii]
 		);
 		pos.y -= e.sy[ii];
-		if(e.player_id[ii] == my_id)
+
+		if(!e.dead[ii])
 		{
-			draw_text(main_menu.player_name, pos, 1, color, e_font_small, true, (s_transform)zero);
-		}
-		else
-		{
-			if(e.name[ii].len > 0)
+			if(e.player_id[ii] == my_id)
 			{
-				draw_text(e.name[ii].data, pos, 1, color, e_font_small, true, (s_transform)zero);
+				draw_text(main_menu.player_name.data, pos, 1, color, e_font_small, true, (s_transform)zero);
+			}
+			else
+			{
+				if(e.name[ii].len > 0)
+				{
+					draw_text(e.name[ii].data, pos, 1, color, e_font_small, true, (s_transform)zero);
+				}
 			}
 		}
 	}
@@ -450,46 +454,43 @@ func void parse_packet(ENetEvent event)
 	{
 		case e_packet_welcome:
 		{
-			u32 player_id = *(u32*)buffer_read(&cursor, sizeof(player_id));
-			my_id = player_id;
-			make_player(player_id, true);
+			s_welcome_from_server data = *(s_welcome_from_server*)cursor;
+			my_id = data.id;
+			make_player(data.id, true);
 		} break;
 
 		case e_packet_already_connected_player:
 		{
-			s_already_connected_player data = *(s_already_connected_player*)cursor;
+			s_already_connected_player_from_server data = *(s_already_connected_player_from_server*)cursor;
 			int entity = make_player(data.id, data.dead);
 			e.name[entity] = data.name;
 		} break;
 
 		case e_packet_another_player_connected:
 		{
-			u32 player_id = *(u32*)buffer_read(&cursor, sizeof(player_id));
-			b8 dead = *(b8*)buffer_read(&cursor, sizeof(dead));
-			make_player(player_id, dead);
+			s_another_player_connected_from_server data = *(s_another_player_connected_from_server*)cursor;
+			make_player(data.id, data.dead);
 		} break;
 
 		case e_packet_player_update:
 		{
-			u32 id = *(u32*)buffer_read(&cursor, sizeof(u32));
-			float x = *(float*)buffer_read(&cursor, sizeof(float));
-			float y = *(float*)buffer_read(&cursor, sizeof(float));
+			s_player_update_from_server data = *(s_player_update_from_server*)cursor;
 
-			assert(id != my_id);
-			int entity = find_player_by_id(id);
+			assert(data.id != my_id);
+			int entity = find_player_by_id(data.id);
 			if(entity != c_invalid_entity)
 			{
-				e.x[entity] = x;
-				e.y[entity] = y;
+				e.x[entity] = data.x;
+				e.y[entity] = data.y;
 			}
 
 		} break;
 
 		case e_packet_player_disconnected:
 		{
-			u32 disconnected_id = *(u32*)buffer_read(&cursor, sizeof(u32));
-			assert(disconnected_id != my_id);
-			int entity = find_player_by_id(disconnected_id);
+			s_player_disconnected_from_server data = *(s_player_disconnected_from_server*)cursor;
+			assert(data.id != my_id);
+			int entity = find_player_by_id(data.id);
 			if(entity != c_invalid_entity)
 			{
 				e.active[entity] = false;
@@ -498,8 +499,9 @@ func void parse_packet(ENetEvent event)
 
 		case e_packet_beat_level:
 		{
-			current_level = *(int*)buffer_read(&cursor, sizeof(current_level)) + 1;
-			rng.seed = *(int*)buffer_read(&cursor, sizeof(rng.seed));
+			s_beat_level_from_server data = *(s_beat_level_from_server*)cursor;
+			current_level = data.current_level + 1;
+			rng.seed = data.seed;
 			reset_level();
 			revive_every_player();
 			log("Beat level %i", current_level);
@@ -507,21 +509,22 @@ func void parse_packet(ENetEvent event)
 
 		case e_packet_reset_level:
 		{
-			current_level = *(int*)buffer_read(&cursor, sizeof(current_level));
+			s_reset_level_from_server data = *(s_reset_level_from_server*)cursor;
+			current_level = data.current_level;
 			log("Reset level %i", current_level + 1);
-			rng.seed = *(int*)buffer_read(&cursor, sizeof(rng.seed));
+			rng.seed = data.seed;
 			reset_level();
 			revive_every_player();
 		} break;
 
 		case e_packet_player_got_hit:
 		{
-			u32 got_hit_id = *(u32*)buffer_read(&cursor, sizeof(u32));
-			assert(got_hit_id != my_id);
-			int entity = find_player_by_id(got_hit_id);
+			s_player_got_hit_from_server data = *(s_player_got_hit_from_server*)cursor;
+			assert(data.id != my_id);
+			int entity = find_player_by_id(data.id);
 			if(entity != c_invalid_entity)
 			{
-				log("Player %i with id %u died", entity, got_hit_id);
+				log("Player %i with id %u died", entity, data.id);
 				e.dead[entity] = true;
 			}
 		} break;
@@ -558,11 +561,9 @@ func void enet_loop(ENetHost* client, int timeout)
 			{
 				printf("Client: connected!\n");
 
-				begin_packet(e_packet_player_name);
-					int len = main_menu.player_name_length + 1;
-					buffer_write(&write_cursor, &len, sizeof(len));
-					buffer_write(&write_cursor, main_menu.player_name, len);
-				send_packet_peer(server, ENET_PACKET_FLAG_RELIABLE);
+				s_player_name_from_client data;
+				data.name = main_menu.player_name;
+				send_packet(server, e_packet_player_name, data, ENET_PACKET_FLAG_RELIABLE);
 
 			} break;
 
@@ -588,7 +589,7 @@ func void revive_every_player()
 	for(int i = 0; i < c_max_entities; i++)
 	{
 		if(!e.active[i]) { continue; }
-		if(!e.player_id) { continue; }
+		if(!e.player_id[i]) { continue; }
 		e.dead[i] = false;
 		log("Revived player at index %i with id %u", i, e.player_id[i]);
 	}
@@ -614,8 +615,8 @@ func void collision_system(int start, int count)
 			)
 			{
 				e.dead[j] = true;
-				begin_packet(e_packet_player_got_hit);
-				send_packet_peer(server, ENET_PACKET_FLAG_RELIABLE);
+				s_player_got_hit_from_client data = zero;
+				send_packet(server, e_packet_player_got_hit, data, ENET_PACKET_FLAG_RELIABLE);
 			}
 		}
 	}
