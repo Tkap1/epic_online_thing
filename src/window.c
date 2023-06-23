@@ -32,7 +32,8 @@ X(PFNWGLSWAPINTERVALEXTPROC, wglSwapIntervalEXT) \
 X(PFNWGLGETSWAPINTERVALEXTPROC, wglGetSwapIntervalEXT) \
 X(PFNGLBLENDEQUATIONPROC, glBlendEquation) \
 X(PFNGLDELETEPROGRAMPROC, glDeleteProgram) \
-X(PFNGLDELETESHADERPROC, glDeleteShader)
+X(PFNGLDELETESHADERPROC, glDeleteShader) \
+X(PFNGLUNIFORM1FPROC, glUniform1f)
 
 #define X(type, name) global type name = null;
 m_gl_funcs

@@ -289,8 +289,14 @@ func void render()
 		// glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_GREATER);
 
-		int location = glGetUniformLocation(g_program, "window_size");
-		glUniform2fv(location, 1, &g_window.size.x);
+		{
+			int location = glGetUniformLocation(g_program, "window_size");
+			glUniform2fv(location, 1, &g_window.size.x);
+		}
+		{
+			int location = glGetUniformLocation(g_program, "time");
+			glUniform1f(location, total_time);
+		}
 
 		if(transforms.count > 0)
 		{
@@ -921,16 +927,19 @@ func void hot_reload_shaders()
 
 	if(CompareFileTime(&last_write_time, &find_data.ftLastWriteTime) == -1)
 	{
-		if(g_program)
+		// @Note(tkap, 23/06/2023): This can fail because text editor may be locking the file, so we check if it worked
+		u32 new_program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
+		if(new_program)
 		{
-			glUseProgram(0);
-			glDeleteProgram(g_program);
+			if(g_program)
+			{
+				glUseProgram(0);
+				glDeleteProgram(g_program);
+			}
+			g_program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
+			last_write_time = find_data.ftLastWriteTime;
 		}
-		g_program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
-		last_write_time = find_data.ftLastWriteTime;
 	}
-
-
 
 	FindClose(handle);
 
@@ -944,7 +953,9 @@ func u32 load_shader(char* vertex_path, char* fragment_path)
 	u32 fragment = glCreateShader(GL_FRAGMENT_SHADER);
 	char* header = "#version 430 core\n";
 	char* vertex_src = read_file_quick(vertex_path, &frame_arena);
+	if(!vertex_src || !vertex_src[0]) { return 0; }
 	char* fragment_src = read_file_quick(fragment_path, &frame_arena);
+	if(!fragment_src || !fragment_src[0]) { return 0; }
 	char* vertex_src_arr[] = {header, read_file_quick("src/shader_shared.h", &frame_arena), vertex_src};
 	char* fragment_src_arr[] = {header, read_file_quick("src/shader_shared.h", &frame_arena), fragment_src};
 	glShaderSource(vertex, array_count(vertex_src_arr), vertex_src_arr, null);

@@ -9,7 +9,22 @@ in vec2 v_local_uv;
 
 out vec4 out_color;
 
+uniform vec2 window_size;
+uniform float time;
+
 layout (location = 0) uniform sampler2D in_texture;
+
+vec2 n22(vec2 p)
+{
+	vec3 a = fract(p.xyx * vec3(123.34, 234.34, 345.65));
+	a += dot(a, a + 34.45);
+	return fract(vec2(a.x * a.y, a.y * a.z));
+}
+
+float sin2(float s)
+{
+	return sin(s) * 0.5 + 0.5;
+}
 
 vec4 pma(vec4 col)
 {
@@ -19,6 +34,17 @@ vec4 pma(vec4 col)
 bool point_in_rect_topleft(vec2 point, vec2 pos, vec2 size)
 {
 	return point.x >= pos.x && point.x <= pos.x + size.x && point.y >= pos.y && point.y <= pos.y + size.y;
+}
+
+vec3 circle(vec2 pos, vec2 uv, float radius)
+{
+	vec2 ar = vec2(1.0, window_size.y / window_size.x);
+	pos *= ar;
+	uv *= ar;
+	float d = distance(pos, uv);
+	d = smoothstep(radius, 0.0, d);
+	// return vec3(d * 0.1, d * 0.4, d);
+	return vec3(d);
 }
 
 void main()
@@ -57,9 +83,20 @@ void main()
 	}
 	else if(t.do_background)
 	{
-		// vec2 uv = v_local_uv * 10;
-		// color.rgb = vec3(uv.x, 0.0, 0.0);
-		color.rgb = vec3(0);
+		vec2 uv = v_local_uv;
+		vec3 col = vec3(0);
+
+		float r = 1.0;
+		uv *= r;
+
+		for(int i = 0; i < 50; i += 1)
+		{
+			int a = (i*3+2137);
+			vec2 seed = vec2(a, (i*7+123) * 2);
+			vec2 rand_pos = n22(seed) * r;
+			col += circle(rand_pos, uv, sin2(time * 0.5 + a) * 0.15 + 0.1) * vec3(0.1, 0.4, 1.0);
+		}
+		color.rgb = col * 0.1;
 	}
 	color = pma(color);
 
