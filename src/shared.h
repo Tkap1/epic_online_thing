@@ -23,6 +23,8 @@ typedef enum e_packet
 	e_packet_reset_level,
 	e_packet_player_got_hit,
 	e_packet_player_name,
+	e_packet_cheat_next_level,
+	e_packet_cheat_previous_level,
 } e_packet;
 
 #pragma pack(push, 1)
@@ -157,6 +159,12 @@ typedef struct s_player_name_from_client
 {
 	s_name name;
 } s_player_name_from_client;
+
+typedef struct s_cheat_previous_level_from_server
+{
+	int current_level;
+	u32 seed;
+} s_cheat_previous_level_from_server;
 
 
 #pragma pack(pop)

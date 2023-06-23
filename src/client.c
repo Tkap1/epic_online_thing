@@ -201,6 +201,21 @@ func void update()
 
 		case e_state_game:
 		{
+
+			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		cheats, for testing start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+			#ifdef m_debug
+			if(is_key_pressed(key_add))
+			{
+				send_simple_packet(server, e_packet_cheat_next_level, ENET_PACKET_FLAG_RELIABLE);
+			}
+			if(is_key_pressed(key_subtract))
+			{
+				send_simple_packet(server, e_packet_cheat_previous_level, ENET_PACKET_FLAG_RELIABLE);
+			}
+			#endif // m_debug
+			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		cheats, for testing end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
 			spawn_system(levels[current_level]);
 
 			level_timer += delta;
@@ -274,6 +289,24 @@ func void render()
 				draw_system(i * c_entities_per_thread, c_entities_per_thread);
 				draw_circle_system(i * c_entities_per_thread, c_entities_per_thread);
 			}
+
+			// @Note(tkap, 23/06/2023): Display how many seconds left to beat the level
+			{
+				float seconds_left = c_level_duration - level_timer;
+				s_v2 pos = v2(
+					g_window.center.x,
+					g_window.size.y * 0.3f
+				);
+				draw_text(format_text("%i", (int)ceilf(seconds_left)), pos, 1, v41f(1), e_font_medium, true, (s_transform)zero);
+			}
+
+			// @Note(tkap, 23/06/2023): Display current level
+			{
+				s_v2 pos = v2(20, 20);
+				draw_text(format_text("Level %i", current_level + 1), pos, 1, v41f(1), e_font_medium, false, (s_transform)zero);
+			}
+
+
 		} break;
 	}
 
@@ -545,6 +578,17 @@ func void parse_packet(ENetEvent event)
 				log("Set %u's name to %s", data.id, e.name[entity].data);
 			}
 		} break;
+
+		#ifdef m_debug
+		case e_packet_cheat_previous_level:
+		{
+			s_cheat_previous_level_from_server data = *(s_cheat_previous_level_from_server*)cursor;
+			current_level = data.current_level;
+			rng.seed = data.seed;
+			reset_level();
+			revive_every_player();
+		} break;
+		#endif // m_debug
 
 		invalid_default_case;
 	}

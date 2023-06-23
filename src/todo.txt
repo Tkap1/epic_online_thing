@@ -1,10 +1,5 @@
 
 sounds
-main menu (input name, save toi file)
-
-	display names
-	display level time
-	display current level
 
 when connecting, send seed and current level
 cheat key when singleplayer to move between levels
@@ -15,3 +10,5 @@ server remembering players (is this possible without accounts? maybe connectID i
 more levels
 leaderboard?
 the inteprolated rendering thing
+
+multithreading?

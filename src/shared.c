@@ -481,3 +481,14 @@ func s_name str_to_name(char* str)
 	memcpy(result.data, str, result.len + 1);
 	return result;
 }
+
+func void send_simple_packet(ENetPeer* peer, e_packet packet_id, int flag)
+{
+	assert(flag == 0 || flag == ENET_PACKET_FLAG_RELIABLE);
+
+	u8 packet_data[4];
+	u8* cursor = packet_data;
+	buffer_write(&cursor, &packet_id, sizeof(packet_id));
+	ENetPacket* packet = enet_packet_create(packet_data, sizeof(packet_id), flag);
+	enet_peer_send(peer, 0, packet);
+}

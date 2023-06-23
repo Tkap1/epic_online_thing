@@ -219,7 +219,6 @@ func void update()
 		current_level += 1;
 		reset_level();
 		revive_every_player();
-		level_timer = 0;
 	}
 	if(!at_least_one_player_alive)
 	{
@@ -336,6 +335,38 @@ func void parse_packet(ENetEvent event)
 			}
 
 		} break;
+
+		#ifdef m_debug
+		case e_packet_cheat_next_level:
+		{
+			if(peers.count > 1) { break; }
+
+			s_beat_level_from_server data = zero;
+			data.current_level = current_level;
+			data.seed = rng.seed;
+			broadcast_packet(host, e_packet_beat_level, data, ENET_PACKET_FLAG_RELIABLE);
+
+			current_level += 1;
+			reset_level();
+			revive_every_player();
+		} break;
+
+		case e_packet_cheat_previous_level:
+		{
+			if(peers.count > 1) { break; }
+			if(current_level <= 0) { break; }
+
+			current_level -= 1;
+
+			s_cheat_previous_level_from_server data = zero;
+			data.current_level = current_level;
+			data.seed = rng.seed;
+			broadcast_packet(host, e_packet_cheat_previous_level, data, ENET_PACKET_FLAG_RELIABLE);
+
+			reset_level();
+			revive_every_player();
+		} break;
+		#endif // m_debug
 	}
 }
 
