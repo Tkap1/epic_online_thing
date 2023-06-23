@@ -240,7 +240,7 @@ func void spawn_system(s_level level)
 
 					y = randf_range(&rng, 0, c_base_res.y);
 
-					float size = randf_range( &rng, 15, 80 );
+					float size = randf_range(&rng, 15, 80);
 					s_v4 col = v4(randf_range(&rng, 0, 1.0f), randf_range(&rng, 0, 1.0f), randf_range(&rng, 0, 1.0f), 1.0f);
 
 					e.x[entity] = x;
@@ -316,12 +316,12 @@ func void init_levels()
 
 	levels[7].spawn_delay[e_projectile_type_diagonal_bottom_left] = speed(3300);
 
-	levels[8].spawn_delay[e_projectile_type_left_basic] = speed(500);
-	levels[8].spawn_delay[e_projectile_type_right_basic] = speed(500);
+	levels[8].spawn_delay[e_projectile_type_left_basic] = speed(1000);
+	levels[8].spawn_delay[e_projectile_type_right_basic] = speed(1000);
 
 	levels[9].spawn_delay[e_projectile_type_cross] = speed(2777);
 
-	current_level = 0;
+	current_level = 8;
 	#undef speed
 }
 
