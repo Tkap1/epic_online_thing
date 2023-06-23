@@ -190,38 +190,46 @@ func void spawn_system(s_level level)
 					e.speed[entity] = randf_range(&rng, 400, 500);
 					e.sx[entity] = randf_range(&rng, 48, 56);
 					e.color[entity] = v4(0.9f, 0.1f, 0.1f, 1.0f);
+
+					e.speed[entity] *= level.speed_multiplier[proj_i];
 				} break;
 
 				case e_projectile_type_left_basic:
 				{
 					make_side_projectile(entity, -100, 1);
+					e.speed[entity] *= level.speed_multiplier[proj_i];
 				} break;
 
 				case e_projectile_type_right_basic:
 				{
 					make_side_projectile(entity, c_base_res.x + 100, -1);
+					e.speed[entity] *= level.speed_multiplier[proj_i];
 				} break;
 
 				case e_projectile_type_diagonal_left:
 				{
 					make_diagonal_top_projectile(entity, 0, c_base_res.x);
+					e.speed[entity] *= level.speed_multiplier[proj_i];
 				} break;
 
 				case e_projectile_type_diagonal_right:
 				{
 					make_diagonal_top_projectile(entity, c_base_res.x, 0);
+					e.speed[entity] *= level.speed_multiplier[proj_i];
 				} break;
 
 				case e_projectile_type_diagonal_bottom_left:
 				{
 					float angle = pi * -0.25f;
 					make_diagonal_bottom_projectile(entity, 0.0f, angle);
+					e.speed[entity] *= level.speed_multiplier[proj_i];
 				} break;
 
 				case e_projectile_type_diagonal_bottom_right:
 				{
 					float angle = pi * -0.75f;
 					make_diagonal_bottom_projectile(entity, c_base_res.x, angle);
+					e.speed[entity] *= level.speed_multiplier[proj_i];
 				} break;
 
 				case e_projectile_type_cross:
@@ -255,7 +263,7 @@ func void spawn_system(s_level level)
 					e.x[entity] = x;
 					e.y[entity] = y;
 					e.sx[entity] = size;
-					e.speed[entity] = speed;
+					e.speed[entity] = speed * level.speed_multiplier[proj_i];;
 					e.dir_x[entity] = -1.0f;
 					e.dir_y[entity] = 0.0f;
 					e.color[entity] = col;
@@ -264,7 +272,7 @@ func void spawn_system(s_level level)
 					e.x[entity] = x;
 					e.y[entity] = y;
 					e.sx[entity] = size;
-					e.speed[entity] = speed;
+					e.speed[entity] = speed * level.speed_multiplier[proj_i];;
 					e.dir_x[entity] = 1.0f;
 					e.dir_y[entity] = 0.0f;
 					e.color[entity] = col;
@@ -273,7 +281,7 @@ func void spawn_system(s_level level)
 					e.x[entity] = x;
 					e.y[entity] = y;
 					e.sx[entity] = size;
-					e.speed[entity] = 133;
+					e.speed[entity] = 133 * level.speed_multiplier[proj_i];;
 					e.dir_x[entity] = 0.0f;
 					e.dir_y[entity] = -1.0f;
 					e.color[entity] = col;
@@ -282,7 +290,7 @@ func void spawn_system(s_level level)
 					e.x[entity] = x;
 					e.y[entity] = y;
 					e.sx[entity] = size;
-					e.speed[entity] = 133;
+					e.speed[entity] = 133 * level.speed_multiplier[proj_i];;
 					e.dir_x[entity] = 0.0f;
 					e.dir_y[entity] = 1.0f;
 					e.color[entity] = col;
@@ -298,6 +306,8 @@ func void spawn_system(s_level level)
 					e.color[entity] = v4(0.1f, 0.1f, 0.9f, 1.0f);
 					e.spawn_delay[entity] = 1.0f;
 					e.flags[entity][e_entity_flag_projectile_spawner] = true;
+
+					e.speed[entity] *= level.speed_multiplier[proj_i];
 				} break;
 
 				invalid_default_case;
@@ -309,6 +319,15 @@ func void spawn_system(s_level level)
 func void init_levels()
 {
 	#define speed(val) (1000.0f / val)
+
+	for(int level_i = 0; level_i < c_max_levels; level_i++)
+	{
+		for(int proj_i = 0; proj_i < e_projectile_type_count; proj_i++)
+		{
+			levels[level_i].speed_multiplier[proj_i] = 1;
+		}
+	}
+
 	levels[0].spawn_delay[e_projectile_type_top_basic] = speed(3500);
 
 	levels[1].spawn_delay[e_projectile_type_left_basic] = speed(2000);
@@ -329,6 +348,12 @@ func void init_levels()
 	levels[8].spawn_delay[e_projectile_type_right_basic] = speed(1000);
 
 	levels[9].spawn_delay[e_projectile_type_cross] = speed(2777);
+
+	levels[10].spawn_delay[e_projectile_type_top_basic] = speed(3000);
+	levels[10].spawn_delay[e_projectile_type_left_basic] = speed(2500);
+
+	levels[11].spawn_delay[e_projectile_type_diagonal_left] = speed(3500);
+	levels[11].spawn_delay[e_projectile_type_diagonal_bottom_right] = speed(2500);
 
 	current_level = 0;
 	#undef speed

@@ -239,6 +239,7 @@ typedef enum e_projectile_type
 typedef struct s_level
 {
 	float spawn_delay[e_projectile_type_count];
+	float speed_multiplier[e_projectile_type_count];
 } s_level;
 
 global s_level levels[c_max_levels];
