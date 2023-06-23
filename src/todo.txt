@@ -1,7 +1,4 @@
 
-when players are sent, we need to send the names!
-
-
 sounds
 main menu (input name, save toi file)
 
