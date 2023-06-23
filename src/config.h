@@ -1,7 +1,7 @@
 
 
-global s_v2 c_base_res = {1366, 768};
-// global s_v2 c_base_res = {400, 400};
+#define c_base_res (s_v2){1366, 768}
+#define c_spawn_pos (s_v2){c_base_res.x * 0.5f, c_base_res.y * 0.5f}
 #define c_updates_per_second (100)
 #define c_update_delay (1.0 / c_updates_per_second)
 
@@ -14,5 +14,5 @@ global s_v2 c_base_res = {1366, 768};
 #define c_gravity (1700)
 #define c_jump_strength (-700)
 #define c_max_levels (100)
-#define c_level_duration (10)
+#define c_level_duration (15)
 #define c_fast_fall_speed (600)

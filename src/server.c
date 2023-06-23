@@ -265,10 +265,15 @@ func void update()
 	{
 		move_system(i * c_entities_per_thread, c_entities_per_thread);
 		player_movement_system(i * c_entities_per_thread, c_entities_per_thread);
+		physics_movement_system(i * c_entities_per_thread, c_entities_per_thread);
 	}
 	for(int i = 0; i < c_num_threads; i++)
 	{
 		bounds_check_system(i * c_entities_per_thread, c_entities_per_thread);
+	}
+	for(int i = 0; i < c_num_threads; i++)
+	{
+		projectile_spawner_system(i * c_entities_per_thread, c_entities_per_thread);
 	}
 }
 

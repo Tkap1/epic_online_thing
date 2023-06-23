@@ -188,10 +188,15 @@ func void update()
 	{
 		move_system(i * c_entities_per_thread, c_entities_per_thread);
 		player_movement_system(i * c_entities_per_thread, c_entities_per_thread);
+		physics_movement_system(i * c_entities_per_thread, c_entities_per_thread);
 	}
 	for(int i = 0; i < c_num_threads; i++)
 	{
 		bounds_check_system(i * c_entities_per_thread, c_entities_per_thread);
+	}
+	for(int i = 0; i < c_num_threads; i++)
+	{
+		projectile_spawner_system(i * c_entities_per_thread, c_entities_per_thread);
 	}
 	for(int i = 0; i < c_num_threads; i++)
 	{
@@ -287,7 +292,7 @@ func void input_system(int start, int count)
 {
 	b8 go_left = is_key_down(key_a) || is_key_down(key_left);
 	b8 go_right = is_key_down(key_d) || is_key_down(key_right);
-	b8 go_down = is_key_down(key_s) || is_key_down(key_down);
+	b8 go_down = is_key_pressed(key_s) || is_key_pressed(key_down);
 	b8 jump = is_key_pressed(key_space) || is_key_pressed(key_w) || is_key_pressed(key_up);
 	b8 jump_released = is_key_released(key_space) || is_key_released(key_w) || is_key_released(key_up);
 
@@ -333,10 +338,14 @@ func void draw_system(int start, int count)
 	{
 		int ii = start + i;
 		if(!e.active[ii]) { continue; }
-		if(e.dead[ii]) { continue; }
 		if(!e.flags[ii][e_entity_flag_draw]) { continue; }
 
-		draw_rect(v2(e.x[ii], e.y[ii]), 0, v2(e.sx[ii], e.sy[ii]), v41f(1), (s_transform)zero);
+		s_v4 color = v41f(1);
+		if(e.dead[ii])
+		{
+			color = v41f(0.25f);
+		}
+		draw_rect(v2(e.x[ii], e.y[ii]), 0, v2(e.sx[ii], e.sy[ii]), color, (s_transform)zero);
 	}
 }
 
@@ -348,8 +357,11 @@ func void draw_circle_system(int start, int count)
 		if(!e.active[ii]) { continue; }
 		if(!e.flags[ii][e_entity_flag_draw_circle]) { continue; }
 
-		draw_circle(v2(e.x[ii], e.y[ii]), 0, e.sx[ii], e.color[ii], (s_transform)zero);
-		draw_circle(v2(e.x[ii], e.y[ii]), 1, e.sx[ii] * 0.7f, v41f(1), (s_transform)zero);
+		s_v4 light_color = e.color[ii];
+		light_color.w *= 0.2f;
+		draw_light(v2(e.x[ii], e.y[ii]), 0, e.sx[ii] * 8.0f, light_color, (s_transform)zero);
+		draw_circle(v2(e.x[ii], e.y[ii]), 1, e.sx[ii], e.color[ii], (s_transform)zero);
+		draw_circle(v2(e.x[ii], e.y[ii]), 2, e.sx[ii] * 0.7f, v41f(1), (s_transform)zero);
 	}
 }
 

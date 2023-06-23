@@ -36,6 +36,7 @@ typedef enum e_entity_flag
 {
 	e_entity_flag_move,
 	e_entity_flag_player_movement,
+	e_entity_flag_physics_movement,
 	e_entity_flag_input,
 	e_entity_flag_draw,
 	e_entity_flag_draw_circle,
@@ -43,6 +44,7 @@ typedef enum e_entity_flag
 	e_entity_flag_bounds_check,
 	e_entity_flag_expire,
 	e_entity_flag_collide,
+	e_entity_flag_projectile_spawner,
 	e_entity_flag_count,
 } e_entity_flag;
 
@@ -72,10 +74,13 @@ typedef struct s_entities
 	float sy[c_max_entities];
 	float dir_x[c_max_entities];
 	float dir_y[c_max_entities];
+	float vel_x[c_max_entities];
 	float vel_y[c_max_entities];
 	float speed[c_max_entities];
 	float time_lived[c_max_entities];
 	float duration[c_max_entities];
+	float spawn_timer[c_max_entities];
+	float spawn_delay[c_max_entities];
 	s_v4 color[c_max_entities];
 } s_entities;
 
@@ -86,6 +91,9 @@ typedef enum e_projectile_type
 	e_projectile_type_right_basic,
 	e_projectile_type_diagonal_left,
 	e_projectile_type_diagonal_right,
+	e_projectile_type_diagonal_bottom_left,
+	e_projectile_type_diagonal_bottom_right,
+	e_projectile_type_spawner,
 	e_projectile_type_count,
 } e_projectile_type;
 
@@ -104,3 +112,6 @@ func int make_player(u32 player_id, b8 dead);
 func void init_levels();
 func int make_projectile();
 func void expire_system(int start, int count);
+func void make_diagonal_bottom_projectile(int entity, float x, float angle);
+func void make_diagonal_top_projectile(int entity, float x, float opposite_x);
+func void make_side_projectile(int entity, float x, float x_dir);

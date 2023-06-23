@@ -46,7 +46,14 @@ void main()
 	if(t.do_circle)
 	{
 		float d = distance(v_local_uv, vec2(0.5));
-		color.a = 1.0 - smoothstep(0.47, 0.499, d);
+		color.a *= smoothstep(0.499, 0.45, d);
+	}
+	else if(t.do_light)
+	{
+		float d = distance(v_local_uv, vec2(0.5));
+		vec3 col = mix(vec3(1.0), color.rgb, smoothstep(0.0, 0.1, d));
+		color.rgb = col;
+		color.a *= smoothstep(0.499, 0.45, pow(d, 0.4));
 	}
 	color = pma(color);
 
