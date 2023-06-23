@@ -38,6 +38,10 @@ global ENetPeer* server;
 global s_lin_arena frame_arena;
 global s_rng rng;
 global s_font g_font_arr[e_font_count];
+global e_state state;
+global b8 g_connected;
+global ENetHost* g_client;
+global s_main_menu main_menu;
 
 #include "draw.c"
 #include "memory.c"
@@ -57,36 +61,7 @@ int main(int argc, char** argv)
 
 	init_performance();
 
-	if(enet_initialize() != 0)
-	{
-		error(false);
-	}
-
 	frame_arena = make_lin_arena(10 * c_mb);
-
-	ENetHost* client = enet_host_create(
-		null /* create a client host */,
-		1, /* only allow 1 outgoing connection */
-		2, /* allow up 2 channels to be used, 0 and 1 */
-		0, /* assume any amount of incoming bandwidth */
-		0 /* assume any amount of outgoing bandwidth */
-	);
-
-	if(client == null)
-	{
-		error(false);
-	}
-
-	ENetAddress address = zero;
-	enet_address_set_host(&address, "at-taxation.at.ply.gg");
-	// enet_address_set_host(&address, "127.0.0.1");
-	address.port = 62555;
-
-	server = enet_host_connect(client, &address, 2, 0);
-	if(server == null)
-	{
-		error(false);
-	}
 
 	create_window();
 
@@ -139,15 +114,21 @@ int main(int argc, char** argv)
 
 		f64 start_of_frame_seconds = get_seconds();
 
-		enet_loop(client, 0);
+		if(g_connected)
+		{
+			enet_loop(g_client, 0);
+		}
 
 		MSG msg = zero;
 		while(PeekMessage(&msg, null, 0, 0, PM_REMOVE) > 0)
 		{
 			if(msg.message == WM_QUIT)
 			{
-				enet_peer_disconnect(server, 0);
-				enet_loop(client, 1000);
+				if(g_connected)
+				{
+					enet_peer_disconnect(server, 0);
+					enet_loop(g_client, 1000);
+				}
 				running = false;
 			}
 			TranslateMessage(&msg);
@@ -182,61 +163,129 @@ int main(int argc, char** argv)
 
 func void update()
 {
-	spawn_system(levels[current_level]);
+	switch(state)
+	{
+		case e_state_main_menu:
+		{
+			while(true)
+			{
+				s_char_event event = get_char_event();
+				int c = event.c;
+				if(!c) { break; }
 
-	level_timer += delta;
+				if(event.is_symbol)
+				{
+					if(c == key_backspace)
+					{
+						if(main_menu.player_name_length > 0)
+						{
+							main_menu.player_name[--main_menu.player_name_length] = 0;
+						}
+					}
+					else if(c == key_enter)
+					{
+						if(main_menu.player_name_length < 3)
+						{
+							main_menu.error_str = "Character name needs to be at least 3 characters";
+						}
+						else
+						{
+							main_menu.error_str = null;
+							state = e_state_game;
+							connect_to_server();
+							break;
+						}
+					}
+				}
+				else
+				{
+					if(c >= 32 && c <= 126)
+					{
+						if(main_menu.player_name_length < max_player_name_length)
+						{
+							main_menu.player_name[main_menu.player_name_length++] = (char)c;
+						}
+					}
+				}
+			}
+		} break;
 
-	for(int i = 0; i < c_num_threads; i++)
-	{
-		gravity_system(i * c_entities_per_thread, c_entities_per_thread);
-	}
-	for(int i = 0; i < c_num_threads; i++)
-	{
-		input_system(i * c_entities_per_thread, c_entities_per_thread);
-	}
-	for(int i = 0; i < c_num_threads; i++)
-	{
-		move_system(i * c_entities_per_thread, c_entities_per_thread);
-		player_movement_system(i * c_entities_per_thread, c_entities_per_thread);
-		physics_movement_system(i * c_entities_per_thread, c_entities_per_thread);
-	}
-	for(int i = 0; i < c_num_threads; i++)
-	{
-		bounds_check_system(i * c_entities_per_thread, c_entities_per_thread);
-	}
-	for(int i = 0; i < c_num_threads; i++)
-	{
-		projectile_spawner_system(i * c_entities_per_thread, c_entities_per_thread);
-	}
-	for(int i = 0; i < c_num_threads; i++)
-	{
-		collision_system(i * c_entities_per_thread, c_entities_per_thread);
-	}
+		case e_state_game:
+		{
+			spawn_system(levels[current_level]);
 
-	int my_player = find_player_by_id(my_id);
-	if(my_player != c_invalid_entity)
-	{
-		la_push(&frame_arena);
-		e_packet packet_id = e_packet_player_update;
-		u8* data = la_get(&frame_arena, 1024);
-		u8* cursor = data;
-		buffer_write(&cursor, &packet_id, sizeof(packet_id));
-		buffer_write(&cursor, &e.x[my_player], sizeof(e.x[my_player]));
-		buffer_write(&cursor, &e.y[my_player], sizeof(e.y[my_player]));
-		ENetPacket* packet = enet_packet_create(data, cursor - data, 0);
-		enet_peer_send(server, 0, packet);
-		la_pop(&frame_arena);
-	}
+			level_timer += delta;
 
+			for(int i = 0; i < c_num_threads; i++)
+			{
+				gravity_system(i * c_entities_per_thread, c_entities_per_thread);
+			}
+			for(int i = 0; i < c_num_threads; i++)
+			{
+				input_system(i * c_entities_per_thread, c_entities_per_thread);
+			}
+			for(int i = 0; i < c_num_threads; i++)
+			{
+				move_system(i * c_entities_per_thread, c_entities_per_thread);
+				player_movement_system(i * c_entities_per_thread, c_entities_per_thread);
+				physics_movement_system(i * c_entities_per_thread, c_entities_per_thread);
+			}
+			for(int i = 0; i < c_num_threads; i++)
+			{
+				bounds_check_system(i * c_entities_per_thread, c_entities_per_thread);
+			}
+			for(int i = 0; i < c_num_threads; i++)
+			{
+				projectile_spawner_system(i * c_entities_per_thread, c_entities_per_thread);
+			}
+			for(int i = 0; i < c_num_threads; i++)
+			{
+				collision_system(i * c_entities_per_thread, c_entities_per_thread);
+			}
+
+			int my_player = find_player_by_id(my_id);
+			if(my_player != c_invalid_entity)
+			{
+				begin_packet(e_packet_player_update);
+					buffer_write(&write_cursor, &e.x[my_player], sizeof(e.x[my_player]));
+					buffer_write(&write_cursor, &e.y[my_player], sizeof(e.y[my_player]));
+				send_packet_peer(server, 0);
+			}
+		} break;
+	}
 }
 
 func void render(u32 program)
 {
-
-	for(int i = 0; i < c_num_threads; i++)
+	switch(state)
 	{
-		draw_system(i * c_entities_per_thread, c_entities_per_thread);
-		draw_circle_system(i * c_entities_per_thread, c_entities_per_thread);
+		case e_state_main_menu:
+		{
+			s_v2 pos = g_window.center;
+			pos.y -= 100;
+			draw_text("Enter character name", pos, 0, v41f(1), e_font_medium, true, (s_transform)zero);
+			pos.y += 100;
+			if(main_menu.player_name_length > 0)
+			{
+				draw_text(main_menu.player_name, pos, 0, v41f(1), e_font_medium, true, (s_transform)zero);
+				pos.y += 100;
+			}
+
+			if(main_menu.error_str)
+			{
+				draw_text(main_menu.error_str, pos, 0, v4(1, 0, 0, 1), e_font_medium, true, (s_transform)zero);
+				pos.y += 100;
+			}
+		} break;
+
+		case e_state_game:
+		{
+			for(int i = 0; i < c_num_threads; i++)
+			{
+				draw_system(i * c_entities_per_thread, c_entities_per_thread);
+				draw_circle_system(i * c_entities_per_thread, c_entities_per_thread);
+			}
+		} break;
 	}
 
 	{
@@ -357,6 +406,22 @@ func void draw_system(int start, int count)
 			color = v41f(0.25f);
 		}
 		draw_rect(v2(e.x[ii], e.y[ii]), 0, v2(e.sx[ii], e.sy[ii]), color, (s_transform)zero);
+
+		s_v2 pos = v2(
+			e.x[ii], e.y[ii]
+		);
+		pos.y -= e.sy[ii];
+		if(e.player_id[ii] == my_id)
+		{
+			draw_text(main_menu.player_name, pos, 1, color, e_font_small, true, (s_transform)zero);
+		}
+		else
+		{
+			if(e.name[ii].len > 0)
+			{
+				draw_text(e.name[ii].data, pos, 1, color, e_font_small, true, (s_transform)zero);
+			}
+		}
 	}
 }
 
@@ -388,6 +453,13 @@ func void parse_packet(ENetEvent event)
 			u32 player_id = *(u32*)buffer_read(&cursor, sizeof(player_id));
 			my_id = player_id;
 			make_player(player_id, true);
+		} break;
+
+		case e_packet_already_connected_player:
+		{
+			s_already_connected_player data = *(s_already_connected_player*)cursor;
+			int entity = make_player(data.id, data.dead);
+			e.name[entity] = data.name;
 		} break;
 
 		case e_packet_another_player_connected:
@@ -454,6 +526,19 @@ func void parse_packet(ENetEvent event)
 			}
 		} break;
 
+		case e_packet_player_name:
+		{
+			s_player_name_from_server data = *(s_player_name_from_server*)cursor;
+			assert(data.id != my_id);
+
+			int entity = find_player_by_id(data.id);
+			if(entity != c_invalid_entity)
+			{
+				e.name[entity] = data.name;
+				log("Set %u's name to %s", data.id, e.name[entity].data);
+			}
+		} break;
+
 		invalid_default_case;
 	}
 }
@@ -472,6 +557,13 @@ func void enet_loop(ENetHost* client, int timeout)
 			case ENET_EVENT_TYPE_CONNECT:
 			{
 				printf("Client: connected!\n");
+
+				begin_packet(e_packet_player_name);
+					int len = main_menu.player_name_length + 1;
+					buffer_write(&write_cursor, &len, sizeof(len));
+					buffer_write(&write_cursor, main_menu.player_name, len);
+				send_packet_peer(server, ENET_PACKET_FLAG_RELIABLE);
+
 			} break;
 
 			case ENET_EVENT_TYPE_DISCONNECT:
@@ -660,4 +752,39 @@ func s_v2 get_text_size_with_count(char* text, e_font font_id, int count)
 func s_v2 get_text_size(char* text, e_font font_id)
 {
 	return get_text_size_with_count(text, font_id, (int)strlen(text));
+}
+
+func void connect_to_server()
+{
+	if(enet_initialize() != 0)
+	{
+		error(false);
+	}
+
+	g_client = enet_host_create(
+		null /* create a client host */,
+		1, /* only allow 1 outgoing connection */
+		2, /* allow up 2 channels to be used, 0 and 1 */
+		0, /* assume any amount of incoming bandwidth */
+		0 /* assume any amount of outgoing bandwidth */
+	);
+
+	if(g_client == null)
+	{
+		error(false);
+	}
+
+	ENetAddress address = zero;
+	enet_address_set_host(&address, "at-taxation.at.ply.gg");
+	// enet_address_set_host(&address, "127.0.0.1");
+	address.port = 62555;
+
+	server = enet_host_connect(g_client, &address, 2, 0);
+	if(server == null)
+	{
+		error(false);
+	}
+
+	g_connected = true;
+
 }

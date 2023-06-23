@@ -12,6 +12,12 @@ typedef struct s_window
 	s_v2 center;
 } s_window;
 
+typedef struct s_char_event
+{
+	b8 is_symbol;
+	int c;
+} s_char_event;
+
 typedef struct s_stored_input
 {
 	b8 is_down;

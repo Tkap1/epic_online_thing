@@ -20,3 +20,5 @@
 #define c_max_levels (100)
 #define c_level_duration (15)
 #define c_fast_fall_speed (600)
+
+#define max_player_name_length 16

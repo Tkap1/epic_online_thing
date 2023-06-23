@@ -3,24 +3,32 @@
 #define c_port 9417
 
 #define begin_packet(packet_id) { \
-	u8* data = la_get(&frame_arena, 1024); \
-	u8* write_cursor = data; \
+	u8* packet_data = la_get(&frame_arena, 1024); \
+	u8* write_cursor = packet_data; \
 	e_packet packet_id_to_send = packet_id; \
 	buffer_write(&write_cursor, &packet_id_to_send, sizeof(packet_id_to_send));
 
 #define send_packet_peer(peer, flag) \
-	ENetPacket* packet = enet_packet_create(data, write_cursor - data, flag); \
+	ENetPacket* packet = enet_packet_create(packet_data, write_cursor - packet_data, flag); \
 	enet_peer_send(peer, 0, packet); \
 }
 
 #define broadcast_packet(host, flag) \
-	ENetPacket* packet = enet_packet_create(data, write_cursor - data, flag); \
+	ENetPacket* packet = enet_packet_create(packet_data, write_cursor - packet_data, flag); \
 	enet_host_broadcast(host, 0, packet); \
 }
+
+typedef struct s_name
+{
+	int len;
+	char data[max_player_name_length];
+} s_name;
+
 
 typedef enum e_packet
 {
 	e_packet_welcome,
+	e_packet_already_connected_player,
 	e_packet_another_player_connected,
 	e_packet_player_update,
 	e_packet_player_disconnected,
@@ -30,7 +38,38 @@ typedef enum e_packet
 	e_packet_beat_level,
 	e_packet_reset_level,
 	e_packet_player_got_hit,
+	e_packet_player_name,
 } e_packet;
+
+#pragma pack(push, 1)
+typedef struct s_packet_welcome
+{
+	u32 id;
+} s_packet_welcome;
+
+typedef struct s_already_connected_player
+{
+	u32 id;
+	b8 dead;
+	s_name name;
+} s_already_connected_player;
+
+typedef struct s_another_player_connected
+{
+	u32 id;
+} s_another_player_connected;
+
+typedef struct s_player_name_from_server
+{
+	u32 id;
+	s_name name;
+} s_player_name_from_server;
+
+typedef struct s_player_name_from_client
+{
+	s_name name;
+} s_player_name_from_client;
+#pragma pack(pop)
 
 typedef enum e_entity_flag
 {
@@ -82,6 +121,7 @@ typedef struct s_entities
 	float spawn_timer[c_max_entities];
 	float spawn_delay[c_max_entities];
 	s_v4 color[c_max_entities];
+	s_name name[c_max_entities];
 } s_entities;
 
 typedef enum e_projectile_type
@@ -115,3 +155,7 @@ func void expire_system(int start, int count);
 func void make_diagonal_bottom_projectile(int entity, float x, float angle);
 func void make_diagonal_top_projectile(int entity, float x, float opposite_x);
 func void make_side_projectile(int entity, float x, float x_dir);
+func s_name str_to_name(char* str);
+
+#define send_packet(peer, packet_id, data, flag) send_packet_(peer, packet_id, &data, sizeof(data), flag)
+func void send_packet_(ENetPeer* peer, e_packet packet_id, void* data, size_t size, int flag);

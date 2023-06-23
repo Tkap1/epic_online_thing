@@ -80,6 +80,7 @@ func void zero_entity(int index)
 	e.time_lived[index] = 0;
 	e.duration[index] = 0;
 	e.spawn_timer[index] = 0;
+	e.name[index] = (s_name)zero;
 }
 
 func int find_player_by_id(u32 id)
@@ -260,6 +261,7 @@ func void init_levels()
 
 	levels[7].spawn_delay[e_projectile_type_diagonal_bottom_left] = speed(3300);
 
+
 	current_level = 0;
 	#undef speed
 }
@@ -375,4 +377,26 @@ func void make_side_projectile(int entity, float x, float x_dir)
 	e.speed[entity] = randf_range(&rng, 400, 500);
 	e.sx[entity] = randf_range(&rng, 38, 46);
 	e.color[entity] = v4(0.1f, 0.9f, 0.1f, 1.0f);
+}
+
+func void send_packet_(ENetPeer* peer, e_packet packet_id, void* data, size_t size, int flag)
+{
+	assert(flag == 0 || flag == ENET_PACKET_FLAG_RELIABLE);
+	assert(size <= 1024 - sizeof(packet_id));
+
+	u8 packet_data[1024];
+	u8* cursor = packet_data;
+	buffer_write(&cursor, &packet_id, sizeof(packet_id));
+	buffer_write(&cursor, data, size);
+	ENetPacket* packet = enet_packet_create(packet_data, cursor - packet_data, flag);
+	enet_peer_send(peer, 0, packet);
+}
+
+func s_name str_to_name(char* str)
+{
+	s_name result = zero;
+	result.len = (int)strlen(str);
+	assert(result.len < max_player_name_length);
+	memcpy(result.data, str, result.len + 1);
+	return result;
 }

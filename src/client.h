@@ -70,6 +70,13 @@
 #define key_left_control 0xA2
 #define key_right_control 0xA3
 
+typedef enum e_state
+{
+	e_state_main_menu,
+	e_state_game,
+	e_state_count,
+} e_state;
+
 typedef enum e_font
 {
 	e_font_small,
@@ -109,6 +116,13 @@ typedef struct s_font
 	s_glyph glyph_arr[1024];
 } s_font;
 
+typedef struct s_main_menu
+{
+	int player_name_length;
+	char* error_str;
+	char player_name[max_player_name_length];
+} s_main_menu;
+
 
 
 func void update();
@@ -125,3 +139,4 @@ func s_font load_font(char* path, float font_size, s_lin_arena* arena);
 func s_texture load_texture_from_data(void* data, int width, int height, u32 filtering);
 func s_v2 get_text_size(char* text, e_font font_id);
 func s_v2 get_text_size_with_count(char* text, e_font font_id, int count);
+func void connect_to_server();

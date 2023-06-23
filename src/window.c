@@ -38,6 +38,8 @@ m_gl_funcs
 
 global s_window g_window;
 global s_input g_input;
+make_list(s_char_event_list, s_char_event, 1024);
+s_char_event_list char_event_arr;
 
 func void create_window()
 {
@@ -60,7 +62,7 @@ func void create_window()
 		HWND dummy_window = CreateWindowEx(
 			0,
 			class_name,
-			"TKCHAT",
+			"dummy",
 			WS_OVERLAPPEDWINDOW,
 			CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
 			null,
@@ -200,7 +202,7 @@ LRESULT window_proc(HWND window, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case WM_CHAR:
 		{
-			// char_event_arr.add({.is_symbol = false, .c = (int)wparam});
+			s_char_event_list_add(&char_event_arr, (s_char_event){.is_symbol = false, .c = (int)wparam});
 		} break;
 
 		case WM_SIZE:
@@ -227,7 +229,7 @@ LRESULT window_proc(HWND window, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			if(is_down)
 			{
-				// char_event_arr.add({.is_symbol = true, .c = (int)wparam});
+				s_char_event_list_add(&char_event_arr, (s_char_event){.is_symbol = true, .c = (int)wparam});
 			}
 		} break;
 
@@ -315,4 +317,17 @@ func void apply_event_to_input(s_input* in_input, s_stored_input event)
 {
 	in_input->keys[event.key].is_down = event.is_down;
 	in_input->keys[event.key].count += 1;
+}
+
+func s_char_event get_char_event()
+{
+	s_char_event event = zero;
+	if(char_event_arr.count > 0)
+	{
+		event = char_event_arr.elements[0];
+		char_event_arr.count -= 1;
+		int to_move = char_event_arr.count;
+		memmove(&char_event_arr.elements[0], &char_event_arr.elements[1], sizeof(char_event_arr.elements[0]) * to_move);
+	}
+	return event;
 }
