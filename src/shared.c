@@ -228,25 +228,34 @@ func void spawn_system(s_level level)
 				{
 					float x;
 					float y;
+					float size = randf_range(&rng, 15, 44);
+					float speed = randf_range(&rng, 125, 255);
 
-					if ((randu(&rng) & 1) == 0 )
+					if ((randu(&rng) & 1) == 0)
 					{
 						x = randf_range(&rng, 0, c_base_res.x / 4);
 					}
 					else
 					{
 						x = randf_range(&rng, c_base_res.x - c_base_res.x / 4, c_base_res.x);
+						speed *= randf_range(&rng, 1.5f, 2.5f);
 					}
 
-					y = randf_range(&rng, 0, c_base_res.y);
+					if ((randu(&rng) & 1) == 0)
+					{
+						y = randf_range(&rng, c_base_res.y - c_base_res.y / 8, c_base_res.y);
+					}
+					else
+					{
+						y = randf_range(&rng, 0, c_base_res.y);
+					}
 
-					float size = randf_range(&rng, 15, 80);
 					s_v4 col = v4(randf_range(&rng, 0, 1.0f), randf_range(&rng, 0, 1.0f), randf_range(&rng, 0, 1.0f), 1.0f);
 
 					e.x[entity] = x;
 					e.y[entity] = y;
-					e.sx[entity] = randf_range(&rng, 48, 56);
-					e.speed[entity] = size;
+					e.sx[entity] = size;
+					e.speed[entity] = speed;
 					e.dir_x[entity] = -1.0f;
 					e.dir_y[entity] = 0.0f;
 					e.color[entity] = col;
@@ -255,7 +264,7 @@ func void spawn_system(s_level level)
 					e.x[entity] = x;
 					e.y[entity] = y;
 					e.sx[entity] = size;
-					e.speed[entity] = 300;
+					e.speed[entity] = speed;
 					e.dir_x[entity] = 1.0f;
 					e.dir_y[entity] = 0.0f;
 					e.color[entity] = col;
@@ -264,7 +273,7 @@ func void spawn_system(s_level level)
 					e.x[entity] = x;
 					e.y[entity] = y;
 					e.sx[entity] = size;
-					e.speed[entity] = 300;
+					e.speed[entity] = 133;
 					e.dir_x[entity] = 0.0f;
 					e.dir_y[entity] = -1.0f;
 					e.color[entity] = col;
@@ -273,7 +282,7 @@ func void spawn_system(s_level level)
 					e.x[entity] = x;
 					e.y[entity] = y;
 					e.sx[entity] = size;
-					e.speed[entity] = 300;
+					e.speed[entity] = 133;
 					e.dir_x[entity] = 0.0f;
 					e.dir_y[entity] = 1.0f;
 					e.color[entity] = col;
