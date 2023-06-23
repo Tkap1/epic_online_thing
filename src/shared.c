@@ -330,7 +330,7 @@ func void init_levels()
 
 	levels[9].spawn_delay[e_projectile_type_cross] = speed(2777);
 
-	current_level = 8;
+	current_level = 0;
 	#undef speed
 }
 
