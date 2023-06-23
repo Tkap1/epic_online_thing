@@ -1,5 +1,5 @@
 
-func s_sound load_wav(char* path, s_lin_arena* arena)
+func s_sound load_wav(const char* path, s_lin_arena* arena)
 {
 
 	s_sound result = zero;

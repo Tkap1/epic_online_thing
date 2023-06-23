@@ -14,10 +14,20 @@
 #define c_kb (1024)
 #define c_mb (1024 * 1024)
 
+#ifndef _WIN32
+#define _declspec(x)
+#endif
+
 #define array_count(arr) (sizeof((arr)) / sizeof((arr)[0]))
 
 #define true 1
 #define false 0
+
+#ifndef _WIN32
+#define max(a,b) (a)<(b)?(b):(a)
+#define min(a,b) (a)<(b)?(a):(b)
+#endif
+#define STUB(X) printf("STUBBED: %s\n", X)
 
 #ifdef m_server
 #define log(...) printf("Server: "  __VA_ARGS__); printf("\n")
@@ -40,12 +50,12 @@ func void buffer_write(u8** cursor, void* data, size_t size)
 	*cursor += size;
 }
 
-func char* format_text(char* text, ...)
+func char* format_text(const char* text, ...)
 {
 	#define max_format_text_buffers 16
 	#define max_text_buffer_length 256
 
-	static char buffers[max_format_text_buffers][max_text_buffer_length] = zero;
+	static char buffers[max_format_text_buffers][max_text_buffer_length] = {};
 	static int index = 0;
 
 	char* current_buffer = buffers[index];
@@ -67,8 +77,9 @@ func char* format_text(char* text, ...)
 	return current_buffer;
 }
 
-func void on_failed_assert(char* cond, char* file, int line)
+func void on_failed_assert(const char* cond, const char* file, int line)
 {
+#ifdef _WIN32
 	char* text = format_text("FAILED ASSERT IN %s (%i)\n%s\n", file, line, cond);
 	printf("%s\n", text);
 	int result = MessageBox(null, text, "Assertion failed", MB_RETRYCANCEL | MB_TOPMOST);
@@ -83,6 +94,10 @@ func void on_failed_assert(char* cond, char* file, int line)
 			exit(1);
 		}
 	}
+#else
+	fprintf(stderr, "FAILED ASSERT IN %s:%i\n%s\n", file, line, cond);
+	abort();
+#endif
 }
 
 
@@ -230,28 +245,25 @@ struct s_sarray
 		return count <= 0;
 	}
 
-	void bubble_sort()
+	void small_sort()
 	{
-		// @Note(tkap, 25/06/2023): Let's not get crazy with bubble sort, bro
+		// @Note(tkap, 25/06/2023): Let's not get crazy with insertion sort, bro
 		assert(count < 256);
 
-		for(int i = 0; i < count; i++)
+		for(int i = 1; i < count; i++)
 		{
-			b8 swap = false;
-			for(int j = 0; j < count - 1; j++)
+			for(int j = i; j > 0; j--)
 			{
 				T* a = &elements[j];
-				T* b = &elements[j + 1];
+				T* b = &elements[j - 1];
 
-				if(*a > *b)
-				{
-					T temp = *a;
-					*a = *b;
-					*b = temp;
-					swap = true;
+				if(*a > *b) {
+					break;
 				}
+				T temp = *a;
+				*a = *b;
+				*b = temp;
 			}
-			if(!swap) { break; }
 		}
 	}
 

@@ -11,7 +11,7 @@
 
 #include "types.h"
 #include "utils.h"
-#include "math.h"
+#include "epic_math.h"
 #include "config.h"
 #include "platform_shared.h"
 #include "win32_platform.h"
@@ -27,6 +27,14 @@ global s_sarray<s_char_event, 1024> char_event_arr;
 
 #include "platform_shared.cpp"
 
+func void set_swap_interval(int interval)
+{
+	if(wglSwapIntervalEXT)
+	{
+		wglSwapIntervalEXT(1);
+	}
+}
+
 int main(int argc, char** argv)
 {
 	unreferenced(argc);
@@ -41,9 +49,9 @@ int main(int argc, char** argv)
 	init_performance();
 
 	s_platform_funcs platform_funcs = zero;
-	// platform_funcs. = ;
 	platform_funcs.play_sound = play_sound;
 	platform_funcs.load_gl_func = (t_load_gl_func)load_gl_func;
+	platform_funcs.set_swap_interval = set_swap_interval;
 
 	b8 running = true;
 	f64 time_passed = 0;
