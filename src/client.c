@@ -426,6 +426,7 @@ func void parse_packet(ENetEvent event)
 			int entity = find_player_by_id(got_hit_id);
 			if(entity != c_invalid_entity)
 			{
+				log("Player %i with id %u died", entity, got_hit_id);
 				e.dead[entity] = true;
 			}
 		} break;
@@ -474,6 +475,7 @@ func void revive_every_player()
 		if(!e.active[i]) { continue; }
 		if(!e.player_id) { continue; }
 		e.dead[i] = false;
+		log("Revived player at index %i with id %u", i, e.player_id[i]);
 	}
 }
 
@@ -488,6 +490,7 @@ func void collision_system(int start, int count)
 		for(int j = 0; j < c_max_entities; j++)
 		{
 			if(!e.active[j]) { continue; }
+			if(e.dead[j]) { continue; }
 			if(e.type[j] != e_entity_type_player) { continue; }
 			if(e.player_id[j] != my_id) { continue; }
 

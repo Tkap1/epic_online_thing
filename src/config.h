@@ -1,6 +1,7 @@
 
 
 global s_v2 c_base_res = {1366, 768};
+// global s_v2 c_base_res = {400, 400};
 #define c_updates_per_second (100)
 #define c_update_delay (1.0 / c_updates_per_second)
 
