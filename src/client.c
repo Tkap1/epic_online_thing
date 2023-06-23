@@ -145,6 +145,7 @@ int main(int argc, char** argv)
 			{
 				g_input.keys[k_i].count = 0;
 			}
+			char_event_arr.count = 0;
 		}
 
 		render(program);
