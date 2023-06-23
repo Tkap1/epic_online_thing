@@ -23,6 +23,14 @@ func s_v2 v2(float x, float y)
 	return result;
 }
 
+func s_v2 v22i(int x, int y)
+{
+	s_v2 result;
+	result.x = (float)x;
+	result.y = (float)y;
+	return result;
+}
+
 func s_v2 v2ii(int x, int y)
 {
 	s_v2 result;

@@ -70,6 +70,46 @@
 #define key_left_control 0xA2
 #define key_right_control 0xA3
 
+typedef enum e_font
+{
+	e_font_small,
+	e_font_medium,
+	e_font_big,
+	e_font_count,
+} e_font;
+
+typedef struct s_glyph
+{
+	int advance_width;
+	int width;
+	int height;
+	int x0;
+	int y0;
+	int x1;
+	int y1;
+	s_v2 uv_min;
+	s_v2 uv_max;
+} s_glyph;
+
+typedef struct s_texture
+{
+	u32 id;
+	s_v2 size;
+	s_v2 sub_size;
+} s_texture;
+
+typedef struct s_font
+{
+	float size;
+	float scale;
+	int ascent;
+	int descent;
+	int line_gap;
+	s_texture texture;
+	s_glyph glyph_arr[1024];
+} s_font;
+
+
 
 func void update();
 func void render(u32 program);
@@ -81,3 +121,7 @@ func void enet_loop(ENetHost* client, int timeout);
 func void revive_every_player();
 func void draw_circle_system(int start, int count);
 func void collision_system(int start, int count);
+func s_font load_font(char* path, float font_size, s_lin_arena* arena);
+func s_texture load_texture_from_data(void* data, int width, int height, u32 filtering);
+func s_v2 get_text_size(char* text, e_font font_id);
+func s_v2 get_text_size_with_count(char* text, e_font font_id, int count);

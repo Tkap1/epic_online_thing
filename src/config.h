@@ -5,6 +5,10 @@
 #define c_updates_per_second (100)
 #define c_update_delay (1.0 / c_updates_per_second)
 
+#define c_origin_topleft (s_v2){1.0f, -1.0f}
+#define c_origin_bottomleft (s_v2){1.0f, 1.0f}
+#define c_origin_center (s_v2){0, 0}
+
 #define c_num_threads (1)
 #define c_max_entities (1024)
 #define c_entities_per_thread (c_max_entities / c_num_threads)

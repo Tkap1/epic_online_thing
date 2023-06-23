@@ -50,43 +50,43 @@ func void draw_texture(s_v2 pos, int layer, s_v2 size, s_v4 color, s_transform t
 	s_transform_list_add(&transforms, t);
 }
 
-// func void draw_text(char* text, s_v2 in_pos, int layer, s_v4 color, e_font font_id, b8 centered, s_transform t)
-// {
-// 	t.layer = layer;
+func void draw_text(char* text, s_v2 in_pos, int layer, s_v4 color, e_font font_id, b8 centered, s_transform t)
+{
+	t.layer = layer;
 
-// 	s_font* font = &g_font_arr[font_id];
+	s_font* font = &g_font_arr[font_id];
 
-// 	int len = (int)strlen(text);
-// 	assert(len > 0);
-// 	s_v2 pos = in_pos;
-// 	if(centered)
-// 	{
-// 		s_v2 size = get_text_size(text, font_id);
-// 		pos.x -= size.x / 2;
-// 		pos.y -= size.y / 2;
-// 	}
-// 	pos.y += font->ascent * font->scale;
-// 	for(int char_i = 0; char_i < len; char_i++)
-// 	{
-// 		int c = text[char_i];
-// 		if(c <= 0 || c >= 128) { continue; }
+	int len = (int)strlen(text);
+	assert(len > 0);
+	s_v2 pos = in_pos;
+	if(centered)
+	{
+		s_v2 size = get_text_size(text, font_id);
+		pos.x -= size.x / 2;
+		pos.y -= size.y / 2;
+	}
+	pos.y += font->ascent * font->scale;
+	for(int char_i = 0; char_i < len; char_i++)
+	{
+		int c = text[char_i];
+		if(c <= 0 || c >= 128) { continue; }
 
-// 		s_glyph glyph = font->glyph_arr[c];
-// 		s_v2 glyph_pos = pos;
-// 		glyph_pos.y += -glyph.y0 * font->scale;
+		s_glyph glyph = font->glyph_arr[c];
+		s_v2 glyph_pos = pos;
+		glyph_pos.y += -glyph.y0 * font->scale;
 
-// 		t.use_texture = true;
-// 		t.pos = glyph_pos;
-// 		t.draw_size = v2((glyph.x1 - glyph.x0) * font->scale, (glyph.y1 - glyph.y0) * font->scale);
-// 		// t.draw_size = v2(glyph.width, glyph.height);
-// 		t.color = color;
-// 		// t.texture_size = texture.size;
-// 		t.uv_min = glyph.uv_min;
-// 		t.uv_max = glyph.uv_max;
-// 		t.origin_offset = c_origin_bottomleft;
-// 		text_arr[font_id].add(t);
+		t.use_texture = true;
+		t.pos = glyph_pos;
+		t.draw_size = v2((glyph.x1 - glyph.x0) * font->scale, (glyph.y1 - glyph.y0) * font->scale);
+		// t.draw_size = v2(glyph.width, glyph.height);
+		t.color = color;
+		// t.texture_size = texture.size;
+		t.uv_min = glyph.uv_min;
+		t.uv_max = glyph.uv_max;
+		t.origin_offset = c_origin_bottomleft;
+		s_transform_list_add(&text_arr[font_id], t);
 
-// 		pos.x += glyph.advance_width * font->scale;
+		pos.x += glyph.advance_width * font->scale;
 
-// 	}
-// }
+	}
+}
