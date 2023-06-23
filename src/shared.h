@@ -223,6 +223,7 @@ typedef enum e_projectile_type
 	e_projectile_type_diagonal_right,
 	e_projectile_type_diagonal_bottom_left,
 	e_projectile_type_diagonal_bottom_right,
+	e_projectile_type_cross,
 	e_projectile_type_spawner,
 	e_projectile_type_count,
 } e_projectile_type;
