@@ -46,6 +46,7 @@ global e_state state;
 global b8 g_connected;
 global ENetHost* g_client;
 global s_main_menu main_menu;
+global u32 g_program;
 
 #include "draw.c"
 #include "memory.c"
@@ -80,28 +81,7 @@ int main(int argc, char** argv)
 
 	u32 vao;
 	u32 ssbo;
-	u32 program;
-	{
-		u32 vertex = glCreateShader(GL_VERTEX_SHADER);
-		u32 fragment = glCreateShader(GL_FRAGMENT_SHADER);
-		char* header = "#version 430 core\n";
-		char* vertex_src = read_file_quick("shaders/vertex.vertex", &frame_arena);
-		char* fragment_src = read_file_quick("shaders/fragment.fragment", &frame_arena);
-		char* vertex_src_arr[] = {header, read_file_quick("src/shader_shared.h", &frame_arena), vertex_src};
-		char* fragment_src_arr[] = {header, read_file_quick("src/shader_shared.h", &frame_arena), fragment_src};
-		glShaderSource(vertex, array_count(vertex_src_arr), vertex_src_arr, null);
-		glShaderSource(fragment, array_count(fragment_src_arr), fragment_src_arr, null);
-		glCompileShader(vertex);
-		char buffer[1024] = zero;
-		check_for_shader_errors(vertex, buffer);
-		glCompileShader(fragment);
-		check_for_shader_errors(fragment, buffer);
-		program = glCreateProgram();
-		glAttachShader(program, vertex);
-		glAttachShader(program, fragment);
-		glLinkProgram(program);
-		glUseProgram(program);
-	}
+	g_program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
 
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
@@ -156,7 +136,7 @@ int main(int argc, char** argv)
 			char_event_arr.count = 0;
 		}
 
-		render(program);
+		render();
 
 		frame_arena.used = 0;
 
@@ -264,7 +244,7 @@ func void update()
 	}
 }
 
-func void render(u32 program)
+func void render()
 {
 	switch(state)
 	{
@@ -297,7 +277,10 @@ func void render(u32 program)
 		} break;
 	}
 
+	draw_rect(g_window.center, 0, g_window.size, v41f(1), (s_transform){.do_background = true});
+
 	{
+		glUseProgram(g_program);
 		// glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClearDepth(0.0f);
@@ -306,7 +289,7 @@ func void render(u32 program)
 		// glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_GREATER);
 
-		int location = glGetUniformLocation(program, "window_size");
+		int location = glGetUniformLocation(g_program, "window_size");
 		glUniform2fv(location, 1, &g_window.size.x);
 
 		if(transforms.count > 0)
@@ -334,6 +317,12 @@ func void render(u32 program)
 			}
 		}
 	}
+
+	#ifdef _WIN32
+	#ifdef m_debug
+	hot_reload_shaders();
+	#endif // m_debug
+	#endif // _WIN32
 }
 
 func b8 check_for_shader_errors(u32 id, char* out_error)
@@ -919,3 +908,57 @@ func void do_gamepad_shit()
 
 }
 #endif // _WIN32
+
+
+#ifdef _WIN32
+#ifdef m_debug
+global FILETIME last_write_time = zero;
+func void hot_reload_shaders()
+{
+	WIN32_FIND_DATAA find_data = zero;
+	HANDLE handle = FindFirstFileA("shaders/fragment.fragment", &find_data);
+	if(handle == INVALID_HANDLE_VALUE) { return; }
+
+	if(CompareFileTime(&last_write_time, &find_data.ftLastWriteTime) == -1)
+	{
+		if(g_program)
+		{
+			glUseProgram(0);
+			glDeleteProgram(g_program);
+		}
+		g_program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
+		last_write_time = find_data.ftLastWriteTime;
+	}
+
+
+
+	FindClose(handle);
+
+}
+#endif // m_debug
+#endif // _WIN32
+
+func u32 load_shader(char* vertex_path, char* fragment_path)
+{
+	u32 vertex = glCreateShader(GL_VERTEX_SHADER);
+	u32 fragment = glCreateShader(GL_FRAGMENT_SHADER);
+	char* header = "#version 430 core\n";
+	char* vertex_src = read_file_quick(vertex_path, &frame_arena);
+	char* fragment_src = read_file_quick(fragment_path, &frame_arena);
+	char* vertex_src_arr[] = {header, read_file_quick("src/shader_shared.h", &frame_arena), vertex_src};
+	char* fragment_src_arr[] = {header, read_file_quick("src/shader_shared.h", &frame_arena), fragment_src};
+	glShaderSource(vertex, array_count(vertex_src_arr), vertex_src_arr, null);
+	glShaderSource(fragment, array_count(fragment_src_arr), fragment_src_arr, null);
+	glCompileShader(vertex);
+	char buffer[1024] = zero;
+	check_for_shader_errors(vertex, buffer);
+	glCompileShader(fragment);
+	check_for_shader_errors(fragment, buffer);
+	u32 program = glCreateProgram();
+	glAttachShader(program, vertex);
+	glAttachShader(program, fragment);
+	glLinkProgram(program);
+	glDeleteShader(vertex);
+	glDeleteShader(fragment);
+	return program;
+}

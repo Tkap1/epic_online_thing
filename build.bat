@@ -10,8 +10,8 @@ if NOT defined VSCMD_ARG_TGT_ARCH (
 
 if not exist build\NUL mkdir build
 
-set comp=-nologo -std:c11 -W4 -wd4505 -FC -I ../../my_libs -Gm- -GR- -EHa- -wd 4324 -wd 4127 -D_CRT_SECURE_NO_WARNINGS
-set linker=user32.lib Shell32.lib -INCREMENTAL:NO "..\..\enet\enet64.lib" Ws2_32.lib Winmm.lib
+set comp=-nologo -std:c11 -W4 -wd4505 -FC -Gm- -GR- -EHa- -wd 4324 -wd 4127 -D_CRT_SECURE_NO_WARNINGS
+set linker=user32.lib Shell32.lib -INCREMENTAL:NO "..\enet64.lib" Ws2_32.lib Winmm.lib
 
 set debug=2
 if %debug%==0 (

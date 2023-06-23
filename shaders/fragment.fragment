@@ -55,6 +55,10 @@ void main()
 		color.rgb = col;
 		color.a *= smoothstep(0.499, 0.45, pow(d, 0.4));
 	}
+	else if(t.do_background)
+	{
+		color = t.color * 0;
+	}
 	color = pma(color);
 
 	if(color.a <= 0) { discard; }

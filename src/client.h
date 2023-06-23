@@ -134,7 +134,7 @@ typedef struct s_gamepad
 
 
 func void update();
-func void render(u32 program);
+func void render();
 func b8 check_for_shader_errors(u32 id, char* out_error);
 func void input_system(int start, int count);
 func void draw_system(int start, int count);
@@ -148,7 +148,15 @@ func s_texture load_texture_from_data(void* data, int width, int height, u32 fil
 func s_v2 get_text_size(char* text, e_font font_id);
 func s_v2 get_text_size_with_count(char* text, e_font font_id, int count);
 func void connect_to_server();
+func u32 load_shader(char* vertex_path, char* fragment_path);
 
 #ifdef _WIN32
 func void do_gamepad_shit();
 #endif // _WIN32
+
+#ifdef _WIN32
+#ifdef m_debug
+func void hot_reload_shaders();
+#endif // m_debug
+#endif // _WIN32
+

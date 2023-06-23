@@ -4,8 +4,8 @@ cls
 
 stamp_timer.exe start
 
-set libs=-luser32 -lopengl32 -lgdi32 -lShell32 -l"..\..\enet\enet64" -lWs2_32 -lWinmm
-set comp=-std=c11 -Dm_internal -DDEBUG -Dm_app
+set libs=-luser32 -lopengl32 -lgdi32 -lShell32 -l"..\enet64" -lWs2_32 -lWinmm
+set comp=-std=c11 -Dm_internal -Dm_debug -Dm_app
 
 set warn=-Wextra -Wpedantic -Wall
 set warn=%warn% -Wno-switch
@@ -48,7 +48,7 @@ set warn=%warn% -Wno-enum-constexpr-conversion
 @REM set warn=%warn% -Wno-unused-template
 
 pushd build
-	clang ..\src\client.c -shared -g -o game.dll %libs% %comp% %warn%
+	clang ..\src\client.c -shared -g -o game.dll %libs% %comp% %warn% -lXinput
 	clang ..\src\server.c -shared -g -o game.dll %libs% %comp% %warn%
 popd
 

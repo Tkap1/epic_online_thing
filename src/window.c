@@ -30,7 +30,9 @@ X(PFNGLCHECKFRAMEBUFFERSTATUSPROC, glCheckFramebufferStatus) \
 X(PFNGLACTIVETEXTUREPROC, glActiveTexture) \
 X(PFNWGLSWAPINTERVALEXTPROC, wglSwapIntervalEXT) \
 X(PFNWGLGETSWAPINTERVALEXTPROC, wglGetSwapIntervalEXT) \
-X(PFNGLBLENDEQUATIONPROC, glBlendEquation)
+X(PFNGLBLENDEQUATIONPROC, glBlendEquation) \
+X(PFNGLDELETEPROGRAMPROC, glDeleteProgram) \
+X(PFNGLDELETESHADERPROC, glDeleteShader)
 
 #define X(type, name) global type name = null;
 m_gl_funcs
