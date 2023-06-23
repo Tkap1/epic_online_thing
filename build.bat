@@ -29,7 +29,7 @@ taskkill /IM "server.exe" > NUL 2> NUL
 
 pushd build
 	stamp_timer.exe start
-	cl ..\src\client.c %comp% -Dm_app -link %linker% gdi32.lib opengl32.lib
+	cl ..\src\client.c %comp% -Dm_app -link %linker% gdi32.lib opengl32.lib Xinput.lib
 	cl ..\src\server.c %comp% -link %linker%
 	stamp_timer.exe end
 popd

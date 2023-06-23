@@ -3,6 +3,10 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+#ifdef _WIN32
+#include <xinput.h>
+#endif
+
 #include <gl/GL.h>
 #include "external/glcorearb.h"
 #include "external/wglext.h"
@@ -138,6 +142,10 @@ int main(int argc, char** argv)
 		update_timer += time_passed;
 		while(update_timer >= c_update_delay)
 		{
+			#ifdef _WIN32
+			do_gamepad_shit();
+			#endif // _WIN32
+
 			update_timer -= c_update_delay;
 			update();
 
@@ -790,3 +798,124 @@ func void connect_to_server()
 	g_connected = true;
 
 }
+
+#ifdef _WIN32
+
+global s_gamepad g_gamepads[XUSER_MAX_COUNT];
+
+func void do_gamepad_shit()
+{
+	int buttons[] = {
+		XINPUT_GAMEPAD_DPAD_UP, XINPUT_GAMEPAD_DPAD_DOWN, XINPUT_GAMEPAD_DPAD_LEFT, XINPUT_GAMEPAD_DPAD_RIGHT, XINPUT_GAMEPAD_START,
+		XINPUT_GAMEPAD_BACK, XINPUT_GAMEPAD_LEFT_THUMB, XINPUT_GAMEPAD_RIGHT_THUMB, XINPUT_GAMEPAD_LEFT_SHOULDER, XINPUT_GAMEPAD_RIGHT_SHOULDER,
+		XINPUT_GAMEPAD_A, XINPUT_GAMEPAD_B, XINPUT_GAMEPAD_X, XINPUT_GAMEPAD_Y
+	};
+
+	for(int gamepad_i = 0; gamepad_i < XUSER_MAX_COUNT; gamepad_i++)
+	{
+		s_gamepad* gamepad = &g_gamepads[gamepad_i];
+		XINPUT_STATE xinput_state = zero;
+		DWORD dwResult = XInputGetState(gamepad_i, &xinput_state);
+
+		if(dwResult == ERROR_SUCCESS)
+		{
+			gamepad->left_thumb_x = xinput_state.Gamepad.sThumbLX;
+			for(int button_i = 0; button_i < array_count(buttons); button_i++)
+			{
+				if(xinput_state.Gamepad.wButtons & buttons[button_i])
+				{
+					gamepad->buttons |= buttons[button_i];
+				}
+			}
+		}
+		else
+		{
+		}
+	}
+
+	typedef struct s_button_to_key
+	{
+		int button;
+		int key;
+	} s_button_to_key;
+
+	s_button_to_key button_to_key_arr[] = {
+		// {XINPUT_GAMEPAD_DPAD_UP, key_space},
+		{XINPUT_GAMEPAD_DPAD_DOWN, key_down},
+		{XINPUT_GAMEPAD_DPAD_LEFT, key_left},
+		{XINPUT_GAMEPAD_DPAD_RIGHT, key_right},
+		{XINPUT_GAMEPAD_A, key_space},
+		{XINPUT_GAMEPAD_B, key_down},
+		{XINPUT_GAMEPAD_X, key_down},
+		{XINPUT_GAMEPAD_Y, key_down},
+	};
+
+	for(int gamepad_i = 0; gamepad_i < XUSER_MAX_COUNT; gamepad_i++)
+	{
+		s_gamepad* gamepad = &g_gamepads[gamepad_i];
+
+		for(int map_i = 0; map_i < array_count(button_to_key_arr); map_i++)
+		{
+			s_button_to_key map = button_to_key_arr[map_i];
+			b8 is_down = (gamepad->buttons & map.button) != 0;
+			b8 was_down = (gamepad->previous_buttons & map.button) != 0;
+
+			if(is_down && !was_down)
+			{
+				s_stored_input event = zero;
+				event.is_down = true;
+				event.key = map.key;
+				apply_event_to_input(&g_input, event);
+			}
+			else if(!is_down && was_down)
+			{
+				s_stored_input event = zero;
+				event.is_down = false;
+				event.key = map.key;
+				apply_event_to_input(&g_input, event);
+			}
+		}
+
+		b8 right_now = gamepad->left_thumb_x > 2000;
+		b8 right_before = gamepad->previous_left_thumb_x > 2000;
+		b8 left_now = gamepad->left_thumb_x < -2000;
+		b8 left_before = gamepad->previous_left_thumb_x < -2000;
+		if(right_now && !right_before)
+		{
+			s_stored_input event = zero;
+			event.is_down = true;
+			event.key = key_right;
+			apply_event_to_input(&g_input, event);
+		}
+		else if(!right_now && right_before)
+		{
+			s_stored_input event = zero;
+			event.is_down = false;
+			event.key = key_right;
+			apply_event_to_input(&g_input, event);
+		}
+		if(left_now && !left_before)
+		{
+			s_stored_input event = zero;
+			event.is_down = true;
+			event.key = key_left;
+			apply_event_to_input(&g_input, event);
+		}
+		else if(!left_now && left_before)
+		{
+			s_stored_input event = zero;
+			event.is_down = false;
+			event.key = key_left;
+			apply_event_to_input(&g_input, event);
+		}
+
+		gamepad->previous_buttons = gamepad->buttons;
+		gamepad->buttons = 0;
+		gamepad->previous_left_thumb_x = gamepad->left_thumb_x;
+		gamepad->left_thumb_x = 0;
+
+	}
+
+
+}
+#endif // _WIN32

@@ -122,6 +122,15 @@ typedef struct s_main_menu
 	s_name player_name;
 } s_main_menu;
 
+#ifdef _WIN32
+typedef struct s_gamepad
+{
+	int left_thumb_x;
+	int previous_left_thumb_x;
+	int previous_buttons;
+	int buttons;
+} s_gamepad;
+#endif // _WIN32
 
 
 func void update();
@@ -139,3 +148,7 @@ func s_texture load_texture_from_data(void* data, int width, int height, u32 fil
 func s_v2 get_text_size(char* text, e_font font_id);
 func s_v2 get_text_size_with_count(char* text, e_font font_id, int count);
 func void connect_to_server();
+
+#ifdef _WIN32
+func void do_gamepad_shit();
+#endif // _WIN32
