@@ -57,7 +57,9 @@ void main()
 	}
 	else if(t.do_background)
 	{
-		color = t.color * 0;
+		// vec2 uv = v_local_uv * 10;
+		// color.rgb = vec3(uv.x, 0.0, 0.0);
+		color.rgb = vec3(0);
 	}
 	color = pma(color);
 
