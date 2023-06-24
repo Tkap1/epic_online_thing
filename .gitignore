@@ -54,3 +54,4 @@ build
 .tags
 config.txt
 *.rdbg
+compiler_output.txt
