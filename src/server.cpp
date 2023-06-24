@@ -354,7 +354,7 @@ func void parse_packet(ENetEvent event)
 		#ifdef m_debug
 		case e_packet_cheat_next_level:
 		{
-			if(peers.count > 1) { break; }
+			// if(peers.count > 1) { break; }
 
 			s_beat_level_from_server data = zero;
 			data.current_level = current_level;
@@ -368,7 +368,7 @@ func void parse_packet(ENetEvent event)
 
 		case e_packet_cheat_previous_level:
 		{
-			if(peers.count > 1) { break; }
+			// if(peers.count > 1) { break; }
 			if(current_level <= 0) { break; }
 
 			current_level -= 1;
