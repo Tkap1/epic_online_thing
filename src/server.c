@@ -184,6 +184,8 @@ int main(int argc, char** argv)
 
 		frame_arena.used = 0;
 
+		Sleep(1);
+
 		time_passed = (float)(get_seconds() - start_of_frame_seconds);
 		total_time += time_passed;
 	}
