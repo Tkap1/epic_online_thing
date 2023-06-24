@@ -11,7 +11,7 @@
 #define c_origin_center (s_v2){0, 0}
 
 #define c_num_threads (1)
-#define c_max_entities (1024)
+#define c_max_entities (4096)
 #define c_entities_per_thread (c_max_entities / c_num_threads)
 
 #define delta (1.0f / c_updates_per_second)
@@ -23,3 +23,6 @@
 #define c_fast_fall_speed (600)
 
 #define max_player_name_length 16
+
+#define c_projectile_spawn_offset (100)
+#define c_projectile_out_of_bounds_offset (200)

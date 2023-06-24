@@ -203,7 +203,8 @@ func void update()
 	}
 	for(int i = 0; i < c_num_threads; i++)
 	{
-		bounds_check_system(i * c_entities_per_thread, c_entities_per_thread);
+		player_bounds_check_system(i * c_entities_per_thread, c_entities_per_thread);
+		projectile_bounds_check_system(i * c_entities_per_thread, c_entities_per_thread);
 	}
 	for(int i = 0; i < c_num_threads; i++)
 	{

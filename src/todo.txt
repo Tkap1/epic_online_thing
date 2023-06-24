@@ -1,4 +1,6 @@
 
+there appears to be a bug with names. I'm not seeing new player names
+
 improve input system so it works for both windows and linux
 
 sounds
@@ -14,3 +16,6 @@ leaderboard?
 the inteprolated rendering thing
 
 multithreading?
+
+global variable specific to each thread!
+__declspec(thread)
