@@ -440,10 +440,8 @@ func void draw_system(int start, int count, float dt)
 		if(!e.active[ii]) { continue; }
 		if(!e.flags[ii][e_entity_flag_draw]) { continue; }
 
-		float true_dt = e.drawn_last_render[ii] ? dt : 1;
-
-		float x = lerp(e.prev_x[ii], e.x[ii], true_dt);
-		float y = lerp(e.prev_y[ii], e.y[ii], true_dt);
+		float x = lerp(e.prev_x[ii], e.x[ii], dt);
+		float y = lerp(e.prev_y[ii], e.y[ii], dt);
 
 		s_v4 color = v41f(1);
 		if(e.dead[ii])
@@ -482,10 +480,8 @@ func void draw_circle_system(int start, int count, float dt)
 		if(!e.active[ii]) { continue; }
 		if(!e.flags[ii][e_entity_flag_draw_circle]) { continue; }
 
-		float true_dt = e.drawn_last_render[ii] ? dt : 1;
-
-		float x = lerp(e.prev_x[ii], e.x[ii], true_dt);
-		float y = lerp(e.prev_y[ii], e.y[ii], true_dt);
+		float x = lerp(e.prev_x[ii], e.x[ii], dt);
+		float y = lerp(e.prev_y[ii], e.y[ii], dt);
 
 		s_v4 light_color = e.color[ii];
 		light_color.w *= 0.2f;
@@ -967,8 +963,6 @@ func void do_gamepad_shit()
 		gamepad->left_thumb_x = 0;
 
 	}
-
-
 }
 #endif // _WIN32
 
