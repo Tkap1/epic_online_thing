@@ -51,7 +51,7 @@ global s_input g_input;
 make_list(s_char_event_list, s_char_event, 1024)
 s_char_event_list char_event_arr;
 
-func void create_window()
+func void create_window(void)
 {
 	char* class_name = "epic_online_thing_class";
 	HINSTANCE instance = GetModuleHandle(null);
@@ -329,7 +329,7 @@ func void apply_event_to_input(s_input* in_input, s_stored_input event)
 	in_input->keys[event.key].count += 1;
 }
 
-func s_char_event get_char_event()
+func s_char_event get_char_event(void)
 {
 	s_char_event event = zero;
 	if(char_event_arr.count > 0)

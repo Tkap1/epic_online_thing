@@ -10,7 +10,7 @@ if NOT defined VSCMD_ARG_TGT_ARCH (
 
 if not exist build\NUL mkdir build
 
-set comp=-nologo -std:c11 -W4 -wd4505 -FC -Gm- -GR- -EHa- -wd 4324 -wd 4127 -D_CRT_SECURE_NO_WARNINGS
+set comp=-nologo -std:c11 -W4 -FC -Gm- -GR- -EHa- -wd 4324 -wd 4127 -D_CRT_SECURE_NO_WARNINGS
 set linker=user32.lib Shell32.lib -INCREMENTAL:NO "..\enet64.lib" Ws2_32.lib Winmm.lib
 
 set debug=2
@@ -25,7 +25,7 @@ if %debug%==2 (
 )
 
 taskkill /IM "client.exe" > NUL 2> NUL
-taskkill /IM "server.exe" > NUL 2> NUL
+@REM taskkill /IM "server.exe" > NUL 2> NUL
 
 pushd build
 	..\stamp_timer.exe start

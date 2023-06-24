@@ -27,6 +27,7 @@
 #include "client.h"
 #include "rng.h"
 #include "shader_shared.h"
+#include "str_builder.h"
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STBTT_assert assert
@@ -53,6 +54,7 @@ global u32 g_program;
 #include "file.c"
 #include "window.c"
 #include "shared.c"
+#include "str_builder.c"
 
 
 int main(int argc, char** argv)
@@ -67,6 +69,8 @@ int main(int argc, char** argv)
 	init_performance();
 
 	frame_arena = make_lin_arena(10 * c_mb);
+
+	s_config config = read_config_or_make_default(&frame_arena);
 
 	create_window();
 
@@ -129,7 +133,7 @@ int main(int argc, char** argv)
 			update_timer -= c_update_delay;
 			memcpy(e.prev_x, e.x, sizeof(e.x));
 			memcpy(e.prev_y, e.y, sizeof(e.y));
-			update();
+			update(config);
 
 			for(int k_i = 0; k_i < c_max_keys; k_i++)
 			{
@@ -150,16 +154,26 @@ int main(int argc, char** argv)
 		total_time += time_passed;
 	}
 
+	config.player_name = main_menu.player_name;
+	save_config(config);
+
 	return 0;
 }
 
 
-func void update()
+func void update(s_config config)
 {
 	switch(state)
 	{
 		case e_state_main_menu:
 		{
+			if(config.player_name.len >= 3)
+			{
+				main_menu.player_name = config.player_name;
+				state = e_state_game;
+				connect_to_server(config);
+				break;
+			}
 			while(true)
 			{
 				s_char_event event = get_char_event();
@@ -185,7 +199,7 @@ func void update()
 						{
 							main_menu.error_str = null;
 							state = e_state_game;
-							connect_to_server();
+							connect_to_server(config);
 							break;
 						}
 					}
@@ -642,7 +656,7 @@ func void enet_loop(ENetHost* client, int timeout)
 	}
 }
 
-func void revive_every_player()
+func void revive_every_player(void)
 {
 	for(int i = 0; i < c_max_entities; i++)
 	{
@@ -685,7 +699,7 @@ func s_font load_font(char* path, float font_size, s_lin_arena* arena)
 	s_font font = zero;
 	font.size = font_size;
 
-	u8* file_data = (u8*)read_file_quick(path, arena);
+	u8* file_data = (u8*)read_file(path, arena);
 	assert(file_data);
 
 	stbtt_fontinfo info = zero;
@@ -813,7 +827,7 @@ func s_v2 get_text_size(char* text, e_font font_id)
 	return get_text_size_with_count(text, font_id, (int)strlen(text));
 }
 
-func void connect_to_server()
+func void connect_to_server(s_config config)
 {
 	if(enet_initialize() != 0)
 	{
@@ -834,9 +848,9 @@ func void connect_to_server()
 	}
 
 	ENetAddress address = zero;
-	enet_address_set_host(&address, "at-taxation.at.ply.gg");
+	enet_address_set_host(&address, config.ip.data);
 	// enet_address_set_host(&address, "127.0.0.1");
-	address.port = 62555;
+	address.port = (u16)config.port;
 
 	server = enet_host_connect(g_client, &address, 2, 0);
 	if(server == null)
@@ -852,7 +866,7 @@ func void connect_to_server()
 
 global s_gamepad g_gamepads[XUSER_MAX_COUNT];
 
-func void do_gamepad_shit()
+func void do_gamepad_shit(void)
 {
 	int buttons[] = {
 		XINPUT_GAMEPAD_DPAD_UP, XINPUT_GAMEPAD_DPAD_DOWN, XINPUT_GAMEPAD_DPAD_LEFT, XINPUT_GAMEPAD_DPAD_RIGHT, XINPUT_GAMEPAD_START,
@@ -971,7 +985,7 @@ func void do_gamepad_shit()
 #ifdef _WIN32
 #ifdef m_debug
 global FILETIME last_write_time = zero;
-func void hot_reload_shaders()
+func void hot_reload_shaders(void)
 {
 	WIN32_FIND_DATAA find_data = zero;
 	HANDLE handle = FindFirstFileA("shaders/fragment.fragment", &find_data);
@@ -1004,12 +1018,12 @@ func u32 load_shader(char* vertex_path, char* fragment_path)
 	u32 vertex = glCreateShader(GL_VERTEX_SHADER);
 	u32 fragment = glCreateShader(GL_FRAGMENT_SHADER);
 	char* header = "#version 430 core\n";
-	char* vertex_src = read_file_quick(vertex_path, &frame_arena);
+	char* vertex_src = read_file(vertex_path, &frame_arena);
 	if(!vertex_src || !vertex_src[0]) { return 0; }
-	char* fragment_src = read_file_quick(fragment_path, &frame_arena);
+	char* fragment_src = read_file(fragment_path, &frame_arena);
 	if(!fragment_src || !fragment_src[0]) { return 0; }
-	char* vertex_src_arr[] = {header, read_file_quick("src/shader_shared.h", &frame_arena), vertex_src};
-	char* fragment_src_arr[] = {header, read_file_quick("src/shader_shared.h", &frame_arena), fragment_src};
+	char* vertex_src_arr[] = {header, read_file("src/shader_shared.h", &frame_arena), vertex_src};
+	char* fragment_src_arr[] = {header, read_file("src/shader_shared.h", &frame_arena), fragment_src};
 	glShaderSource(vertex, array_count(vertex_src_arr), vertex_src_arr, null);
 	glShaderSource(fragment, array_count(fragment_src_arr), fragment_src_arr, null);
 	glCompileShader(vertex);
@@ -1031,4 +1045,114 @@ func void handle_instant_movement_(int entity)
 	assert(entity != c_invalid_entity);
 	e.prev_x[entity] = e.x[entity];
 	e.prev_y[entity] = e.y[entity];
+}
+
+func s_config read_config_or_make_default(s_lin_arena* arena)
+{
+	s_config config = zero;
+
+	char* data = read_file("config.txt", arena);
+	if(!data)
+	{
+		return make_default_config();
+	}
+
+	typedef struct s_query_data
+	{
+		char* query;
+		void* target;
+		int type;
+	} s_query_data;
+
+	s_query_data queries[] =
+	{
+		{.query = "name=", .target = &config.player_name, .type = 0},
+		{.query = "ip=", .target = &config.ip, .type = 0},
+		{.query = "port=", .target = &config.port, .type = 1},
+	};
+
+	for(int query_i = 0; query_i < array_count(queries); query_i++)
+	{
+		s_query_data query = queries[query_i];
+		char* where = strstr(data, query.query);
+		if(!where)
+		{
+			log("Malformed config file. Generating default config");
+			return make_default_config();
+		}
+		char* start = where + strlen(query.query);
+		char* cursor = start;
+		while(true)
+		{
+			b8 do_thing = false;
+			if(*cursor == 0)
+			{
+				do_thing = true;
+			}
+			else if(*cursor == '\n' || *cursor == '\r')
+			{
+				do_thing = true;
+			}
+			else
+			{
+				cursor += 1;
+			}
+			if(do_thing)
+			{
+				if(cursor - start <= 0)
+				{
+					log("Malformed config file. Generating default config");
+					return make_default_config();
+				}
+				if(query.type == 0)
+				{
+					s_name* name = query.target;
+					memcpy(name->data, start, cursor - start);
+					name->len = (int)(cursor - start);
+					break;
+				}
+				else
+				{
+					char buffer[32] = zero;
+					memcpy(buffer, start, cursor - start);
+					*(int*)query.target = atoi(buffer);
+					break;
+				}
+			}
+		}
+		data = cursor;
+	}
+
+	return config;
+}
+
+func s_config make_default_config(void)
+{
+	s_config config = zero;
+	config.ip = make_name("at-taxation.at.ply.gg");
+	config.port = 62555;
+	return config;
+}
+
+func void save_config(s_config config)
+{
+	s_str_builder builder = zero;
+	builder_add_line(&builder, "name=%s", config.player_name.data);
+	builder_add_line(&builder, "ip=%s", config.ip.data);
+	builder_add_line(&builder, "port=%i", config.port);
+	b8 result = write_file("config.txt", builder.data, builder.len);
+	if(!result)
+	{
+		log("Failed to write config.txt");
+	}
+}
+
+func s_name make_name(char* str)
+{
+	s_name result = zero;
+	int len = (int)strlen(str);
+	assert(len < max_player_name_length);
+	memcpy(result.data, str, len);
+	result.len = len;
+	return result;
 }

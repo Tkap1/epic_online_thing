@@ -193,7 +193,7 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-func void update()
+func void update(void)
 {
 	for(int i = 0; i < c_num_threads; i++)
 	{
@@ -373,7 +373,7 @@ func void parse_packet(ENetEvent event)
 	}
 }
 
-func void revive_every_player()
+func void revive_every_player(void)
 {
 	for(int peer_i = 0; peer_i < peers.count; peer_i++)
 	{

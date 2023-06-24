@@ -44,7 +44,7 @@ func void physics_movement_system(int start, int count)
 	}
 }
 
-func int make_entity()
+func int make_entity(void)
 {
 	for(int i = 0; i < c_max_entities; i++)
 	{
@@ -86,6 +86,8 @@ func void zero_entity(int index)
 
 func int find_player_by_id(u32 id)
 {
+	if(id == 0) { return c_invalid_entity; }
+
 	for(int i = 0; i < c_max_entities; i++)
 	{
 		if(!e.active[i]) { continue; }
@@ -179,7 +181,7 @@ func int make_player(u32 player_id, b8 dead)
 	return entity;
 }
 
-func int make_projectile()
+func int make_projectile(void)
 {
 	int entity = make_entity();
 	assert(entity != c_invalid_entity);
@@ -354,7 +356,7 @@ func void spawn_system(s_level level)
 	}
 }
 
-func void init_levels()
+func void init_levels(void)
 {
 	#define speed(val) (1000.0f / val)
 
@@ -397,7 +399,7 @@ func void init_levels()
 	#undef speed
 }
 
-func void reset_level()
+func void reset_level(void)
 {
 	level_timer = 0;
 	memset(spawn_timer, 0, sizeof(spawn_timer));

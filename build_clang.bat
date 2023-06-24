@@ -33,7 +33,7 @@ set warn=%warn% -Wno-format-nonliteral
 set warn=%warn% -Wno-covered-switch-default
 set warn=%warn% -Wno-switch-enum
 set warn=%warn% -Wno-newline-eof
-set warn=%warn% -Wno-strict-prototypes
+@REM set warn=%warn% -Wno-strict-prototypes
 set warn=%warn% -Wno-incompatible-pointer-types-discards-qualifiers
 
 @REM maybe we want these

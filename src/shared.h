@@ -255,18 +255,19 @@ typedef struct s_level
 
 global s_level levels[c_max_levels];
 
-func int make_entity();
+func int make_entity(void);
 func void zero_entity(int index);
 func int find_player_by_id(u32 id);
 func void gravity_system(int start, int count);
 func int make_player(u32 player_id, b8 dead);
-func void init_levels();
-func int make_projectile();
+func void init_levels(void);
 func void expire_system(int start, int count);
 func void make_diagonal_bottom_projectile(int entity, float x, float angle);
 func void make_diagonal_top_projectile(int entity, float x, float opposite_x);
 func void make_side_projectile(int entity, float x, float x_dir);
 func s_name str_to_name(char* str);
+func int make_entity(void);
+func void init_levels(void);
 
 #define send_packet(peer, packet_id, data, flag) send_packet_(peer, packet_id, &data, sizeof(data), flag)
 func void send_packet_(ENetPeer* peer, e_packet packet_id, void* data, size_t size, int flag);
