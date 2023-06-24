@@ -62,6 +62,7 @@ int main(int argc, char** argv)
 	unreferenced(argc);
 	unreferenced(argv);
 
+	rng.seed = (u32)__rdtsc();
 	init_levels();
 
 	assert((c_max_entities % c_num_threads) == 0);
