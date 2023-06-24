@@ -2,6 +2,13 @@
 // #define c_port 9417
 #define c_port 9417
 
+
+#ifdef m_client
+#define handle_instant_movement(entity) handle_instant_movement_(entity)
+#else // m_client
+#define handle_instant_movement(entity)
+#endif
+
 typedef struct s_name
 {
 	int len;
@@ -201,10 +208,13 @@ typedef struct s_entities
 	b8 flags[c_max_entities][e_entity_flag_count];
 	b8 jumping[c_max_entities];
 	b8 dead[c_max_entities];
+	b8 drawn_last_render[c_max_entities];
 	e_entity_type type[c_max_entities];
 	int id[c_max_entities];
 	int jumps_done[c_max_entities];
 	u32 player_id[c_max_entities];
+	float prev_x[c_max_entities];
+	float prev_y[c_max_entities];
 	float x[c_max_entities];
 	float y[c_max_entities];
 	float sx[c_max_entities];

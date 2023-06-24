@@ -107,3 +107,8 @@ func float v2_angle(s_v2 v)
 {
 	return atan2f(v.y, v.x);
 }
+
+func float lerp(float a, float b, float t)
+{
+	return a + (b - a) * t;
+}

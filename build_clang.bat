@@ -48,8 +48,8 @@ set warn=%warn% -Wno-enum-constexpr-conversion
 @REM set warn=%warn% -Wno-unused-template
 
 pushd build
-	clang ..\src\client.c -shared -g -o game.dll %libs% %comp% %warn% -lXinput
-	clang ..\src\server.c -shared -g -o game.dll %libs% %comp% %warn%
+	clang ..\src\client.c -g -o %libs% %comp% %warn% -lXinput
+	clang ..\src\server.c -g -o %libs% %comp% %warn%
 popd
 
 stamp_timer.exe end

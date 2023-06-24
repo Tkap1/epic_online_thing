@@ -1,4 +1,4 @@
-//have been shocked, wglGetProc("glBufferData") failed, 
+//have been shocked, wglGetProc("glBufferData") failed,
 //then remembered that integrated graphic has incomplete gl-standards
 //for notebooks, choose graphicscard instead of embedded intel-graphics.
 //nv and amd look for theese exported flags
@@ -269,7 +269,7 @@ void gl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, G
 func b8 is_key_down(int key)
 {
 	assert(key < c_max_keys);
-	return g_input.keys[key].is_down;
+	return g_input.keys[key].is_down || g_input.keys[key].count >= 2;
 }
 
 func b8 is_key_up(int key)

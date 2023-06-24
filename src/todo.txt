@@ -1,4 +1,6 @@
 
+improve input system so it works for both windows and linux
+
 sounds
 
 when connecting, send seed and current level

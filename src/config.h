@@ -3,6 +3,7 @@
 #define c_base_res (s_v2){1366, 768}
 #define c_spawn_pos (s_v2){c_base_res.x * 0.5f, c_base_res.y * 0.5f}
 #define c_updates_per_second (100)
+// #define c_updates_per_second (5)
 #define c_update_delay (1.0 / c_updates_per_second)
 
 #define c_origin_topleft (s_v2){1.0f, -1.0f}

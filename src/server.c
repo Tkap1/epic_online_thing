@@ -80,7 +80,7 @@ int main(int argc, char** argv)
 
 				case ENET_EVENT_TYPE_CONNECT:
 				{
-					printf("Someone connected!\n");
+					log("Someone connected!");
 
 					if(peers.count >= c_max_peers) { break; }
 
@@ -161,7 +161,7 @@ int main(int argc, char** argv)
 						send_packet(peer, e_packet_player_disconnected, data, ENET_PACKET_FLAG_RELIABLE);
 					}
 
-					printf("Someone disconnected!\n");
+					log("Someone disconnected!");
 
 				} break;
 
@@ -193,6 +193,21 @@ int main(int argc, char** argv)
 
 func void update()
 {
+	for(int i = 0; i < c_num_threads; i++)
+	{
+		move_system(i * c_entities_per_thread, c_entities_per_thread);
+		player_movement_system(i * c_entities_per_thread, c_entities_per_thread);
+		physics_movement_system(i * c_entities_per_thread, c_entities_per_thread);
+	}
+	for(int i = 0; i < c_num_threads; i++)
+	{
+		bounds_check_system(i * c_entities_per_thread, c_entities_per_thread);
+	}
+	for(int i = 0; i < c_num_threads; i++)
+	{
+		projectile_spawner_system(i * c_entities_per_thread, c_entities_per_thread);
+	}
+
 	spawn_system(levels[current_level]);
 
 	b8 at_least_one_player_alive = false;
@@ -230,21 +245,6 @@ func void update()
 		data.current_level = current_level;
 		data.seed = rng.seed;
 		broadcast_packet(host, e_packet_reset_level, data, ENET_PACKET_FLAG_RELIABLE);
-	}
-
-	for(int i = 0; i < c_num_threads; i++)
-	{
-		move_system(i * c_entities_per_thread, c_entities_per_thread);
-		player_movement_system(i * c_entities_per_thread, c_entities_per_thread);
-		physics_movement_system(i * c_entities_per_thread, c_entities_per_thread);
-	}
-	for(int i = 0; i < c_num_threads; i++)
-	{
-		bounds_check_system(i * c_entities_per_thread, c_entities_per_thread);
-	}
-	for(int i = 0; i < c_num_threads; i++)
-	{
-		projectile_spawner_system(i * c_entities_per_thread, c_entities_per_thread);
 	}
 }
 
