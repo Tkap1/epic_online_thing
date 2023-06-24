@@ -1,7 +1,6 @@
 
 play a sound when we beat level
 reset when all levels beaten
-explain to create local server and test for yourself in readme
 
 improve input system so it works for both windows and linux
 
