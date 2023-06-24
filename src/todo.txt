@@ -1,20 +1,13 @@
 
-play a sound when we beat level
 reset when all levels beaten
 
 improve input system so it works for both windows and linux
 
-sounds
-
 when connecting, send seed and current level
-cheat key when singleplayer to move between levels
-background
-linux port (Aware)
 server remembering players (is this possible without accounts? maybe connectID is consistent? but surely it wont on ip change)
 	i would be nice to know how many maps each player has survived
 more levels
 leaderboard?
-the inteprolated rendering thing
 
 multithreading?
 

@@ -52,6 +52,7 @@ global float total_time;
 global s_sound big_dog_sound = zero;
 global s_sound jump_sound = zero;
 global s_sound jump2_sound = zero;
+global s_sound win_sound = zero;
 
 global s_game_window g_window;
 global s_input* g_input;
@@ -112,6 +113,7 @@ void update_game(s_platform_data platform_data, s_platform_funcs platform_funcs)
 		jump_sound = load_wav("assets/jump.wav", &frame_arena);
 		jump2_sound = load_wav("assets/jump2.wav", &frame_arena);
 		big_dog_sound = load_wav("assets/big_dog.wav", &frame_arena);
+		win_sound = load_wav("assets/win.wav", &frame_arena);
 
 		g_font_arr[e_font_small] = load_font("assets/consola.ttf", 24, &frame_arena);
 		g_font_arr[e_font_medium] = load_font("assets/consola.ttf", 36, &frame_arena);
@@ -591,6 +593,7 @@ func void parse_packet(ENetEvent event, s_config config)
 			reset_level();
 			revive_every_player();
 			log("Beat level %i", current_level);
+			play_sound_if_supported(win_sound);
 		} break;
 
 		case e_packet_reset_level:
