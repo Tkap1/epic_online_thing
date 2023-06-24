@@ -526,6 +526,7 @@ func void parse_packet(ENetEvent event, s_config config)
 			s_already_connected_player_from_server data = *(s_already_connected_player_from_server*)cursor;
 			int entity = make_player(data.id, data.dead, data.color);
 			e.name[entity] = data.name;
+			e.color[entity] = data.color;
 		} break;
 
 		case e_packet_another_player_connected:
