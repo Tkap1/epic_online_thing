@@ -29,7 +29,7 @@ typedef enum e_packet
 	e_packet_beat_level,
 	e_packet_reset_level,
 	e_packet_player_got_hit,
-	e_packet_player_name,
+	e_packet_player_appearance,
 	e_packet_cheat_next_level,
 	e_packet_cheat_previous_level,
 } e_packet;
@@ -53,6 +53,7 @@ typedef struct s_already_connected_player_from_server
 	u32 id;
 	b8 dead;
 	s_name name;
+	s_v4 color;
 } s_already_connected_player_from_server;
 
 typedef struct s_already_connected_player_from_client
@@ -156,16 +157,18 @@ typedef struct s_player_got_hit_from_client
 	int unused;
 } s_player_got_hit_from_client;
 
-typedef struct s_player_name_from_server
+typedef struct s_player_appearance_from_server
 {
 	u32 id;
 	s_name name;
-} s_player_name_from_server;
+	s_v4 color;
+} s_player_appearance_from_server;
 
-typedef struct s_player_name_from_client
+typedef struct s_player_appearance_from_client
 {
 	s_name name;
-} s_player_name_from_client;
+	s_v4 color;
+} s_player_appearance_from_client;
 
 typedef struct s_cheat_previous_level_from_server
 {
@@ -259,7 +262,7 @@ func int make_entity(void);
 func void zero_entity(int index);
 func int find_player_by_id(u32 id);
 func void gravity_system(int start, int count);
-func int make_player(u32 player_id, b8 dead);
+func int make_player(u32 player_id, b8 dead, s_v4 color);
 func void init_levels(void);
 func void expire_system(int start, int count);
 func void make_diagonal_bottom_projectile(int entity, float x, float angle);

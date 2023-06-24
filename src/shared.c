@@ -153,7 +153,7 @@ func void projectile_bounds_check_system(int start, int count)
 }
 
 
-func int make_player(u32 player_id, b8 dead)
+func int make_player(u32 player_id, b8 dead, s_v4 color)
 {
 	int entity = make_entity();
 	e.x[entity] = c_spawn_pos.x;
@@ -166,6 +166,7 @@ func int make_player(u32 player_id, b8 dead)
 	e.dead[entity] = dead;
 	e.flags[entity][e_entity_flag_draw] = true;
 	e.type[entity] = e_entity_type_player;
+	e.color[entity] = color;
 
 	#ifdef m_client
 	if(player_id == my_id)

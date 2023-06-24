@@ -127,6 +127,7 @@ typedef struct s_config
 	s_name player_name;
 	s_name ip;
 	int port;
+	s_v4 color;
 } s_config;
 
 #ifdef _WIN32
@@ -146,8 +147,8 @@ func void render(float dt);
 func b8 check_for_shader_errors(u32 id, char* out_error);
 func void input_system(int start, int count);
 func void draw_system(int start, int count, float dt);
-func void parse_packet(ENetEvent event);
-func void enet_loop(ENetHost* client, int timeout);
+func void parse_packet(ENetEvent event, s_config config);
+func void enet_loop(ENetHost* client, int timeout, s_config config);
 func void revive_every_player(void);
 func void draw_circle_system(int start, int count, float dt);
 func void collision_system(int start, int count);
@@ -158,10 +159,10 @@ func s_v2 get_text_size_with_count(char* text, e_font font_id, int count);
 func void connect_to_server(s_config config);
 func u32 load_shader(char* vertex_path, char* fragment_path);
 func void handle_instant_movement_(int entity);
-func s_config make_default_config(void);
+func s_config make_default_config(s_rng* in_rng);
 func s_name make_name(char* str);
 func void save_config(s_config config);
-func s_config read_config_or_make_default(s_lin_arena* arena);
+func s_config read_config_or_make_default(s_lin_arena* arena, s_rng* in_rng);
 
 #ifdef _WIN32
 func void do_gamepad_shit(void);

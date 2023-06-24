@@ -95,6 +95,7 @@ int main(int argc, char** argv)
 						data.id = id;
 						data.dead = e.dead[entity];
 						data.name = e.name[entity];
+						data.color = e.color[entity];
 						send_packet(event.peer, e_packet_already_connected_player, data, ENET_PACKET_FLAG_RELIABLE);
 					}
 
@@ -119,7 +120,7 @@ int main(int argc, char** argv)
 					s_peer_list_add(&peers, event.peer);
 					peer_ids[peers.count - 1] = event.peer->connectID;
 
-					make_player(event.peer->connectID, true);
+					make_player(event.peer->connectID, true, v41f(1));
 
 				} break;
 
@@ -307,10 +308,10 @@ func void parse_packet(ENetEvent event)
 
 		} break;
 
-		case e_packet_player_name:
+		case e_packet_player_appearance:
 		{
 			u32 player_id = event.peer->connectID;
-			s_player_name_from_client data = *(s_player_name_from_client*)cursor;
+			s_player_appearance_from_client data = *(s_player_appearance_from_client*)cursor;
 
 			if(data.name.len <= 3 || data.name.len > max_player_name_length)
 			{
@@ -330,10 +331,11 @@ func void parse_packet(ENetEvent event)
 					ENetPeer* peer = peers.elements[peer_i];
 					if(peer->connectID == player_id) { continue; }
 
-					s_player_name_from_server out_data = zero;
+					s_player_appearance_from_server out_data = zero;
 					out_data.id = player_id;
 					out_data.name = data.name;
-					send_packet(peer, e_packet_player_name, out_data, ENET_PACKET_FLAG_RELIABLE);
+					out_data.color = data.color;
+					send_packet(peer, e_packet_player_appearance, out_data, ENET_PACKET_FLAG_RELIABLE);
 				}
 			}
 

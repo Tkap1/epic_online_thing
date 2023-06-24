@@ -24,8 +24,8 @@
 #include "window.h"
 #include "memory.h"
 #include "file.h"
-#include "client.h"
 #include "rng.h"
+#include "client.h"
 #include "shader_shared.h"
 #include "str_builder.h"
 
@@ -70,7 +70,7 @@ int main(int argc, char** argv)
 
 	frame_arena = make_lin_arena(10 * c_mb);
 
-	s_config config = read_config_or_make_default(&frame_arena);
+	s_config config = read_config_or_make_default(&frame_arena, &rng);
 
 	create_window();
 
@@ -104,7 +104,7 @@ int main(int argc, char** argv)
 
 		if(g_connected)
 		{
-			enet_loop(g_client, 0);
+			enet_loop(g_client, 0, config);
 		}
 
 		MSG msg = zero;
@@ -115,7 +115,7 @@ int main(int argc, char** argv)
 				if(g_connected)
 				{
 					enet_peer_disconnect(server, 0);
-					enet_loop(g_client, 1000);
+					enet_loop(g_client, 1000, config);
 				}
 				running = false;
 			}
@@ -458,10 +458,10 @@ func void draw_system(int start, int count, float dt)
 		float x = lerp(e.prev_x[ii], e.x[ii], dt);
 		float y = lerp(e.prev_y[ii], e.y[ii], dt);
 
-		s_v4 color = v41f(1);
+		s_v4 color = e.color[ii];
 		if(e.dead[ii])
 		{
-			color = v41f(0.25f);
+			color.w = 0.25f;
 		}
 		draw_rect(v2(x, y), 0, v2(e.sx[ii], e.sy[ii]), color, (s_transform)zero);
 
@@ -506,7 +506,7 @@ func void draw_circle_system(int start, int count, float dt)
 	}
 }
 
-func void parse_packet(ENetEvent event)
+func void parse_packet(ENetEvent event, s_config config)
 {
 	u8* cursor = event.packet->data;
 	e_packet packet_id = *(e_packet*)buffer_read(&cursor, sizeof(packet_id));
@@ -517,20 +517,20 @@ func void parse_packet(ENetEvent event)
 		{
 			s_welcome_from_server data = *(s_welcome_from_server*)cursor;
 			my_id = data.id;
-			make_player(data.id, true);
+			make_player(data.id, true, config.color);
 		} break;
 
 		case e_packet_already_connected_player:
 		{
 			s_already_connected_player_from_server data = *(s_already_connected_player_from_server*)cursor;
-			int entity = make_player(data.id, data.dead);
+			int entity = make_player(data.id, data.dead, data.color);
 			e.name[entity] = data.name;
 		} break;
 
 		case e_packet_another_player_connected:
 		{
 			s_another_player_connected_from_server data = *(s_another_player_connected_from_server*)cursor;
-			make_player(data.id, data.dead);
+			make_player(data.id, data.dead, v41f(1));
 		} break;
 
 		case e_packet_player_update:
@@ -590,15 +590,16 @@ func void parse_packet(ENetEvent event)
 			}
 		} break;
 
-		case e_packet_player_name:
+		case e_packet_player_appearance:
 		{
-			s_player_name_from_server data = *(s_player_name_from_server*)cursor;
+			s_player_appearance_from_server data = *(s_player_appearance_from_server*)cursor;
 			assert(data.id != my_id);
 
 			int entity = find_player_by_id(data.id);
 			if(entity != c_invalid_entity)
 			{
 				e.name[entity] = data.name;
+				e.color[entity] = data.color;
 				log("Set %u's name to %s", data.id, e.name[entity].data);
 			}
 		} break;
@@ -618,7 +619,7 @@ func void parse_packet(ENetEvent event)
 	}
 }
 
-func void enet_loop(ENetHost* client, int timeout)
+func void enet_loop(ENetHost* client, int timeout, s_config config)
 {
 	ENetEvent event = zero;
 	while(enet_host_service(client, &event, timeout) > 0)
@@ -633,9 +634,10 @@ func void enet_loop(ENetHost* client, int timeout)
 			{
 				log("Connected!");
 
-				s_player_name_from_client data;
+				s_player_appearance_from_client data;
 				data.name = main_menu.player_name;
-				send_packet(server, e_packet_player_name, data, ENET_PACKET_FLAG_RELIABLE);
+				data.color = config.color;
+				send_packet(server, e_packet_player_appearance, data, ENET_PACKET_FLAG_RELIABLE);
 
 			} break;
 
@@ -647,7 +649,7 @@ func void enet_loop(ENetHost* client, int timeout)
 
 			case ENET_EVENT_TYPE_RECEIVE:
 			{
-				parse_packet(event);
+				parse_packet(event, config);
 				enet_packet_destroy(event.packet);
 			} break;
 
@@ -1047,14 +1049,14 @@ func void handle_instant_movement_(int entity)
 	e.prev_y[entity] = e.y[entity];
 }
 
-func s_config read_config_or_make_default(s_lin_arena* arena)
+func s_config read_config_or_make_default(s_lin_arena* arena, s_rng* in_rng)
 {
 	s_config config = zero;
 
 	char* data = read_file("config.txt", arena);
 	if(!data)
 	{
-		return make_default_config();
+		return make_default_config(in_rng);
 	}
 
 	typedef struct s_query_data
@@ -1069,6 +1071,7 @@ func s_config read_config_or_make_default(s_lin_arena* arena)
 		{.query = "name=", .target = &config.player_name, .type = 0},
 		{.query = "ip=", .target = &config.ip, .type = 0},
 		{.query = "port=", .target = &config.port, .type = 1},
+		{.query = "color=", .target = &config.color, .type = 2},
 	};
 
 	for(int query_i = 0; query_i < array_count(queries); query_i++)
@@ -1078,7 +1081,7 @@ func s_config read_config_or_make_default(s_lin_arena* arena)
 		if(!where)
 		{
 			log("Malformed config file. Generating default config");
-			return make_default_config();
+			return make_default_config(in_rng);
 		}
 		char* start = where + strlen(query.query);
 		char* cursor = start;
@@ -1102,8 +1105,10 @@ func s_config read_config_or_make_default(s_lin_arena* arena)
 				if(cursor - start <= 0)
 				{
 					log("Malformed config file. Generating default config");
-					return make_default_config();
+					return make_default_config(in_rng);
 				}
+
+				// @Note(tkap, 24/06/2023): string
 				if(query.type == 0)
 				{
 					s_name* name = query.target;
@@ -1111,11 +1116,30 @@ func s_config read_config_or_make_default(s_lin_arena* arena)
 					name->len = (int)(cursor - start);
 					break;
 				}
-				else
+
+				// @Note(tkap, 24/06/2023): int
+				else if(query.type == 1)
 				{
 					char buffer[32] = zero;
 					memcpy(buffer, start, cursor - start);
 					*(int*)query.target = atoi(buffer);
+					break;
+				}
+
+				// @Note(tkap, 24/06/2023): color
+				else if(query.type == 2)
+				{
+					char buffer[32] = zero;
+					memcpy(buffer, start, cursor - start);
+					int val = (int)strtol(buffer, null, 16);
+					s_v4* color = query.target;
+					float r = ((val & 0xFF0000) >> 16) / 255.0f;
+					float g = ((val & 0x00FF00) >> 8) / 255.0f;
+					float b = ((val & 0x0000FF) >> 0) / 255.0f;
+					color->x = r;
+					color->y = g;
+					color->z = b;
+					color->w = 1;
 					break;
 				}
 			}
@@ -1126,11 +1150,15 @@ func s_config read_config_or_make_default(s_lin_arena* arena)
 	return config;
 }
 
-func s_config make_default_config(void)
+func s_config make_default_config(s_rng* in_rng)
 {
 	s_config config = zero;
 	config.ip = make_name("at-taxation.at.ply.gg");
 	config.port = 62555;
+	config.color.x = (randu(in_rng) % 256) / 255.0f;
+	config.color.y = (randu(in_rng) % 256) / 255.0f;
+	config.color.z = (randu(in_rng) % 256) / 255.0f;
+	config.color.w = 1;
 	return config;
 }
 
@@ -1140,6 +1168,11 @@ func void save_config(s_config config)
 	builder_add_line(&builder, "name=%s", config.player_name.data);
 	builder_add_line(&builder, "ip=%s", config.ip.data);
 	builder_add_line(&builder, "port=%i", config.port);
+
+	int r = roundfi(config.color.x * 255);
+	int g = roundfi(config.color.y * 255);
+	int b = roundfi(config.color.z * 255);
+	builder_add(&builder, "color=%02x%02x%02x", r, g, b);
 	b8 result = write_file("config.txt", builder.data, builder.len);
 	if(!result)
 	{

@@ -112,3 +112,8 @@ func float lerp(float a, float b, float t)
 {
 	return a + (b - a) * t;
 }
+
+func int roundfi(float x)
+{
+	return (int)roundf(x);
+}
