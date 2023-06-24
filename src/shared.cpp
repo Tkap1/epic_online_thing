@@ -396,6 +396,9 @@ func void init_levels(void)
 	levels[11].spawn_delay[e_projectile_type_diagonal_left] = speed(3500);
 	levels[11].spawn_delay[e_projectile_type_diagonal_bottom_right] = speed(2500);
 
+	levels[12].spawn_delay[e_projectile_type_top_basic] = speed(2000);
+	levels[12].spawn_delay[e_projectile_type_spawner] = speed(1500);
+
 	current_level = 0;
 	#undef speed
 }
