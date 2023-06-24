@@ -8,7 +8,7 @@ func void draw_rect(s_v2 pos, int layer, s_v2 size, s_v4 color, s_transform t)
 	t.uv_min = v2(0, 0);
 	t.uv_max = v2(1, 1);
 	t.mix_color = v41f(1);
-	s_transform_list_add(&transforms, t);
+	transforms.add(t);
 }
 
 func void draw_circle(s_v2 pos, int layer, float radius, s_v4 color, s_transform t)
@@ -21,7 +21,7 @@ func void draw_circle(s_v2 pos, int layer, float radius, s_v4 color, s_transform
 	t.uv_min = v2(0, 0);
 	t.uv_max = v2(1, 1);
 	t.mix_color = v41f(1);
-	s_transform_list_add(&transforms, t);
+	transforms.add(t);
 }
 
 func void draw_light(s_v2 pos, int layer, float radius, s_v4 color, s_transform t)
@@ -34,7 +34,7 @@ func void draw_light(s_v2 pos, int layer, float radius, s_v4 color, s_transform 
 	t.uv_min = v2(0, 0);
 	t.uv_max = v2(1, 1);
 	t.mix_color = v41f(1);
-	s_transform_list_add(&transforms, t);
+	transforms.add(t);
 }
 
 func void draw_texture(s_v2 pos, int layer, s_v2 size, s_v4 color, s_transform t)
@@ -47,7 +47,7 @@ func void draw_texture(s_v2 pos, int layer, s_v2 size, s_v4 color, s_transform t
 	t.uv_min = v2(0, 0);
 	t.uv_max = v2(1, 1);
 	t.mix_color = v41f(1);
-	s_transform_list_add(&transforms, t);
+	transforms.add(t);
 }
 
 func void draw_text(char* text, s_v2 in_pos, int layer, s_v4 color, e_font font_id, b8 centered, s_transform t)
@@ -84,7 +84,7 @@ func void draw_text(char* text, s_v2 in_pos, int layer, s_v4 color, e_font font_
 		t.uv_min = glyph.uv_min;
 		t.uv_max = glyph.uv_max;
 		t.origin_offset = c_origin_bottomleft;
-		s_transform_list_add(&text_arr[font_id], t);
+		text_arr[font_id].add(t);
 
 		pos.x += glyph.advance_width * font->scale;
 
