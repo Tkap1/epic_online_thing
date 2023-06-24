@@ -96,10 +96,6 @@ func s_char_event get_char_event();
 void gl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam);
 
 #ifdef _WIN32
-func void do_gamepad_shit(void);
-#endif // _WIN32
-
-#ifdef _WIN32
 #ifdef m_debug
 func void hot_reload_shaders(void);
 #endif // m_debug

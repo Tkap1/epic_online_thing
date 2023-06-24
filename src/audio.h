@@ -25,3 +25,5 @@ struct s_data_chunk
 	u32 sub_chunk2_size;
 };
 #pragma pack(pop)
+
+func b8 play_sound_if_supported(s_sound sound);

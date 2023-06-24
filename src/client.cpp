@@ -80,6 +80,8 @@ m_gl_funcs
 
 void update_game(s_platform_data platform_data, s_platform_funcs platform_funcs)
 {
+	assert((c_max_entities % c_num_threads) == 0);
+
 	g_platform_funcs = platform_funcs;
 	g_platform_data = platform_data;
 	char_event_arr = platform_data.char_event_arr;
@@ -145,10 +147,6 @@ void update_game(s_platform_data platform_data, s_platform_funcs platform_funcs)
 	game.update_timer += g_platform_data.time_passed;
 	while(game.update_timer >= c_update_delay)
 	{
-		#ifdef _WIN32
-		// do_gamepad_shit();
-		#endif // _WIN32
-
 		game.update_timer -= c_update_delay;
 		memcpy(e.prev_x, e.x, sizeof(e.x));
 		memcpy(e.prev_y, e.y, sizeof(e.y));
@@ -176,22 +174,6 @@ void update_game(s_platform_data platform_data, s_platform_funcs platform_funcs)
 	}
 
 }
-
-#if 0
-int main(int argc, char** argv)
-{
-
-	assert((c_max_entities % c_num_threads) == 0);
-
-	f64 update_timer = 0;
-	while(running)
-	{
-
-		f64 start_of_frame_seconds = get_seconds();
-
-	return 0;
-}
-#endif
 
 func void update(s_config config)
 {
@@ -470,11 +452,11 @@ func void input_system(int start, int count)
 		{
 			if(e.jumps_done[ii] == 0)
 			{
-				g_platform_funcs.play_sound(jump_sound);
+				play_sound_if_supported(jump_sound);
 			}
 			else
 			{
-				g_platform_funcs.play_sound(jump2_sound);
+				play_sound_if_supported(jump2_sound);
 			}
 			float jump_multiplier = e.jumps_done[ii] == 0 ? 1.0f : 0.9f;
 			e.vel_y[ii] = c_jump_strength * jump_multiplier;
@@ -567,6 +549,7 @@ func void parse_packet(ENetEvent event, s_config config)
 			int entity = make_player(data.id, data.dead, data.color);
 			e.name[entity] = data.name;
 			e.color[entity] = data.color;
+			log("Got already connected data of %u", data.id);
 		} break;
 
 		case e_packet_another_player_connected:

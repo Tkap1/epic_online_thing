@@ -113,8 +113,6 @@ struct s_sound
 };
 
 typedef void* (*t_load_gl_func)(char*);
-typedef char* (*t_write_file)(char*);
-typedef char* (*t_read_file)(char*);
 typedef b8 (*t_play_sound)(s_sound);
 
 struct s_game_window
@@ -162,8 +160,6 @@ struct s_platform_data
 
 struct s_platform_funcs
 {
-	// t_write_file write_file;
-	// t_read_file read_file;
 	t_load_gl_func load_gl_func;
 	t_play_sound play_sound;
 };
