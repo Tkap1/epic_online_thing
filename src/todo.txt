@@ -1,5 +1,5 @@
 
-there appears to be a bug with names. I'm not seeing new player names
+explain to create local server and test for yourself in readme
 
 improve input system so it works for both windows and linux
 

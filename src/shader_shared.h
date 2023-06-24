@@ -1,11 +1,11 @@
 
 
 #ifdef m_app
-	#define shader_v2 _Alignas(8) s_v2
-	#define shader_v4 _Alignas(16) s_v4
-	#define shader_float _Alignas(4) float
-	#define shader_int _Alignas(4) int
-	#define shader_bool _Alignas(4) b32
+	#define shader_v2 alignas(8) s_v2
+	#define shader_v4 alignas(16) s_v4
+	#define shader_float alignas(4) float
+	#define shader_int alignas(4) int
+	#define shader_bool alignas(4) b32
 #else
 	#define shader_v2 vec2
 	#define shader_v4 vec4

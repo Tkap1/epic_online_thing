@@ -80,7 +80,7 @@ func void zero_entity(int index)
 	e.time_lived[index] = 0;
 	e.duration[index] = 0;
 	e.spawn_timer[index] = 0;
-	e.name[index] = (s_name)zero;
+	e.name[index] = zero;
 	e.drawn_last_render[index] = false;
 }
 

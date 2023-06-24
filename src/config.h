@@ -1,14 +1,19 @@
 
 
-#define c_base_res (s_v2){1366, 768}
-#define c_spawn_pos (s_v2){c_base_res.x * 0.5f, c_base_res.y * 0.5f}
+global constexpr s_v2 c_base_res = {1366, 768};
+global constexpr s_v2 c_spawn_pos = {c_base_res.x * 0.5f, c_base_res.y * 0.5f};
+
+global constexpr int c_num_channels = 2;
+global constexpr int c_sample_rate = 44100;
+global constexpr int c_max_concurrent_sounds = 8;
+
 #define c_updates_per_second (100)
 // #define c_updates_per_second (5)
 #define c_update_delay (1.0 / c_updates_per_second)
 
-#define c_origin_topleft (s_v2){1.0f, -1.0f}
-#define c_origin_bottomleft (s_v2){1.0f, 1.0f}
-#define c_origin_center (s_v2){0, 0}
+#define c_origin_topleft {1.0f, -1.0f}
+#define c_origin_bottomleft {1.0f, 1.0f}
+#define c_origin_center {0, 0}
 
 #define c_num_threads (1)
 #define c_max_entities (4096)

@@ -1,19 +1,19 @@
 
 #define pi (3.141f)
 
-typedef struct s_v2
+struct s_v2
 {
 	float x;
 	float y;
-} s_v2;
+};
 
-typedef struct s_v4
+struct s_v4
 {
 	float x;
 	float y;
 	float z;
 	float w;
-} s_v4;
+};
 
 func s_v2 v2(float x, float y)
 {

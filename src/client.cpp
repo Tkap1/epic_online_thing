@@ -5,6 +5,7 @@
 
 #ifdef _WIN32
 #include <xinput.h>
+#include <xaudio2.h>
 #endif
 
 #include <gl/GL.h>
@@ -29,6 +30,10 @@
 #include "shader_shared.h"
 #include "str_builder.h"
 
+#ifdef _WIN32
+#include "audio.h"
+#endif // _WIN32
+
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STBTT_assert assert
 #include "external/stb_truetype.h"
@@ -49,12 +54,20 @@ global ENetHost* g_client;
 global s_main_menu main_menu;
 global u32 g_program;
 
-#include "draw.c"
-#include "memory.c"
-#include "file.c"
-#include "window.c"
-#include "shared.c"
-#include "str_builder.c"
+s_sound big_dog_sound = zero;
+s_sound jump_sound = zero;
+s_sound jump2_sound = zero;
+
+#include "draw.cpp"
+#include "memory.cpp"
+#include "file.cpp"
+#include "window.cpp"
+#include "shared.cpp"
+#include "str_builder.cpp"
+
+#ifdef _WIN32
+#include "audio.cpp"
+#endif // _WIN32
 
 
 int main(int argc, char** argv)
@@ -65,11 +78,20 @@ int main(int argc, char** argv)
 	rng.seed = (u32)__rdtsc();
 	init_levels();
 
+
+	#ifdef _WIN32
+	init_audio();
+	#endif // _WIN32
+
 	assert((c_max_entities % c_num_threads) == 0);
 
 	init_performance();
 
 	frame_arena = make_lin_arena(10 * c_mb);
+
+	jump_sound = load_wav("assets/jump.wav", &frame_arena);
+	jump2_sound = load_wav("assets/jump2.wav", &frame_arena);
+	big_dog_sound = load_wav("assets/big_dog.wav", &frame_arena);
 
 	s_config config = read_config_or_make_default(&frame_arena, &rng);
 
@@ -161,9 +183,9 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-
 func void update(s_config config)
 {
+
 	switch(state)
 	{
 		case e_state_main_menu:
@@ -286,17 +308,17 @@ func void render(float dt)
 		{
 			s_v2 pos = g_window.center;
 			pos.y -= 100;
-			draw_text("Enter character name", pos, 0, v41f(1), e_font_medium, true, (s_transform)zero);
+			draw_text("Enter character name", pos, 0, v41f(1), e_font_medium, true, zero);
 			pos.y += 100;
 			if(main_menu.player_name.len > 0)
 			{
-				draw_text(main_menu.player_name.data, pos, 0, v41f(1), e_font_medium, true, (s_transform)zero);
+				draw_text(main_menu.player_name.data, pos, 0, v41f(1), e_font_medium, true, zero);
 				pos.y += 100;
 			}
 
 			if(main_menu.error_str)
 			{
-				draw_text(main_menu.error_str, pos, 0, v4(1, 0, 0, 1), e_font_medium, true, (s_transform)zero);
+				draw_text(main_menu.error_str, pos, 0, v4(1, 0, 0, 1), e_font_medium, true, zero);
 				pos.y += 100;
 			}
 		} break;
@@ -316,20 +338,20 @@ func void render(float dt)
 					g_window.center.x,
 					g_window.size.y * 0.3f
 				);
-				draw_text(format_text("%i", (int)ceilf(seconds_left)), pos, 1, v41f(1), e_font_medium, true, (s_transform)zero);
+				draw_text(format_text("%i", (int)ceilf(seconds_left)), pos, 1, v41f(1), e_font_medium, true, zero);
 			}
 
 			// @Note(tkap, 23/06/2023): Display current level
 			{
 				s_v2 pos = v2(20, 20);
-				draw_text(format_text("Level %i", current_level + 1), pos, 1, v41f(1), e_font_medium, false, (s_transform)zero);
+				draw_text(format_text("Level %i", current_level + 1), pos, 1, v41f(1), e_font_medium, false, zero);
 			}
 
 
 		} break;
 	}
 
-	draw_rect(g_window.center, 0, g_window.size, v41f(1), (s_transform){.do_background = true});
+	draw_rect(g_window.center, 0, g_window.size, v41f(1), {.do_background = true});
 
 	{
 		glUseProgram(g_program);
@@ -436,6 +458,14 @@ func void input_system(int start, int count)
 		b8 can_jump = e.jumps_done[ii] < 2;
 		if(can_jump && jump)
 		{
+			if(e.jumps_done[ii] == 0)
+			{
+				play_sound(jump_sound);
+			}
+			else
+			{
+				play_sound(jump2_sound);
+			}
 			float jump_multiplier = e.jumps_done[ii] == 0 ? 1.0f : 0.9f;
 			e.vel_y[ii] = c_jump_strength * jump_multiplier;
 			e.jumping[ii] = true;
@@ -464,7 +494,7 @@ func void draw_system(int start, int count, float dt)
 		{
 			color.w = 0.25f;
 		}
-		draw_rect(v2(x, y), 0, v2(e.sx[ii], e.sy[ii]), color, (s_transform)zero);
+		draw_rect(v2(x, y), 0, v2(e.sx[ii], e.sy[ii]), color, zero);
 
 		s_v2 pos = v2(
 			x, y
@@ -475,13 +505,13 @@ func void draw_system(int start, int count, float dt)
 		{
 			if(e.player_id[ii] == my_id)
 			{
-				draw_text(main_menu.player_name.data, pos, 1, color, e_font_small, true, (s_transform)zero);
+				draw_text(main_menu.player_name.data, pos, 1, color, e_font_small, true, zero);
 			}
 			else
 			{
 				if(e.name[ii].len > 0)
 				{
-					draw_text(e.name[ii].data, pos, 1, color, e_font_small, true, (s_transform)zero);
+					draw_text(e.name[ii].data, pos, 1, color, e_font_small, true, zero);
 				}
 			}
 		}
@@ -501,9 +531,9 @@ func void draw_circle_system(int start, int count, float dt)
 
 		s_v4 light_color = e.color[ii];
 		light_color.w *= 0.2f;
-		draw_light(v2(x, y), 0, e.sx[ii] * 8.0f, light_color, (s_transform)zero);
-		draw_circle(v2(x, y), 1, e.sx[ii], e.color[ii], (s_transform)zero);
-		draw_circle(v2(x, y), 2, e.sx[ii] * 0.7f, v41f(1), (s_transform)zero);
+		draw_light(v2(x, y), 0, e.sx[ii] * 8.0f, light_color, zero);
+		draw_circle(v2(x, y), 1, e.sx[ii], e.color[ii], zero);
+		draw_circle(v2(x, y), 2, e.sx[ii] * 0.7f, v41f(1), zero);
 	}
 }
 
@@ -733,7 +763,7 @@ func s_font load_font(char* path, float font_size, s_lin_arena* arena)
 	}
 
 	// @Fixme(tkap, 23/06/2023): Use arena
-	u8* gl_bitmap = calloc(1, sizeof(u8) * 4 * total_width * total_height);
+	u8* gl_bitmap = (u8*)calloc(1, sizeof(u8) * 4 * total_width * total_height);
 
 	int current_x = padding;
 	for(int char_i = 0; char_i < max_chars; char_i++)
@@ -803,7 +833,7 @@ func s_texture load_texture_from_data(void* data, int width, int height, u32 fil
 func s_v2 get_text_size_with_count(char* text, e_font font_id, int count)
 {
 	assert(count >= 0);
-	if(count <= 0) { return (s_v2)zero; }
+	if(count <= 0) { return zero; }
 	s_font* font = &g_font_arr[font_id];
 
 	s_v2 size = zero;
@@ -900,11 +930,11 @@ func void do_gamepad_shit(void)
 		}
 	}
 
-	typedef struct s_button_to_key
+	struct s_button_to_key
 	{
 		int button;
 		int key;
-	} s_button_to_key;
+	};
 
 	s_button_to_key button_to_key_arr[] = {
 		// {XINPUT_GAMEPAD_DPAD_UP, key_space},
@@ -1061,12 +1091,12 @@ func s_config read_config_or_make_default(s_lin_arena* arena, s_rng* in_rng)
 		return make_default_config(in_rng);
 	}
 
-	typedef struct s_query_data
+	struct s_query_data
 	{
 		char* query;
 		void* target;
 		int type;
-	} s_query_data;
+	};
 
 	s_query_data queries[] =
 	{
@@ -1113,7 +1143,7 @@ func s_config read_config_or_make_default(s_lin_arena* arena, s_rng* in_rng)
 				// @Note(tkap, 24/06/2023): string
 				if(query.type == 0)
 				{
-					s_name* name = query.target;
+					s_name* name = (s_name*)query.target;
 					memcpy(name->data, start, cursor - start);
 					name->len = (int)(cursor - start);
 					break;
@@ -1134,7 +1164,7 @@ func s_config read_config_or_make_default(s_lin_arena* arena, s_rng* in_rng)
 					char buffer[32] = zero;
 					memcpy(buffer, start, cursor - start);
 					int val = (int)strtol(buffer, null, 16);
-					s_v4* color = query.target;
+					s_v4* color = (s_v4*)query.target;
 					float r = ((val & 0xFF0000) >> 16) / 255.0f;
 					float g = ((val & 0x00FF00) >> 8) / 255.0f;
 					float b = ((val & 0x0000FF) >> 0) / 255.0f;

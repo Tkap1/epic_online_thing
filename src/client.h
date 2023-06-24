@@ -70,22 +70,22 @@
 #define key_left_control 0xA2
 #define key_right_control 0xA3
 
-typedef enum e_state
+enum e_state
 {
 	e_state_main_menu,
 	e_state_game,
 	e_state_count,
-} e_state;
+};
 
-typedef enum e_font
+enum e_font
 {
 	e_font_small,
 	e_font_medium,
 	e_font_big,
 	e_font_count,
-} e_font;
+};
 
-typedef struct s_glyph
+struct s_glyph
 {
 	int advance_width;
 	int width;
@@ -96,16 +96,16 @@ typedef struct s_glyph
 	int y1;
 	s_v2 uv_min;
 	s_v2 uv_max;
-} s_glyph;
+};
 
-typedef struct s_texture
+struct s_texture
 {
 	u32 id;
 	s_v2 size;
 	s_v2 sub_size;
-} s_texture;
+};
 
-typedef struct s_font
+struct s_font
 {
 	float size;
 	float scale;
@@ -114,30 +114,30 @@ typedef struct s_font
 	int line_gap;
 	s_texture texture;
 	s_glyph glyph_arr[1024];
-} s_font;
+};
 
-typedef struct s_main_menu
+struct s_main_menu
 {
 	char* error_str;
 	s_name player_name;
-} s_main_menu;
+};
 
-typedef struct s_config
+struct s_config
 {
 	s_name player_name;
 	s_name ip;
 	int port;
 	s_v4 color;
-} s_config;
+};
 
 #ifdef _WIN32
-typedef struct s_gamepad
+struct s_gamepad
 {
 	int left_thumb_x;
 	int previous_left_thumb_x;
 	int previous_buttons;
 	int buttons;
-} s_gamepad;
+};
 #endif // _WIN32
 
 

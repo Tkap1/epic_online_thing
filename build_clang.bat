@@ -5,7 +5,7 @@ cls
 stamp_timer.exe start
 
 set libs=-luser32 -lopengl32 -lgdi32 -lShell32 -l"..\enet64" -lWs2_32 -lWinmm
-set comp=-std=c11 -Dm_internal -Dm_debug -Dm_app
+set comp=-std=c++20 -Dm_internal -Dm_debug -Dm_app
 
 set warn=-Wextra -Wpedantic -Wall
 set warn=%warn% -Wno-switch
@@ -48,7 +48,7 @@ set warn=%warn% -Wno-enum-constexpr-conversion
 @REM set warn=%warn% -Wno-unused-template
 
 pushd build
-	clang ..\src\client.c -g -o %libs% %comp% %warn% -lXinput
+	clang ..\src\client.c -g -o %libs% %comp% %warn% -lXinput -Ole32
 	clang ..\src\server.c -g -o %libs% %comp% %warn%
 popd
 

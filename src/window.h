@@ -2,7 +2,7 @@
 
 #define c_max_keys 1024
 
-typedef struct s_window
+struct s_window
 {
 	HDC dc;
 	HWND handle;
@@ -10,30 +10,30 @@ typedef struct s_window
 	int height;
 	s_v2 size;
 	s_v2 center;
-} s_window;
+};
 
-typedef struct s_char_event
+struct s_char_event
 {
 	b8 is_symbol;
 	int c;
-} s_char_event;
+};
 
-typedef struct s_stored_input
+struct s_stored_input
 {
 	b8 is_down;
 	int key;
-} s_stored_input;
+};
 
-typedef struct s_key
+struct s_key
 {
 	b8 is_down;
 	int count;
-} s_key;
+};
 
-typedef struct s_input
+struct s_input
 {
 	s_key keys[c_max_keys];
-} s_input;
+};
 
 
 func PROC load_gl_func(char* name);

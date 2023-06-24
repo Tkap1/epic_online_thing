@@ -25,10 +25,10 @@
 #define log(...) printf("Client: " __VA_ARGS__); printf("\n")
 #endif
 
-#define make_list(name, type, max_elements) typedef struct name { \
+#define make_list(name, type, max_elements) struct name { \
 	int count; \
 	type elements[max_elements]; \
-} name; \
+}; \
 func void name##_add(name* list, type element) \
 { \
 	assert(list->count < max_elements); \

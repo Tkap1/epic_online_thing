@@ -26,8 +26,8 @@ global u32 peer_ids[c_max_peers];
 global ENetHost* host;
 global s_rng rng;
 
-#include "shared.c"
-#include "memory.c"
+#include "shared.cpp"
+#include "memory.cpp"
 
 
 int main(int argc, char** argv)

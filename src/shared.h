@@ -9,14 +9,14 @@
 #define handle_instant_movement(entity)
 #endif
 
-typedef struct s_name
+struct s_name
 {
 	int len;
 	char data[max_player_name_length];
-} s_name;
+};
 
 
-typedef enum e_packet
+enum e_packet
 {
 	e_packet_welcome,
 	e_packet_already_connected_player,
@@ -32,154 +32,154 @@ typedef enum e_packet
 	e_packet_player_appearance,
 	e_packet_cheat_next_level,
 	e_packet_cheat_previous_level,
-} e_packet;
+};
 
 #pragma pack(push, 1)
 
 /////
 
-typedef struct s_welcome_from_server
+struct s_welcome_from_server
 {
 	u32 id;
-} s_welcome_from_server;
+};
 
-typedef struct s_welcome_from_client
+struct s_welcome_from_client
 {
 	int unused;
-} s_welcome_from_client;
+};
 
-typedef struct s_already_connected_player_from_server
+struct s_already_connected_player_from_server
 {
 	u32 id;
 	b8 dead;
 	s_name name;
 	s_v4 color;
-} s_already_connected_player_from_server;
+};
 
-typedef struct s_already_connected_player_from_client
+struct s_already_connected_player_from_client
 {
 	int unused;
-} s_already_connected_player_from_client;
+};
 
-typedef struct s_another_player_connected_from_server
+struct s_another_player_connected_from_server
 {
 	u32 id;
 	b8 dead;
-} s_another_player_connected_from_server;
+};
 
-typedef struct s_another_player_connected_from_client
+struct s_another_player_connected_from_client
 {
 	int unused;
-} s_another_player_connected_from_client;
+};
 
-typedef struct s_player_update_from_server
+struct s_player_update_from_server
 {
 	u32 id;
 	float x;
 	float y;
-} s_player_update_from_server;
+};
 
-typedef struct s_player_update_from_client
+struct s_player_update_from_client
 {
 	float x;
 	float y;
-} s_player_update_from_client;
+};
 
-typedef struct s_player_disconnected_from_server
+struct s_player_disconnected_from_server
 {
 	u32 id;
-} s_player_disconnected_from_server;
+};
 
-typedef struct s_player_disconnected_from_client
+struct s_player_disconnected_from_client
 {
 	int unused;
-} s_player_disconnected_from_client;
+};
 
-typedef struct s_player_died_from_server
+struct s_player_died_from_server
 {
 	int unused;
-} s_player_died_from_server;
+};
 
-typedef struct s_player_died_from_client
+struct s_player_died_from_client
 {
 	int unused;
-} s_player_died_from_client;
+};
 
-typedef struct s_start_level_from_server
+struct s_start_level_from_server
 {
 	int unused;
-} s_start_level_from_server;
+};
 
-typedef struct s_start_level_from_client
+struct s_start_level_from_client
 {
 	int unused;
-} s_start_level_from_client;
+};
 
-typedef struct s_set_level_from_server
+struct s_set_level_from_server
 {
 	int unused;
-} s_set_level_from_server;
+};
 
-typedef struct s_set_level_from_client
+struct s_set_level_from_client
 {
 	int unused;
-} s_set_level_from_client;
+};
 
-typedef struct s_beat_level_from_server
+struct s_beat_level_from_server
 {
 	int current_level;
 	u32 seed;
-} s_beat_level_from_server;
+};
 
-typedef struct s_beat_level_from_client
+struct s_beat_level_from_client
 {
 	int unused;
-} s_beat_level_from_client;
+};
 
-typedef struct s_reset_level_from_server
+struct s_reset_level_from_server
 {
 	int current_level;
 	u32 seed;
-} s_reset_level_from_server;
+};
 
-typedef struct s_reset_level_from_client
+struct s_reset_level_from_client
 {
 	int unused;
-} s_reset_level_from_client;
+};
 
-typedef struct s_player_got_hit_from_server
+struct s_player_got_hit_from_server
 {
 	u32 id;
-} s_player_got_hit_from_server;
+};
 
-typedef struct s_player_got_hit_from_client
+struct s_player_got_hit_from_client
 {
 	int unused;
-} s_player_got_hit_from_client;
+};
 
-typedef struct s_player_appearance_from_server
+struct s_player_appearance_from_server
 {
 	u32 id;
 	s_name name;
 	s_v4 color;
-} s_player_appearance_from_server;
+};
 
-typedef struct s_player_appearance_from_client
+struct s_player_appearance_from_client
 {
 	s_name name;
 	s_v4 color;
-} s_player_appearance_from_client;
+};
 
-typedef struct s_cheat_previous_level_from_server
+struct s_cheat_previous_level_from_server
 {
 	int current_level;
 	u32 seed;
-} s_cheat_previous_level_from_server;
+};
 
 
 #pragma pack(pop)
 
-typedef enum e_entity_flag
+enum e_entity_flag
 {
 	e_entity_flag_move,
 	e_entity_flag_player_movement,
@@ -194,16 +194,16 @@ typedef enum e_entity_flag
 	e_entity_flag_collide,
 	e_entity_flag_projectile_spawner,
 	e_entity_flag_count,
-} e_entity_flag;
+};
 
-typedef enum e_entity_type
+enum e_entity_type
 {
 	e_entity_type_player,
 	e_entity_type_projectile,
 	e_entity_type_count,
-} e_entity_type;
+};
 
-typedef struct s_entities
+struct s_entities
 {
 	int count;
 	int next_id;
@@ -234,9 +234,9 @@ typedef struct s_entities
 	float spawn_delay[c_max_entities];
 	s_v4 color[c_max_entities];
 	s_name name[c_max_entities];
-} s_entities;
+};
 
-typedef enum e_projectile_type
+enum e_projectile_type
 {
 	e_projectile_type_top_basic,
 	e_projectile_type_left_basic,
@@ -248,13 +248,13 @@ typedef enum e_projectile_type
 	e_projectile_type_cross,
 	e_projectile_type_spawner,
 	e_projectile_type_count,
-} e_projectile_type;
+};
 
-typedef struct s_level
+struct s_level
 {
 	float spawn_delay[e_projectile_type_count];
 	float speed_multiplier[e_projectile_type_count];
-} s_level;
+};
 
 global s_level levels[c_max_levels];
 

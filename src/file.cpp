@@ -30,7 +30,7 @@
 // }
 
 
-func void* read_file(char* path, s_lin_arena* arena)
+func char* read_file(char* path, s_lin_arena* arena)
 {
 	FILE* file = fopen(path, "rb");
 	if(!file) { return null; }
@@ -39,7 +39,7 @@ func void* read_file(char* path, s_lin_arena* arena)
 	size_t file_size = ftell(file);
 	fseek(file, 0, SEEK_SET);
 
-	char* data = la_get(arena, file_size + 1);
+	char* data = (char*)la_get(arena, file_size + 1);
 	fread(data, file_size, 1, file);
 	data[file_size] = 0;
 	fclose(file);

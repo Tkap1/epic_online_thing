@@ -212,7 +212,7 @@ LRESULT window_proc(HWND window, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case WM_CHAR:
 		{
-			s_char_event_list_add(&char_event_arr, (s_char_event){.is_symbol = false, .c = (int)wparam});
+			s_char_event_list_add(&char_event_arr, {.is_symbol = false, .c = (int)wparam});
 		} break;
 
 		case WM_SIZE:
@@ -239,7 +239,7 @@ LRESULT window_proc(HWND window, UINT msg, WPARAM wparam, LPARAM lparam)
 
 			if(is_down)
 			{
-				s_char_event_list_add(&char_event_arr, (s_char_event){.is_symbol = true, .c = (int)wparam});
+				s_char_event_list_add(&char_event_arr, {.is_symbol = true, .c = (int)wparam});
 			}
 		} break;
 

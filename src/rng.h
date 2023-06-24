@@ -1,9 +1,9 @@
 
 
-typedef struct s_rng
+struct s_rng
 {
 	u32 seed;
-} s_rng;
+};
 
 
 func u32 randu(s_rng* rng)
