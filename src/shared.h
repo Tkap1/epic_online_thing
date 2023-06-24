@@ -36,8 +36,6 @@ enum e_packet
 
 #pragma pack(push, 1)
 
-/////
-
 struct s_welcome_from_server
 {
 	u32 id;

@@ -18,8 +18,7 @@
 
 #define c_max_peers 32
 
-make_list(s_peer_list, ENetPeer*, c_max_peers)
-global s_peer_list peers;
+global s_sarray<ENetPeer*, c_max_peers> peers;
 global s_lin_arena frame_arena;
 global s_entities e;
 global u32 peer_ids[c_max_peers];
@@ -97,6 +96,8 @@ int main(int argc, char** argv)
 						data.name = e.name[entity];
 						data.color = e.color[entity];
 						send_packet(event.peer, e_packet_already_connected_player, data, ENET_PACKET_FLAG_RELIABLE);
+						log("Sent already connected data to %u", id);
+						log("Color: %f, %f, %f", data.color.x, data.color.y, data.color.z);
 					}
 
 					// @Note(tkap, 22/06/2023): Welcome the new client
@@ -117,7 +118,7 @@ int main(int argc, char** argv)
 						send_packet(peer, e_packet_another_player_connected, data, ENET_PACKET_FLAG_RELIABLE);
 					}
 
-					s_peer_list_add(&peers, event.peer);
+					peers.add(event.peer);
 					peer_ids[peers.count - 1] = event.peer->connectID;
 
 					make_player(event.peer->connectID, true, v41f(1));
@@ -323,6 +324,7 @@ func void parse_packet(ENetEvent event)
 			if(entity != c_invalid_entity)
 			{
 				e.name[entity] = data.name;
+				e.color[entity] = data.color;
 				log("Set %u's name to %s", player_id, e.name[entity].data);
 
 				// @Note(tkap, 23/06/2023): Send the name to everyone else

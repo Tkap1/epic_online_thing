@@ -29,8 +29,13 @@ taskkill /IM "server.exe" > NUL 2> NUL
 
 pushd build
 	..\stamp_timer.exe start
-	cl ..\src\client.cpp %comp% -Dm_app -link %linker% gdi32.lib opengl32.lib Xinput.lib Ole32.lib
-	cl ..\src\server.cpp %comp% -link %linker%
+	cl ..\src\win32_platform.cpp ..\src\client.cpp -Feclient.exe %comp% -Dm_app -link %linker% gdi32.lib opengl32.lib Xinput.lib Ole32.lib > temp_compiler_output.txt
+	if NOT %ErrorLevel% == 0 (
+		popd
+		goto fail
+	)
+	@REM cl ..\src\client.cpp %comp% -Dm_app -link %linker% gdi32.lib opengl32.lib Xinput.lib Ole32.lib
+	cl ..\src\server.cpp %comp% -link %linker% > temp_compiler_output.txt
 	..\stamp_timer.exe end
 popd
 if %errorlevel%==0 goto success

@@ -26,40 +26,4 @@ struct s_data_chunk
 };
 #pragma pack(pop)
 
-struct s_sound
-{
-	int sample_count;
-	s16* samples;
-};
-
-struct s_voice : IXAudio2VoiceCallback
-{
-	IXAudio2SourceVoice* voice;
-
-	volatile int playing;
-	// s_sound sound;
-
-	void OnStreamEnd()
-	{
-		// assert(sound.sample_count > 0);
-		// assert(sound.samples);
-		// free(sound.samples);
-		InterlockedExchange((LONG*)&playing, false);
-		voice->Stop();
-	}
-
-	void OnBufferStart(void * pBufferContext)
-	{
-		unreferenced(pBufferContext);
-		InterlockedExchange((LONG*)&playing, true);
-	}
-
-	void OnVoiceProcessingPassEnd() { }
-	void OnVoiceProcessingPassStart(UINT32 SamplesRequired) { unreferenced(SamplesRequired); }
-	void OnBufferEnd(void * pBufferContext) { unreferenced(pBufferContext); }
-	void OnLoopEnd(void * pBufferContext) { unreferenced(pBufferContext); }
-	void OnVoiceError(void * pBufferContext, HRESULT Error) { unreferenced(pBufferContext); unreferenced(Error);}
-};
-
-func b8 init_audio();
-func b8 thread_safe_set_bool_to_true(volatile int* var);
+func b8 play_sound_if_supported(s_sound sound);

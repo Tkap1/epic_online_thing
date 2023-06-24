@@ -1,46 +1,40 @@
 #define m_client 1
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 
 #ifdef _WIN32
-#include <xinput.h>
-#include <xaudio2.h>
-#endif
+// @Note(tkap, 24/06/2023): We don't want this Madeg
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif // _WIN32
 
-#include <gl/GL.h>
+#include <GL/gl.h>
 #include "external/glcorearb.h"
 #include "external/wglext.h"
 
 #include <winsock2.h>
 #include <stdio.h>
 #include <math.h>
-#include "external\enet\enet.h"
+#include "external/enet/enet.h"
 #include "types.h"
 #include "utils.h"
 #include "math.h"
 #include "config.h"
 #include "shared.h"
-#include "time.h"
-#include "window.h"
 #include "memory.h"
 #include "file.h"
 #include "rng.h"
+#include "platform_shared.h"
 #include "client.h"
 #include "shader_shared.h"
 #include "str_builder.h"
-
-#ifdef _WIN32
 #include "audio.h"
-#endif // _WIN32
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STBTT_assert assert
 #include "external/stb_truetype.h"
 
-make_list(s_transform_list, s_transform, c_max_entities)
-s_transform_list transforms;
-s_transform_list text_arr[e_font_count];
+global s_sarray<s_transform, c_max_entities> transforms;
+global s_sarray<s_transform, c_max_entities> text_arr[e_font_count];
 
 global s_entities e;
 global u32 my_id = 0;
@@ -53,134 +47,132 @@ global b8 g_connected;
 global ENetHost* g_client;
 global s_main_menu main_menu;
 global u32 g_program;
+global float total_time;
 
-s_sound big_dog_sound = zero;
-s_sound jump_sound = zero;
-s_sound jump2_sound = zero;
+global s_sound big_dog_sound = zero;
+global s_sound jump_sound = zero;
+global s_sound jump2_sound = zero;
+
+global s_game_window g_window;
+global s_input* g_input;
+global s_sarray<s_char_event, 1024>* char_event_arr;
+
+global b8 game_initialized;
+global s_platform_data g_platform_data;
+global s_platform_funcs g_platform_funcs;
+
+global s_game game;
+
+
+#ifdef _WIN32
+#define X(type, name) global type name = null;
+m_gl_funcs
+#undef X
+#endif // _WIN32
 
 #include "draw.cpp"
 #include "memory.cpp"
 #include "file.cpp"
-#include "window.cpp"
 #include "shared.cpp"
 #include "str_builder.cpp"
-
-#ifdef _WIN32
 #include "audio.cpp"
-#endif // _WIN32
 
 
-int main(int argc, char** argv)
+void update_game(s_platform_data platform_data, s_platform_funcs platform_funcs)
 {
-	unreferenced(argc);
-	unreferenced(argv);
-
-	rng.seed = (u32)__rdtsc();
-	init_levels();
-
-
-	#ifdef _WIN32
-	init_audio();
-	#endif // _WIN32
-
 	assert((c_max_entities % c_num_threads) == 0);
 
-	init_performance();
-
-	frame_arena = make_lin_arena(10 * c_mb);
-
-	jump_sound = load_wav("assets/jump.wav", &frame_arena);
-	jump2_sound = load_wav("assets/jump2.wav", &frame_arena);
-	big_dog_sound = load_wav("assets/big_dog.wav", &frame_arena);
-
-	s_config config = read_config_or_make_default(&frame_arena, &rng);
-
-	create_window();
-
-	if(wglSwapIntervalEXT)
-	{
-		wglSwapIntervalEXT(1);
-	}
-
-	g_font_arr[e_font_small] = load_font("assets/consola.ttf", 24, &frame_arena);
-	g_font_arr[e_font_medium] = load_font("assets/consola.ttf", 36, &frame_arena);
-	g_font_arr[e_font_big] = load_font("assets/consola.ttf", 72, &frame_arena);
-
-	u32 vao;
-	u32 ssbo;
-	g_program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
-
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-
-	glGenBuffers(1, &ssbo);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(transforms.elements), null, GL_DYNAMIC_DRAW);
-
-	b8 running = true;
-	f64 update_timer = 0;
-	while(running)
+	g_platform_funcs = platform_funcs;
+	g_platform_data = platform_data;
+	char_event_arr = platform_data.char_event_arr;
+	g_input = platform_data.input;
+	if(!game_initialized)
 	{
 
-		f64 start_of_frame_seconds = get_seconds();
+		#define X(type, name) name = (type)platform_funcs.load_gl_func(#name);
+		m_gl_funcs
+		#undef X
 
-		if(g_connected)
+		glDebugMessageCallback(gl_debug_callback, null);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+
+		rng.seed = (u32)__rdtsc();
+		frame_arena = make_lin_arena(10 * c_mb);
+
+		game.config = read_config_or_make_default(&frame_arena, &rng);
+
+		if(wglSwapIntervalEXT)
 		{
-			enet_loop(g_client, 0, config);
+			wglSwapIntervalEXT(1);
 		}
 
-		MSG msg = zero;
-		while(PeekMessage(&msg, null, 0, 0, PM_REMOVE) > 0)
+		game_initialized = true;
+		init_levels();
+
+		jump_sound = load_wav("assets/jump.wav", &frame_arena);
+		jump2_sound = load_wav("assets/jump2.wav", &frame_arena);
+		big_dog_sound = load_wav("assets/big_dog.wav", &frame_arena);
+
+		g_font_arr[e_font_small] = load_font("assets/consola.ttf", 24, &frame_arena);
+		g_font_arr[e_font_medium] = load_font("assets/consola.ttf", 36, &frame_arena);
+		g_font_arr[e_font_big] = load_font("assets/consola.ttf", 72, &frame_arena);
+
+		u32 vao;
+		u32 ssbo;
+		g_program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
+
+		glGenVertexArrays(1, &vao);
+		glBindVertexArray(vao);
+
+		glGenBuffers(1, &ssbo);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(transforms.elements), null, GL_DYNAMIC_DRAW);
+	}
+	g_window.width = platform_data.window_width;
+	g_window.height = platform_data.window_height;
+	g_window.size = v2ii(g_window.width, g_window.height);
+	g_window.center = v2_mul(g_window.size, 0.5f);
+
+	if(g_connected)
+	{
+		enet_loop(g_client, 0, game.config);
+		if(g_platform_data.quit_after_this_frame)
 		{
-			if(msg.message == WM_QUIT)
-			{
-				if(g_connected)
-				{
-					enet_peer_disconnect(server, 0);
-					enet_loop(g_client, 1000, config);
-				}
-				running = false;
-			}
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+			enet_peer_disconnect(server, 0);
+			enet_loop(g_client, 1000, game.config);
 		}
-
-		update_timer += time_passed;
-		while(update_timer >= c_update_delay)
-		{
-			#ifdef _WIN32
-			do_gamepad_shit();
-			#endif // _WIN32
-
-			update_timer -= c_update_delay;
-			memcpy(e.prev_x, e.x, sizeof(e.x));
-			memcpy(e.prev_y, e.y, sizeof(e.y));
-			update(config);
-
-			for(int k_i = 0; k_i < c_max_keys; k_i++)
-			{
-				g_input.keys[k_i].count = 0;
-			}
-			char_event_arr.count = 0;
-		}
-
-		float interpolation_dt = (float)(update_timer / c_update_delay);
-		render(interpolation_dt);
-		memset(e.drawn_last_render, true, sizeof(e.drawn_last_render));
-
-		frame_arena.used = 0;
-
-		SwapBuffers(g_window.dc);
-
-		time_passed = (float)(get_seconds() - start_of_frame_seconds);
-		total_time += time_passed;
 	}
 
-	config.player_name = main_menu.player_name;
-	save_config(config);
+	game.update_timer += g_platform_data.time_passed;
+	while(game.update_timer >= c_update_delay)
+	{
+		game.update_timer -= c_update_delay;
+		memcpy(e.prev_x, e.x, sizeof(e.x));
+		memcpy(e.prev_y, e.y, sizeof(e.y));
+		update(game.config);
 
-	return 0;
+		for(int k_i = 0; k_i < c_max_keys; k_i++)
+		{
+			g_input->keys[k_i].count = 0;
+		}
+		char_event_arr->count = 0;
+	}
+
+	float interpolation_dt = (float)(game.update_timer / c_update_delay);
+	render(interpolation_dt);
+	memset(e.drawn_last_render, true, sizeof(e.drawn_last_render));
+
+	frame_arena.used = 0;
+
+	total_time += (float)platform_data.time_passed;
+
+	if(g_platform_data.quit_after_this_frame)
+	{
+		game.config.player_name = main_menu.player_name;
+		save_config(game.config);
+	}
+
 }
 
 func void update(s_config config)
@@ -460,11 +452,11 @@ func void input_system(int start, int count)
 		{
 			if(e.jumps_done[ii] == 0)
 			{
-				play_sound(jump_sound);
+				play_sound_if_supported(jump_sound);
 			}
 			else
 			{
-				play_sound(jump2_sound);
+				play_sound_if_supported(jump2_sound);
 			}
 			float jump_multiplier = e.jumps_done[ii] == 0 ? 1.0f : 0.9f;
 			e.vel_y[ii] = c_jump_strength * jump_multiplier;
@@ -557,6 +549,7 @@ func void parse_packet(ENetEvent event, s_config config)
 			int entity = make_player(data.id, data.dead, data.color);
 			e.name[entity] = data.name;
 			e.color[entity] = data.color;
+			log("Got already connected data of %u", data.id);
 		} break;
 
 		case e_packet_another_player_connected:
@@ -897,126 +890,6 @@ func void connect_to_server(s_config config)
 }
 
 #ifdef _WIN32
-
-global s_gamepad g_gamepads[XUSER_MAX_COUNT];
-
-func void do_gamepad_shit(void)
-{
-	int buttons[] = {
-		XINPUT_GAMEPAD_DPAD_UP, XINPUT_GAMEPAD_DPAD_DOWN, XINPUT_GAMEPAD_DPAD_LEFT, XINPUT_GAMEPAD_DPAD_RIGHT, XINPUT_GAMEPAD_START,
-		XINPUT_GAMEPAD_BACK, XINPUT_GAMEPAD_LEFT_THUMB, XINPUT_GAMEPAD_RIGHT_THUMB, XINPUT_GAMEPAD_LEFT_SHOULDER, XINPUT_GAMEPAD_RIGHT_SHOULDER,
-		XINPUT_GAMEPAD_A, XINPUT_GAMEPAD_B, XINPUT_GAMEPAD_X, XINPUT_GAMEPAD_Y
-	};
-
-	for(int gamepad_i = 0; gamepad_i < XUSER_MAX_COUNT; gamepad_i++)
-	{
-		s_gamepad* gamepad = &g_gamepads[gamepad_i];
-		XINPUT_STATE xinput_state = zero;
-		DWORD dwResult = XInputGetState(gamepad_i, &xinput_state);
-
-		if(dwResult == ERROR_SUCCESS)
-		{
-			gamepad->left_thumb_x = xinput_state.Gamepad.sThumbLX;
-			for(int button_i = 0; button_i < array_count(buttons); button_i++)
-			{
-				if(xinput_state.Gamepad.wButtons & buttons[button_i])
-				{
-					gamepad->buttons |= buttons[button_i];
-				}
-			}
-		}
-		else
-		{
-		}
-	}
-
-	struct s_button_to_key
-	{
-		int button;
-		int key;
-	};
-
-	s_button_to_key button_to_key_arr[] = {
-		// {XINPUT_GAMEPAD_DPAD_UP, key_space},
-		{XINPUT_GAMEPAD_DPAD_DOWN, key_down},
-		{XINPUT_GAMEPAD_DPAD_LEFT, key_left},
-		{XINPUT_GAMEPAD_DPAD_RIGHT, key_right},
-		{XINPUT_GAMEPAD_A, key_space},
-		{XINPUT_GAMEPAD_B, key_down},
-		{XINPUT_GAMEPAD_X, key_down},
-		{XINPUT_GAMEPAD_Y, key_down},
-	};
-
-	for(int gamepad_i = 0; gamepad_i < XUSER_MAX_COUNT; gamepad_i++)
-	{
-		s_gamepad* gamepad = &g_gamepads[gamepad_i];
-
-		for(int map_i = 0; map_i < array_count(button_to_key_arr); map_i++)
-		{
-			s_button_to_key map = button_to_key_arr[map_i];
-			b8 is_down = (gamepad->buttons & map.button) != 0;
-			b8 was_down = (gamepad->previous_buttons & map.button) != 0;
-
-			if(is_down && !was_down)
-			{
-				s_stored_input event = zero;
-				event.is_down = true;
-				event.key = map.key;
-				apply_event_to_input(&g_input, event);
-			}
-			else if(!is_down && was_down)
-			{
-				s_stored_input event = zero;
-				event.is_down = false;
-				event.key = map.key;
-				apply_event_to_input(&g_input, event);
-			}
-		}
-
-		b8 right_now = gamepad->left_thumb_x > 2000;
-		b8 right_before = gamepad->previous_left_thumb_x > 2000;
-		b8 left_now = gamepad->left_thumb_x < -2000;
-		b8 left_before = gamepad->previous_left_thumb_x < -2000;
-		if(right_now && !right_before)
-		{
-			s_stored_input event = zero;
-			event.is_down = true;
-			event.key = key_right;
-			apply_event_to_input(&g_input, event);
-		}
-		else if(!right_now && right_before)
-		{
-			s_stored_input event = zero;
-			event.is_down = false;
-			event.key = key_right;
-			apply_event_to_input(&g_input, event);
-		}
-		if(left_now && !left_before)
-		{
-			s_stored_input event = zero;
-			event.is_down = true;
-			event.key = key_left;
-			apply_event_to_input(&g_input, event);
-		}
-		else if(!left_now && left_before)
-		{
-			s_stored_input event = zero;
-			event.is_down = false;
-			event.key = key_left;
-			apply_event_to_input(&g_input, event);
-		}
-
-		gamepad->previous_buttons = gamepad->buttons;
-		gamepad->buttons = 0;
-		gamepad->previous_left_thumb_x = gamepad->left_thumb_x;
-		gamepad->left_thumb_x = 0;
-
-	}
-}
-#endif // _WIN32
-
-
-#ifdef _WIN32
 #ifdef m_debug
 global FILETIME last_write_time = zero;
 func void hot_reload_shaders(void)
@@ -1220,4 +1093,53 @@ func s_name make_name(char* str)
 	memcpy(result.data, str, len);
 	result.len = len;
 	return result;
+}
+
+func b8 is_key_down(int key)
+{
+	assert(key < c_max_keys);
+	return g_input->keys[key].is_down || g_input->keys[key].count >= 2;
+}
+
+func b8 is_key_up(int key)
+{
+	assert(key < c_max_keys);
+	return !g_input->keys[key].is_down;
+}
+
+func b8 is_key_pressed(int key)
+{
+	assert(key < c_max_keys);
+	return (g_input->keys[key].is_down && g_input->keys[key].count == 1) || g_input->keys[key].count > 1;
+}
+
+func b8 is_key_released(int key)
+{
+	assert(key < c_max_keys);
+	return (!g_input->keys[key].is_down && g_input->keys[key].count == 1) || g_input->keys[key].count > 1;
+}
+
+func s_char_event get_char_event()
+{
+	s_char_event event = zero;
+	if(char_event_arr->count > 0)
+	{
+		event = char_event_arr->elements[0];
+		char_event_arr->remove_and_shift(0);
+	}
+	return event;
+}
+
+void gl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+{
+	unreferenced(userParam);
+	unreferenced(length);
+	unreferenced(id);
+	unreferenced(type);
+	unreferenced(source);
+	if(severity >= GL_DEBUG_SEVERITY_HIGH)
+	{
+		printf("GL ERROR: %s\n", message);
+		assert(false);
+	}
 }
