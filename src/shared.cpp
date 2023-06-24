@@ -369,35 +369,48 @@ func void init_levels(void)
 		}
 	}
 
-	levels[0].spawn_delay[e_projectile_type_top_basic] = speed(3500);
+	levels[level_count].spawn_delay[e_projectile_type_top_basic] = speed(3500);
+	level_count++;
 
-	levels[1].spawn_delay[e_projectile_type_left_basic] = speed(2000);
+	levels[level_count].spawn_delay[e_projectile_type_left_basic] = speed(2000);
+	level_count++;
 
-	levels[2].spawn_delay[e_projectile_type_diagonal_right] = speed(3000);
+	levels[level_count].spawn_delay[e_projectile_type_diagonal_right] = speed(3000);
+	level_count++;
 
-	levels[3].spawn_delay[e_projectile_type_right_basic] = speed(2500);
+	levels[level_count].spawn_delay[e_projectile_type_right_basic] = speed(2500);
+	level_count++;
 
-	levels[4].spawn_delay[e_projectile_type_diagonal_left] = speed(2800);
+	levels[level_count].spawn_delay[e_projectile_type_diagonal_left] = speed(2800);
+	level_count++;
 
-	levels[5].spawn_delay[e_projectile_type_diagonal_bottom_right] = speed(2800);
+	levels[level_count].spawn_delay[e_projectile_type_diagonal_bottom_right] = speed(2800);
+	level_count++;
 
-	levels[6].spawn_delay[e_projectile_type_spawner] = speed(1000);
+	levels[level_count].spawn_delay[e_projectile_type_spawner] = speed(1000);
+	level_count++;
 
-	levels[7].spawn_delay[e_projectile_type_diagonal_bottom_left] = speed(3300);
+	levels[level_count].spawn_delay[e_projectile_type_diagonal_bottom_left] = speed(3300);
+	level_count++;
 
-	levels[8].spawn_delay[e_projectile_type_left_basic] = speed(1000);
-	levels[8].spawn_delay[e_projectile_type_right_basic] = speed(1000);
+	levels[level_count].spawn_delay[e_projectile_type_left_basic] = speed(1000);
+	levels[level_count].spawn_delay[e_projectile_type_right_basic] = speed(1000);
+	level_count++;
 
-	levels[9].spawn_delay[e_projectile_type_cross] = speed(2777);
+	levels[level_count].spawn_delay[e_projectile_type_cross] = speed(2777);
+	level_count++;
 
-	levels[10].spawn_delay[e_projectile_type_top_basic] = speed(3000);
-	levels[10].spawn_delay[e_projectile_type_left_basic] = speed(2500);
+	levels[level_count].spawn_delay[e_projectile_type_top_basic] = speed(3000);
+	levels[level_count].spawn_delay[e_projectile_type_left_basic] = speed(2500);
+	level_count++;
 
-	levels[11].spawn_delay[e_projectile_type_diagonal_left] = speed(3500);
-	levels[11].spawn_delay[e_projectile_type_diagonal_bottom_right] = speed(2500);
+	levels[level_count].spawn_delay[e_projectile_type_diagonal_left] = speed(3500);
+	levels[level_count].spawn_delay[e_projectile_type_diagonal_bottom_right] = speed(2500);
+	level_count++;
 
-	levels[12].spawn_delay[e_projectile_type_top_basic] = speed(2000);
-	levels[12].spawn_delay[e_projectile_type_spawner] = speed(1500);
+	levels[level_count].spawn_delay[e_projectile_type_top_basic] = speed(2000);
+	levels[level_count].spawn_delay[e_projectile_type_spawner] = speed(1500);
+	level_count++;
 
 	current_level = 0;
 	#undef speed
@@ -562,4 +575,15 @@ func void send_simple_packet(ENetPeer* peer, e_packet packet_id, int flag)
 	buffer_write(&cursor, &packet_id, sizeof(packet_id));
 	ENetPacket* packet = enet_packet_create(packet_data, sizeof(packet_id), flag);
 	enet_peer_send(peer, 0, packet);
+}
+
+func void broadcast_simple_packet(ENetHost* in_host, e_packet packet_id, int flag)
+{
+	assert(flag == 0 || flag == ENET_PACKET_FLAG_RELIABLE);
+
+	u8 packet_data[4];
+	u8* cursor = packet_data;
+	buffer_write(&cursor, &packet_id, sizeof(packet_id));
+	ENetPacket* packet = enet_packet_create(packet_data, sizeof(packet_id), flag);
+	enet_host_broadcast(in_host, 0, packet);
 }

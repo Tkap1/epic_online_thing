@@ -24,6 +24,7 @@ global s_entities e;
 global u32 peer_ids[c_max_peers];
 global ENetHost* host;
 global s_rng rng;
+global int level_count = 0;
 
 #include "shared.cpp"
 #include "memory.cpp"
@@ -237,6 +238,13 @@ func void update(void)
 		log("Level %i beaten", current_level + 1);
 
 		current_level += 1;
+
+		// @Note(tkap, 25/06/2023): Reset if we go past all levels
+		if(current_level >= level_count)
+		{
+			current_level = 0;
+			broadcast_simple_packet(host, e_packet_all_levels_beat, ENET_PACKET_FLAG_RELIABLE);
+		}
 		reset_level();
 		revive_every_player();
 	}

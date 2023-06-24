@@ -32,6 +32,7 @@ enum e_packet
 	e_packet_player_appearance,
 	e_packet_cheat_next_level,
 	e_packet_cheat_previous_level,
+	e_packet_all_levels_beat,
 };
 
 #pragma pack(push, 1)

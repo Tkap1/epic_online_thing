@@ -54,6 +54,8 @@ global s_sound jump_sound = zero;
 global s_sound jump2_sound = zero;
 global s_sound win_sound = zero;
 
+global int level_count = 0;
+
 global s_game_window g_window;
 global s_input* g_input;
 global s_sarray<s_char_event, 1024>* char_event_arr;
@@ -642,6 +644,13 @@ func void parse_packet(ENetEvent event, s_config config)
 			revive_every_player();
 		} break;
 		#endif // m_debug
+
+		case e_packet_all_levels_beat:
+		{
+			current_level = 0;
+			reset_level();
+			revive_every_player();
+		} break;
 
 		invalid_default_case;
 	}
