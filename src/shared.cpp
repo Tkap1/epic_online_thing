@@ -526,7 +526,7 @@ func void init_levels(void)
 	level_count++;
 
 	levels[level_count].spawn_delay[e_projectile_type_cross] = speed(1111);
-	levels[level_count].spawn_delay[e_projectile_type_shockwave] = speed(2222);
+	levels[level_count].spawn_delay[e_projectile_type_shockwave] = speed(2000);
 
 	level_count++;
 

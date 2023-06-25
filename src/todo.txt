@@ -4,7 +4,6 @@ show time spent on level
 
 improve input system so it works for both windows and linux
 
-when connecting, send seed and current level
 server remembering players (is this possible without accounts? maybe connectID is consistent? but surely it wont on ip change)
 	i would be nice to know how many maps each player has survived
 more levels
