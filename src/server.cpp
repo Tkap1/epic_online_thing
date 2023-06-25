@@ -365,7 +365,7 @@ func void parse_packet(ENetEvent event)
 			u32 player_id = event.peer->connectID;
 			s_player_appearance_from_client data = *(s_player_appearance_from_client*)cursor;
 
-			if(data.name.len <= 3 || data.name.len > max_player_name_length)
+			if(data.name.len < 3 || data.name.len > max_player_name_length)
 			{
 				// @TODO(tkap, 23/06/2023): Kick player?
 				break;
