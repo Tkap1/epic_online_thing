@@ -15,7 +15,7 @@ global constexpr int c_max_concurrent_sounds = 8;
 #define c_origin_bottomleft {1.0f, 1.0f}
 #define c_origin_center {0, 0}
 
-#define c_num_threads (1)
+#define c_num_threads (4)
 #define c_max_entities (4096)
 #define c_entities_per_thread (c_max_entities / c_num_threads)
 

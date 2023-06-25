@@ -28,6 +28,7 @@
 #include "shader_shared.h"
 #include "str_builder.h"
 #include "audio.h"
+#include "thread.h"
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STBTT_assert assert
@@ -79,6 +80,7 @@ m_gl_funcs
 #include "shared.cpp"
 #include "str_builder.cpp"
 #include "audio.cpp"
+#include "thread.cpp"
 
 
 void update_game(s_platform_data platform_data, s_platform_funcs platform_funcs)
@@ -91,6 +93,11 @@ void update_game(s_platform_data platform_data, s_platform_funcs platform_funcs)
 	g_input = platform_data.input;
 	if(!game_initialized)
 	{
+
+		for(int i = 0; i < c_num_threads; i++)
+		{
+			CreateThread(null, 0, thread_spin, null, 0, 0);
+		}
 
 		#define X(type, name) name = (type)platform_funcs.load_gl_func(#name);
 		m_gl_funcs
@@ -254,25 +261,49 @@ func void update(s_config config)
 			#endif // m_debug
 			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		cheats, for testing end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+			// u64 before = __rdtsc();
+
 			for(int i = 0; i < c_num_threads; i++)
 			{
-				gravity_system(i * c_entities_per_thread, c_entities_per_thread);
+				// gravity_system(i * c_entities_per_thread, c_entities_per_thread);
+				add_job(gravity_system, {.a = i * c_entities_per_thread, .b = c_entities_per_thread});
 			}
+			start_jobs();
+			wait_for_jobs();
+
 			for(int i = 0; i < c_num_threads; i++)
 			{
-				input_system(i * c_entities_per_thread, c_entities_per_thread);
+				add_job(input_system, {.a = i * c_entities_per_thread, .b = c_entities_per_thread});
+				// input_system(i * c_entities_per_thread, c_entities_per_thread);
 			}
+			start_jobs();
+			wait_for_jobs();
+
 			for(int i = 0; i < c_num_threads; i++)
 			{
-				move_system(i * c_entities_per_thread, c_entities_per_thread);
-				player_movement_system(i * c_entities_per_thread, c_entities_per_thread);
-				physics_movement_system(i * c_entities_per_thread, c_entities_per_thread);
+				add_job(move_system, {.a = i * c_entities_per_thread, .b = c_entities_per_thread});
+				add_job(player_movement_system, {.a = i * c_entities_per_thread, .b = c_entities_per_thread});
+				add_job(physics_movement_system, {.a = i * c_entities_per_thread, .b = c_entities_per_thread});
+				// move_system(i * c_entities_per_thread, c_entities_per_thread);
+				// player_movement_system(i * c_entities_per_thread, c_entities_per_thread);
+				// physics_movement_system(i * c_entities_per_thread, c_entities_per_thread);
 			}
+			start_jobs();
+			wait_for_jobs();
+
 			for(int i = 0; i < c_num_threads; i++)
 			{
-				player_bounds_check_system(i * c_entities_per_thread, c_entities_per_thread);
-				projectile_bounds_check_system(i * c_entities_per_thread, c_entities_per_thread);
+				add_job(player_bounds_check_system, {.a = i * c_entities_per_thread, .b = c_entities_per_thread});
+				add_job(projectile_bounds_check_system, {.a = i * c_entities_per_thread, .b = c_entities_per_thread});
+				// player_bounds_check_system(i * c_entities_per_thread, c_entities_per_thread);
+				// projectile_bounds_check_system(i * c_entities_per_thread, c_entities_per_thread);
 			}
+			start_jobs();
+			wait_for_jobs();
+
+			// u64 after = __rdtsc();
+			// printf("%f kc\n", (after - before) / 1000.0);
+
 			for(int i = 0; i < c_num_threads; i++)
 			{
 				projectile_spawner_system(i * c_entities_per_thread, c_entities_per_thread);
@@ -283,8 +314,10 @@ func void update(s_config config)
 			}
 			for(int i = 0; i < c_num_threads; i++)
 			{
-				increase_time_lived_system(i * c_entities_per_thread, c_entities_per_thread);
+				add_job(increase_time_lived_system, {.a = i * c_entities_per_thread, .b = c_entities_per_thread});
 			}
+			start_jobs();
+			wait_for_jobs();
 
 			int my_player = find_player_by_id(my_id);
 			if(my_player != c_invalid_entity)
