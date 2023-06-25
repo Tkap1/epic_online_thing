@@ -33,6 +33,7 @@ enum e_packet
 	e_packet_cheat_next_level,
 	e_packet_cheat_previous_level,
 	e_packet_all_levels_beat,
+	e_packet_update_time_lived,
 };
 
 #pragma pack(push, 1)
@@ -175,6 +176,11 @@ struct s_cheat_previous_level_from_server
 	u32 seed;
 };
 
+struct s_update_time_lived_from_server
+{
+	u32 id;
+	float time_lived;
+};
 
 #pragma pack(pop)
 
@@ -207,6 +213,7 @@ enum e_entity_flag
 	e_entity_flag_expire,
 	e_entity_flag_collide,
 	e_entity_flag_projectile_spawner,
+	e_entity_flag_increase_time_lived,
 	e_entity_flag_count,
 };
 

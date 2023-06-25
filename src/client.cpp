@@ -279,6 +279,10 @@ func void update(s_config config)
 			{
 				collision_system(i * c_entities_per_thread, c_entities_per_thread);
 			}
+			for(int i = 0; i < c_num_threads; i++)
+			{
+				increase_time_lived_system(i * c_entities_per_thread, c_entities_per_thread);
+			}
 
 			int my_player = find_player_by_id(my_id);
 			if(my_player != c_invalid_entity)
@@ -341,6 +345,42 @@ func void render(float dt)
 			{
 				s_v2 pos = v2(20, 20);
 				draw_text(format_text("Level %i", current_level + 1), pos, 1, v41f(1), e_font_medium, false, zero);
+			}
+
+			// @Note(tkap, 25/06/2023): Display time alive of each player
+			{
+				struct s_player_and_time
+				{
+					int index;
+					float time;
+
+					bool operator>(s_player_and_time right)
+					{
+						return time < right.time;
+					}
+
+				};
+				s_sarray<s_player_and_time, 64> player_and_time_arr;
+				for(int i = 0; i < c_max_entities; i++)
+				{
+					if(!e.active[i]) { continue; }
+					if(!e.player_id[i]) { continue; }
+
+					s_player_and_time pat = zero;
+					pat.index = i;
+					pat.time = e.time_lived[i];
+					player_and_time_arr.add(pat);
+				}
+				player_and_time_arr.bubble_sort();
+
+				s_v2 pos = v2(20, 60);
+				for(int pat_i = 0; pat_i < player_and_time_arr.count; pat_i++)
+				{
+					s_player_and_time pat = player_and_time_arr[pat_i];
+					char* text = format_text("%s: %i", e.name[pat.index].data, roundfi(pat.time));
+					draw_text(text, pos, 1, v41f(1), e_font_medium, false, zero);
+					pos.y += g_font_arr[e_font_medium].size;
+				}
 			}
 
 
@@ -544,7 +584,8 @@ func void parse_packet(ENetEvent event, s_config config)
 		{
 			s_welcome_from_server data = *(s_welcome_from_server*)cursor;
 			my_id = data.id;
-			make_player(data.id, true, config.color);
+			int entity = make_player(data.id, true, config.color);
+			e.name[entity] = main_menu.player_name;
 		} break;
 
 		case e_packet_already_connected_player:
@@ -650,6 +691,17 @@ func void parse_packet(ENetEvent event, s_config config)
 			current_level = 0;
 			reset_level();
 			revive_every_player();
+		} break;
+
+		case e_packet_update_time_lived:
+		{
+			s_update_time_lived_from_server data = *(s_update_time_lived_from_server*)cursor;
+
+			int entity = find_player_by_id(data.id);
+			if(entity != c_invalid_entity)
+			{
+				e.time_lived[entity] = data.time_lived;
+			}
 		} break;
 
 		invalid_default_case;

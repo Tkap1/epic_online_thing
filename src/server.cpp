@@ -25,6 +25,7 @@ global u32 peer_ids[c_max_peers];
 global ENetHost* host;
 global s_rng rng;
 global int level_count = 0;
+global s_game game;
 
 #include "shared.cpp"
 #include "memory.cpp"
@@ -213,6 +214,10 @@ func void update(void)
 	{
 		projectile_spawner_system(i * c_entities_per_thread, c_entities_per_thread);
 	}
+	for(int i = 0; i < c_num_threads; i++)
+	{
+		increase_time_lived_system(i * c_entities_per_thread, c_entities_per_thread);
+	}
 
 	spawn_system(levels[current_level]);
 
@@ -258,6 +263,25 @@ func void update(void)
 		data.current_level = current_level;
 		data.seed = rng.seed;
 		broadcast_packet(host, e_packet_reset_level, data, ENET_PACKET_FLAG_RELIABLE);
+	}
+
+	game.time_alive_packet_timer += delta;
+	if(game.time_alive_packet_timer >= 1)
+	{
+		game.time_alive_packet_timer -= 1;
+
+		for(int peer_i = 0; peer_i < peers.count; peer_i++)
+		{
+			ENetPeer* peer = peers[peer_i];
+			int entity = find_player_by_id(peer->connectID);
+			if(entity != c_invalid_entity)
+			{
+				s_update_time_lived_from_server data = zero;
+				data.id = peer->connectID;
+				data.time_lived = e.time_lived[entity];
+				broadcast_packet(host, e_packet_update_time_lived, data, 0);
+			}
+		}
 	}
 }
 

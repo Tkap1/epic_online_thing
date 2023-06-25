@@ -230,4 +230,29 @@ struct s_sarray
 		return count <= 0;
 	}
 
+	void bubble_sort()
+	{
+		// @Note(tkap, 25/06/2023): Let's not get crazy with bubble sort, bro
+		assert(count < 256);
+
+		for(int i = 0; i < count; i++)
+		{
+			b8 swap = false;
+			for(int j = 0; j < count - 1; j++)
+			{
+				T* a = &elements[j];
+				T* b = &elements[j + 1];
+
+				if(*a > *b)
+				{
+					T temp = *a;
+					*a = *b;
+					*b = temp;
+					swap = true;
+				}
+			}
+			if(!swap) { break; }
+		}
+	}
+
 };

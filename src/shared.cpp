@@ -167,6 +167,7 @@ func int make_player(u32 player_id, b8 dead, s_v4 color)
 	e.speed[entity] = 400;
 	e.dead[entity] = dead;
 	e.flags[entity][e_entity_flag_draw] = true;
+	e.flags[entity][e_entity_flag_increase_time_lived] = true;
 	e.type[entity] = e_entity_type_player;
 	e.color[entity] = color;
 
@@ -701,4 +702,17 @@ func void broadcast_simple_packet(ENetHost* in_host, e_packet packet_id, int fla
 	buffer_write(&cursor, &packet_id, sizeof(packet_id));
 	ENetPacket* packet = enet_packet_create(packet_data, sizeof(packet_id), flag);
 	enet_host_broadcast(in_host, 0, packet);
+}
+
+func void increase_time_lived_system(int start, int count)
+{
+	for(int i = 0; i < count; i++)
+	{
+		int ii = start + i;
+		if(!e.active[ii]) { continue; }
+		if(e.dead[ii]) { continue; }
+		if(!e.flags[ii][e_entity_flag_increase_time_lived]) { continue; }
+
+		e.time_lived[ii] += delta;
+	}
 }
