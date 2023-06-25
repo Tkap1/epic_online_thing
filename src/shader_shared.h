@@ -11,7 +11,7 @@
 	#define shader_v4 vec4
 	#define shader_float float
 	#define shader_int int
-	#define shader_bool bool
+	#define shader_bool int
 #endif
 
 #ifdef m_app

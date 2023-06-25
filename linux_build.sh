@@ -5,7 +5,7 @@ if [ $cc = "g++" ] ; then
 else
 	diag="-fno-caret-diagnostics"
 fi
-warn="-Werror -Wall -Wno-char-subscripts -Wno-unused-function"
+warn="-Werror -Wall -Wno-char-subscripts -Wno-unused-function -Wno-switch"
 opt="-std=c++17 -Isrc/ -g -Dm_app"
 opt_release="-std=c++17 -O2 -DNDEBUG -Dm_app"
 libs="-lm -lGL -lX11 -lenet"

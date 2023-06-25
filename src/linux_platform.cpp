@@ -76,9 +76,11 @@ func void create_window(int InitialWindowWidth, int InitialWindowHeight)
 		// mean linking to yet another library just to use 2 functions,
 		// and so I prefer this approach.
 		XFontStruct *fn = XLoadQueryFont(g_window.display, "nil2");
-		XColor dummy;
-		g_window.invisible_cursor = XCreateGlyphCursor(g_window.display, fn->fid, fn->fid, 'X', ' ', &dummy, &dummy);
-		XFreeFont(g_window.display, fn);
+		if (fn) {
+			XColor dummy;
+			g_window.invisible_cursor = XCreateGlyphCursor(g_window.display, fn->fid, fn->fid, 'X', ' ', &dummy, &dummy);
+			XFreeFont(g_window.display, fn);
+		}
 	}
 
 	GLXFBConfig best_fbc;
