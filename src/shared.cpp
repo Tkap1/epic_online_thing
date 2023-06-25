@@ -279,6 +279,78 @@ func void spawn_system(s_level level)
 					handle_instant_resize(entity);
 				} break;
 
+				case e_projectile_type_corner_shot:
+				{
+					float x = (randu(&rng) & 1) ? 0 : c_base_res.x;
+					float y = 0;
+					float size = (rand_range_ii(&rng, 0, 99) < 6) ? 200.f : randf_range(&rng, 45, 65);
+					float speed = randf_range(&rng, 166, 311) * level.speed_multiplier[proj_i];
+					s_v4 col = v4(randf_range(&rng, 0.775f, 1.0f), 0.0f, 0.0f, 1.0f);
+
+					e.x[entity] = x;
+					e.y[entity] = y;
+					e.sx[entity] = 300.0f;
+					e.speed[entity] = randf_range(&rng, 125, 455) * level.speed_multiplier[proj_i];
+					e.dir_x[entity] = 0.0f;
+					e.dir_y[entity] = 0.0f;
+					e.color[entity] = col;
+					handle_instant_movement(entity);
+					handle_instant_resize(entity);
+
+					int shock_proj_num = rand_range_ii(&rng, 7, 14);
+					float inc = deg_to_rad(360.f / shock_proj_num);
+
+					for(int shock_proj_i = 0; shock_proj_i < shock_proj_num; shock_proj_i++)
+					{
+						entity = make_projectile();
+						e.x[entity] = x;
+						e.y[entity] = y;
+						e.sx[entity] = size;
+						e.speed[entity] = speed * level.speed_multiplier[proj_i];
+						e.dir_x[entity] = sinf(shock_proj_i * inc * 2 * pi);
+						e.dir_y[entity] = cosf(shock_proj_i * inc * 2 * pi);
+						e.color[entity] = col;
+						handle_instant_movement(entity);
+						handle_instant_resize(entity);
+					}
+				} break;
+
+				case e_projectile_type_shockwave:
+				{
+					float x = randf_range(&rng, 0, c_base_res.x);
+					float y = randf_range(&rng, 0, c_base_res.y / 3);
+					s_v4 col = v4(randf_range(&rng, 0.05f, 1.0f), randf_range(&rng, 0.85f, 1.0f), randf_range(&rng, .05f, 1.0f), 1.0f);
+
+					e.x[entity] = x;
+					e.y[entity] = y;
+					e.sx[entity] = 66.f;
+					e.speed[entity] = randf_range(&rng, 125, 455) * level.speed_multiplier[proj_i];
+					e.dir_x[entity] = 0.0f;
+					e.dir_y[entity] = 1.0f;
+					e.color[entity] = col;
+					handle_instant_movement(entity);
+					handle_instant_resize(entity);
+
+					int shock_proj_num = rand_range_ii(&rng, 7, 14);
+					float inc = deg_to_rad(360.f / shock_proj_num);
+					float size = randf_range(&rng, 15, 55);
+					float speed = randf_range(&rng, 166, 311) * level.speed_multiplier[proj_i];
+
+					for(int shock_proj_i = 0; shock_proj_i < shock_proj_num; shock_proj_i++)
+					{
+						entity = make_projectile();
+						e.x[entity] = x;
+						e.y[entity] = y;
+						e.sx[entity] = size;
+						e.speed[entity] = speed * level.speed_multiplier[proj_i];
+						e.dir_x[entity] = sinf(shock_proj_i * inc * 2 * pi);
+						e.dir_y[entity] = cosf(shock_proj_i * inc * 2 * pi);
+						e.color[entity] = col;
+						handle_instant_movement(entity);
+						handle_instant_resize(entity);
+					}
+				} break;
+
 				case e_projectile_type_cross:
 				{
 					float x;
@@ -445,6 +517,17 @@ func void init_levels(void)
 
 	levels[level_count].spawn_delay[e_projectile_type_diagonal_bottom_left] = speed(2200);
 	levels[level_count].spawn_delay[e_projectile_type_diagonal_bottom_right] = speed(2200);
+	level_count++;
+
+	levels[level_count].spawn_delay[e_projectile_type_corner_shot] = speed(3333);
+	level_count++;
+
+	levels[level_count].spawn_delay[e_projectile_type_shockwave] = speed(2777);
+	level_count++;
+
+	levels[level_count].spawn_delay[e_projectile_type_cross] = speed(1111);
+	levels[level_count].spawn_delay[e_projectile_type_shockwave] = speed(2222);
+
 	level_count++;
 
 	#undef speed
