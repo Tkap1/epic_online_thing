@@ -1,18 +1,25 @@
 #define m_server 1
 
+#ifdef _WIN32
 #include <winsock2.h>
-#include <stdio.h>
-#include "external\enet\enet.h"
 #include <intrin.h>
+#else
+#include <x86intrin.h>
+#include <string.h>
+#include <stdarg.h>
+#include <unistd.h>
+#endif
+#include <stdio.h>
+#include "external/enet/enet.h"
 #include <math.h>
 #include "types.h"
 #include "memory.h"
 #include "utils.h"
-#include "math.h"
+#include "epic_math.h"
 #include "config.h"
 #include "types.h"
 #include "shared.h"
-#include "time.h"
+#include "epic_time.h"
 #include "rng.h"
 #include "server.h"
 
@@ -70,7 +77,7 @@ int main(int argc, char** argv)
 	{
 		f64 start_of_frame_seconds = get_seconds();
 
-		ENetEvent event = zero;
+		ENetEvent event;
 		while(enet_host_service(host, &event, 0) > 0)
 		{
 			switch(event.type)
@@ -191,8 +198,14 @@ int main(int argc, char** argv)
 
 		frame_arena.used = 0;
 
+#ifdef _WIN32
 		Sleep(1);
-
+#else
+		struct timespec rq, rm;
+		rq.tv_sec = 0;
+		rq.tv_nsec = c_update_delay / 2;
+		nanosleep(&rq, &rm);
+#endif
 		time_passed = (float)(get_seconds() - start_of_frame_seconds);
 		total_time += time_passed;
 	}
@@ -427,6 +440,11 @@ func void parse_packet(ENetEvent event)
 			revive_every_player();
 		} break;
 		#endif // m_debug
+
+		default:
+		{
+			assert(0);
+		} break;
 	}
 }
 

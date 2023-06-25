@@ -4,7 +4,9 @@
 Run client.exe to join (if server is open)
 
 # How to build
-Run build.bat (if on Windows)
+If on windows, run build.bat
+
+If on linux, run linux_build.sh
 
 # How to test
 If you want to run your own server for testing, create (or modify if you played before) a config.txt that looks like:

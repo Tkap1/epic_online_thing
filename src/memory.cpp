@@ -1,6 +1,6 @@
 
 
-
+#ifdef _WIN32
 func s_lin_arena make_lin_arena(size_t capacity)
 {
 	assert(capacity > 0);
@@ -10,6 +10,18 @@ func s_lin_arena make_lin_arena(size_t capacity)
 	result.memory = VirtualAlloc(null, capacity, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 	return result;
 }
+#else
+func s_lin_arena make_lin_arena(size_t capacity)
+{
+	assert(capacity > 0);
+	u64 pagesize = sysconf(_SC_PAGESIZE);
+	capacity = (capacity + (pagesize-1)) & ~(pagesize-1);
+	s_lin_arena result = zero;
+	result.capacity = capacity;
+	result.memory = aligned_alloc(pagesize, capacity);
+	return result;
+}
+#endif
 
 func void* la_get(s_lin_arena* arena, size_t in_requested)
 {

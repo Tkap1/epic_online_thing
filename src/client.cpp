@@ -5,23 +5,31 @@
 // @Note(tkap, 24/06/2023): We don't want this Madeg
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#endif // _WIN32
 
 #include <GL/gl.h>
 #include "external/glcorearb.h"
 #include "external/wglext.h"
+#else
+#include<X11/X.h>
+#include<X11/Xlib.h>
+#include<GL/gl.h>
+#include<GL/glx.h>
+#include<GL/glext.h>
+#include <x86intrin.h>
+#include <string.h>
+#include <stdarg.h>
+#include <unistd.h>
+#endif // _WIN32
 
-#include <winsock2.h>
 #include <stdio.h>
 #include <math.h>
 #include "external/enet/enet.h"
 #include "types.h"
 #include "utils.h"
-#include "math.h"
+#include "epic_math.h"
 #include "config.h"
 #include "shared.h"
 #include "memory.h"
-#include "file.h"
 #include "rng.h"
 #include "platform_shared.h"
 #include "client.h"
@@ -66,12 +74,9 @@ global s_platform_funcs g_platform_funcs;
 
 global s_game game;
 
-
-#ifdef _WIN32
-#define X(type, name) global type name = null;
+#define X(type, name) type name = null;
 m_gl_funcs
 #undef X
-#endif // _WIN32
 
 #include "draw.cpp"
 #include "memory.cpp"
@@ -79,7 +84,6 @@ m_gl_funcs
 #include "shared.cpp"
 #include "str_builder.cpp"
 #include "audio.cpp"
-
 
 void update_game(s_platform_data platform_data, s_platform_funcs platform_funcs)
 {
@@ -104,10 +108,7 @@ void update_game(s_platform_data platform_data, s_platform_funcs platform_funcs)
 
 		game.config = read_config_or_make_default(&frame_arena, &rng);
 
-		if(wglSwapIntervalEXT)
-		{
-			wglSwapIntervalEXT(1);
-		}
+		platform_funcs.set_swap_interval(1);
 
 		game_initialized = true;
 		init_levels();
@@ -203,14 +204,14 @@ func void update(s_config config)
 
 				if(event.is_symbol)
 				{
-					if(c == key_backspace)
+					if(c == c_key_backspace)
 					{
 						if(main_menu.player_name.len > 0)
 						{
 							main_menu.player_name.data[--main_menu.player_name.len] = 0;
 						}
 					}
-					else if(c == key_enter)
+					else if(c == c_key_enter)
 					{
 						if(main_menu.player_name.len < 3)
 						{
@@ -243,11 +244,11 @@ func void update(s_config config)
 
 			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		cheats, for testing start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 			#ifdef m_debug
-			if(is_key_pressed(key_add))
+			if(is_key_pressed(c_key_add))
 			{
 				send_simple_packet(server, e_packet_cheat_next_level, ENET_PACKET_FLAG_RELIABLE);
 			}
-			if(is_key_pressed(key_subtract))
+			if(is_key_pressed(c_key_subtract))
 			{
 				send_simple_packet(server, e_packet_cheat_previous_level, ENET_PACKET_FLAG_RELIABLE);
 			}
@@ -298,6 +299,11 @@ func void update(s_config config)
 			level_timer += delta;
 			spawn_system(levels[current_level]);
 
+		} break;
+
+		case e_state_count:
+		{
+			assert(0);
 		} break;
 	}
 }
@@ -373,7 +379,7 @@ func void render(float dt)
 					pat.time = e.time_lived[i];
 					player_and_time_arr.add(pat);
 				}
-				player_and_time_arr.bubble_sort();
+				player_and_time_arr.small_sort();
 
 				s_v2 pos = v2(20, 60);
 				for(int pat_i = 0; pat_i < player_and_time_arr.count; pat_i++)
@@ -386,6 +392,11 @@ func void render(float dt)
 			}
 
 
+		} break;
+
+		case e_state_count:
+		{
+			assert(0);
 		} break;
 	}
 
@@ -466,11 +477,11 @@ func b8 check_for_shader_errors(u32 id, char* out_error)
 
 func void input_system(int start, int count)
 {
-	b8 go_left = is_key_down(key_a) || is_key_down(key_left);
-	b8 go_right = is_key_down(key_d) || is_key_down(key_right);
-	b8 go_down = is_key_pressed(key_s) || is_key_pressed(key_down);
-	b8 jump = is_key_pressed(key_space) || is_key_pressed(key_w) || is_key_pressed(key_up);
-	b8 jump_released = is_key_released(key_space) || is_key_released(key_w) || is_key_released(key_up);
+	b8 go_left = is_key_down(c_key_a) || is_key_down(c_key_left);
+	b8 go_right = is_key_down(c_key_d) || is_key_down(c_key_right);
+	b8 go_down = is_key_pressed(c_key_s) || is_key_pressed(c_key_down);
+	b8 jump = is_key_pressed(c_key_space) || is_key_pressed(c_key_w) || is_key_pressed(c_key_up);
+	b8 jump_released = is_key_released(c_key_space) || is_key_released(c_key_w) || is_key_released(c_key_up);
 
 	for(int i = 0; i < count; i++)
 	{
@@ -723,7 +734,7 @@ func void parse_packet(ENetEvent event, s_config config)
 
 func void enet_loop(ENetHost* client, int timeout, s_config config)
 {
-	ENetEvent event = zero;
+	ENetEvent event;
 	while(enet_host_service(client, &event, timeout) > 0)
 	{
 		switch(event.type)
@@ -798,7 +809,7 @@ func void collision_system(int start, int count)
 	}
 }
 
-func s_font load_font(char* path, float font_size, s_lin_arena* arena)
+func s_font load_font(const char* path, float font_size, s_lin_arena* arena)
 {
 	s_font font = zero;
 	font.size = font_size;
@@ -900,7 +911,7 @@ func s_texture load_texture_from_data(void* data, int width, int height, u32 fil
 	return texture;
 }
 
-func s_v2 get_text_size_with_count(char* text, e_font font_id, int count)
+func s_v2 get_text_size_with_count(const char* text, e_font font_id, int count)
 {
 	assert(count >= 0);
 	if(count <= 0) { return zero; }
@@ -926,7 +937,7 @@ func s_v2 get_text_size_with_count(char* text, e_font font_id, int count)
 	return size;
 }
 
-func s_v2 get_text_size(char* text, e_font font_id)
+func s_v2 get_text_size(const char* text, e_font font_id)
 {
 	return get_text_size_with_count(text, font_id, (int)strlen(text));
 }
@@ -997,19 +1008,19 @@ func void hot_reload_shaders(void)
 #endif // m_debug
 #endif // _WIN32
 
-func u32 load_shader(char* vertex_path, char* fragment_path)
+func u32 load_shader(const char* vertex_path, const char* fragment_path)
 {
 	u32 vertex = glCreateShader(GL_VERTEX_SHADER);
 	u32 fragment = glCreateShader(GL_FRAGMENT_SHADER);
-	char* header = "#version 430 core\n";
+	const char* header = "#version 430 core\n";
 	char* vertex_src = read_file(vertex_path, &frame_arena);
 	if(!vertex_src || !vertex_src[0]) { return 0; }
 	char* fragment_src = read_file(fragment_path, &frame_arena);
 	if(!fragment_src || !fragment_src[0]) { return 0; }
-	char* vertex_src_arr[] = {header, read_file("src/shader_shared.h", &frame_arena), vertex_src};
-	char* fragment_src_arr[] = {header, read_file("src/shader_shared.h", &frame_arena), fragment_src};
-	glShaderSource(vertex, array_count(vertex_src_arr), vertex_src_arr, null);
-	glShaderSource(fragment, array_count(fragment_src_arr), fragment_src_arr, null);
+	const char* vertex_src_arr[] = {header, read_file("src/shader_shared.h", &frame_arena), vertex_src};
+	const char* fragment_src_arr[] = {header, read_file("src/shader_shared.h", &frame_arena), fragment_src};
+	glShaderSource(vertex, array_count(vertex_src_arr), (const GLchar * const *)vertex_src_arr, null);
+	glShaderSource(fragment, array_count(fragment_src_arr), (const GLchar * const *)fragment_src_arr, null);
 	glCompileShader(vertex);
 	char buffer[1024] = zero;
 	check_for_shader_errors(vertex, buffer);
@@ -1040,7 +1051,7 @@ func void handle_instant_resize_(int entity)
 
 func s_config read_config_or_make_default(s_lin_arena* arena, s_rng* in_rng)
 {
-	s_config config = zero;
+	s_config config = {};
 
 	char* data = read_file("config.txt", arena);
 	if(!data)
@@ -1050,7 +1061,7 @@ func s_config read_config_or_make_default(s_lin_arena* arena, s_rng* in_rng)
 
 	struct s_query_data
 	{
-		char* query;
+		const char* query;
 		void* target;
 		int type;
 	};
@@ -1141,7 +1152,7 @@ func s_config read_config_or_make_default(s_lin_arena* arena, s_rng* in_rng)
 
 func s_config make_default_config(s_rng* in_rng)
 {
-	s_config config = zero;
+	s_config config = {};
 	config.ip = make_name("at-taxation.at.ply.gg");
 	config.port = 62555;
 	config.color.x = (randu(in_rng) % 256) / 255.0f;
@@ -1169,7 +1180,7 @@ func void save_config(s_config config)
 	}
 }
 
-func s_name make_name(char* str)
+func s_name make_name(const char* str)
 {
 	s_name result = zero;
 	int len = (int)strlen(str);

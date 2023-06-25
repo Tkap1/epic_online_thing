@@ -1,6 +1,6 @@
 
 
-func void builder_add_(s_str_builder* builder, char* what, b8 use_tabs, va_list args)
+func void builder_add_(s_str_builder* builder, const char* what, b8 use_tabs, va_list args)
 {
 	if(use_tabs)
 	{
@@ -17,7 +17,7 @@ func void builder_add_(s_str_builder* builder, char* what, b8 use_tabs, va_list 
 	builder->data[builder->len] = 0;
 }
 
-func void builder_add(s_str_builder* builder, char* what, ...)
+func void builder_add(s_str_builder* builder, const char* what, ...)
 {
 	va_list args;
 	va_start(args, what);
@@ -32,7 +32,7 @@ func void builder_add_char(s_str_builder* builder, char c)
 	builder->data[builder->len] = 0;
 }
 
-func void builder_add_with_tabs(s_str_builder* builder, char* what, ...)
+func void builder_add_with_tabs(s_str_builder* builder, const char* what, ...)
 {
 	va_list args;
 	va_start(args, what);
@@ -40,7 +40,7 @@ func void builder_add_with_tabs(s_str_builder* builder, char* what, ...)
 	va_end(args);
 }
 
-func void builder_add_line(s_str_builder* builder, char* what, ...)
+func void builder_add_line(s_str_builder* builder, const char* what, ...)
 {
 	va_list args;
 	va_start(args, what);
@@ -49,7 +49,7 @@ func void builder_add_line(s_str_builder* builder, char* what, ...)
 	builder_add(builder, "\n");
 }
 
-func void builder_add_line_with_tabs(s_str_builder* builder, char* what, ...)
+func void builder_add_line_with_tabs(s_str_builder* builder, const char* what, ...)
 {
 	va_list args;
 	va_start(args, what);

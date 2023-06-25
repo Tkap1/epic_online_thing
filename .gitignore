@@ -55,3 +55,7 @@ build
 config.txt
 *.rdbg
 compiler_output.txt
+tags
+*.swp
+client
+server

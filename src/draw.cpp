@@ -50,7 +50,7 @@ func void draw_texture(s_v2 pos, int layer, s_v2 size, s_v4 color, s_transform t
 	transforms.add(t);
 }
 
-func void draw_text(char* text, s_v2 in_pos, int layer, s_v4 color, e_font font_id, b8 centered, s_transform t)
+func void draw_text(const char* text, s_v2 in_pos, int layer, s_v4 color, e_font font_id, b8 centered, s_transform t)
 {
 	t.layer = layer;
 
