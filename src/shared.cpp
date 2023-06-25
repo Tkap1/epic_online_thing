@@ -677,8 +677,6 @@ func void init_levels(void)
 	level_count++;
 	// -----------------------------------------------------------------------------
 
-	current_level = 20;
-
 	#undef speed
 }
 
