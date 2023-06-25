@@ -69,7 +69,7 @@ func void zero_entity(int index)
 	e.sx[index] = 0;
 	e.sy[index] = 0;
 	set_speed(index, 0);
-	e.speed_modifier[index] = zero;
+	e.speed_curve[index] = zero;
 	e.dir_x[index] = 0;
 	e.dir_y[index] = 0;
 	e.vel_x[index] = 0;
@@ -187,11 +187,11 @@ func int make_player(u32 player_id, b8 dead, s_v4 color)
 	return entity;
 }
 
-func int make_projectile(s_speed_over_time_modifier speed_modifier)
+func int make_projectile(s_float_curve speed_curve)
 {
 	int entity = make_entity();
 	assert(entity != c_invalid_entity);
-	e.speed_modifier[entity] = speed_modifier;
+	e.speed_curve[entity] = speed_curve;
 	e.type[entity] = e_entity_type_projectile;
 	e.flags[entity][e_entity_flag_move] = true;
 	e.flags[entity][e_entity_flag_draw_circle] = true;
@@ -216,7 +216,7 @@ func void spawn_system(s_level level)
 		{
 			spawn_timer[spawn_i] -= data.delay;
 
-			int entity = make_projectile(data.speed_modifier);
+			int entity = make_projectile(data.speed_curve);
 			switch(data.type)
 			{
 				case e_projectile_type_top_basic:
@@ -307,7 +307,7 @@ func void spawn_system(s_level level)
 
 					for(int shock_proj_i = 0; shock_proj_i < shock_proj_num; shock_proj_i++)
 					{
-						entity = make_projectile(data.speed_modifier);
+						entity = make_projectile(data.speed_curve);
 						e.x[entity] = x;
 						e.y[entity] = y;
 						e.sx[entity] = size;
@@ -345,7 +345,7 @@ func void spawn_system(s_level level)
 
 					for(int shock_proj_i = 0; shock_proj_i < shock_proj_num; shock_proj_i++)
 					{
-						entity = make_projectile(data.speed_modifier);
+						entity = make_projectile(data.speed_curve);
 						e.x[entity] = x;
 						e.y[entity] = y;
 						e.sx[entity] = size;
@@ -398,7 +398,7 @@ func void spawn_system(s_level level)
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile(data.speed_modifier);
+					entity = make_projectile(data.speed_curve);
 					e.x[entity] = x;
 					e.y[entity] = y;
 					e.sx[entity] = size;
@@ -410,7 +410,7 @@ func void spawn_system(s_level level)
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile(data.speed_modifier);
+					entity = make_projectile(data.speed_curve);
 					e.x[entity] = x;
 					e.y[entity] = y;
 					e.sx[entity] = size;
@@ -422,7 +422,7 @@ func void spawn_system(s_level level)
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile(data.speed_modifier);
+					entity = make_projectile(data.speed_curve);
 					e.x[entity] = x;
 					e.y[entity] = y;
 					e.sx[entity] = size;
@@ -655,10 +655,29 @@ func void init_levels(void)
 		.delay = speed(25000),
 		.speed_multiplier = 0.33f,
 		.size_multiplier = 0.25f,
-		.speed_modifier = {.seconds = 1, .speed = 5},
+		.speed_curve = {
+			.start_seconds = {0},
+			.end_seconds = {1},
+			.multiplier = {5},
+		},
 	});
 	level_count++;
 	// -----------------------------------------------------------------------------
+
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_left_basic,
+		.delay = speed(2000),
+		.speed_multiplier = 1.5f,
+	});
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_right_basic,
+		.delay = speed(1500),
+		.speed_multiplier = 0.25f,
+	});
+	level_count++;
+	// -----------------------------------------------------------------------------
+
+	current_level = 20;
 
 	#undef speed
 }
@@ -976,10 +995,28 @@ func void modify_speed_system(int start, int count)
 
 		assert(e.flags[ii][e_entity_flag_increase_time_lived]);
 
-		float seconds = e.speed_modifier[ii].seconds;
-		float increase_at_start = e.speed_modifier[ii].speed;
-		float p = 1.0f - (e.time_lived[ii] / seconds);
-		p = at_least(0, p);
-		e.modified_speed[ii] = e.base_speed[ii] * (1 + increase_at_start * p);
+		int index = -1;
+		for(int curve_i = 0; curve_i < 4; curve_i++)
+		{
+			s_float_curve curve = e.speed_curve[ii];
+			if(floats_equal(curve.start_seconds[curve_i], 0) && floats_equal(curve.end_seconds[curve_i], 0))
+			{
+				break;
+			}
+			if(e.time_lived[ii] >= curve.start_seconds[curve_i] && e.time_lived[ii] <= curve.end_seconds[curve_i])
+			{
+				index = curve_i;
+				break;
+			}
+		}
+		if(index == -1)
+		{
+			e.modified_speed[ii] = e.base_speed[ii];
+			continue;
+		}
+
+		s_float_curve sc = e.speed_curve[ii];
+		float p = 1.0f - ilerp(sc.start_seconds[index], sc.end_seconds[index], e.time_lived[ii]);
+		e.modified_speed[ii] = e.base_speed[ii] * (1 + sc.multiplier[index] * p);
 	}
 }

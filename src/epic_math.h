@@ -1,5 +1,6 @@
 
 #define pi (3.141f)
+global constexpr float epsilon = 0.000001f;
 
 struct s_v2
 {
@@ -136,4 +137,16 @@ func float rad_to_deg(float r)
 func float at_least(float a, float b)
 {
 	return a > b ? a : b;
+}
+
+func b8 floats_equal(float a, float b)
+{
+	return (a >= b - epsilon && a <= b + epsilon);
+}
+
+func float ilerp(float start, float end, float val)
+{
+	float b = end - start;
+	if(floats_equal(b, 0)) { return val; }
+	return (val - start) / b;
 }

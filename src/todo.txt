@@ -1,7 +1,8 @@
 
-show time spent on level
+size curve, just like speed curve
+make server send level data so no pulling/pushhing necessary just for levels?
 
-improve input system so it works for both windows and linux
+show time spent on level
 
 server remembering players (is this possible without accounts? maybe connectID is consistent? but surely it wont on ip change)
 	i would be nice to know how many maps each player has survived

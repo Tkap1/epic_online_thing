@@ -230,10 +230,18 @@ enum e_entity_type
 	e_entity_type_count,
 };
 
-struct s_speed_over_time_modifier
+enum e_curve_type
 {
-	float seconds;
-	float speed;
+	e_curve_type_linear,
+	e_curve_type_count,
+};
+
+struct s_float_curve
+{
+	e_curve_type type[4];
+	float start_seconds[4];
+	float end_seconds[4];
+	float multiplier[4];
 };
 
 struct s_entities
@@ -267,7 +275,7 @@ struct s_entities
 	float time_lived[c_max_entities];
 	float duration[c_max_entities];
 	s_particle_spawner particle_spawner[c_max_entities];
-	s_speed_over_time_modifier speed_modifier[c_max_entities];
+	s_float_curve speed_curve[c_max_entities];
 	s_v4 color[c_max_entities];
 	s_name name[c_max_entities];
 };
@@ -294,7 +302,7 @@ struct s_projectile_spawn_data
 	float delay;
 	float speed_multiplier = 1;
 	float size_multiplier = 1;
-	s_speed_over_time_modifier speed_modifier;
+	s_float_curve speed_curve;
 };
 
 struct s_level
