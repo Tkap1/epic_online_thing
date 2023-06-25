@@ -79,10 +79,10 @@ func void zero_entity(int index)
 	e.dead[index] = false;
 	e.time_lived[index] = 0;
 	e.duration[index] = 0;
-	e.particle_spawner[index].type = e_particle_spawner_default,
-		e.particle_spawner[index].spawn_timer = 0,
-		e.particle_spawner[index].spawn_delay = 0,
-		e.name[index] = zero;
+	e.particle_spawner[index].type = e_particle_spawner_default;
+	e.particle_spawner[index].spawn_timer = 0;
+	e.particle_spawner[index].spawn_delay = 0;
+	e.name[index] = zero;
 	e.drawn_last_render[index] = false;
 }
 
@@ -147,7 +147,7 @@ func void projectile_bounds_check_system(int start, int count)
 			e.y[ii] + radius < -c_projectile_out_of_bounds_offset ||
 			e.x[ii] - radius > c_base_res.x + c_projectile_out_of_bounds_offset ||
 			e.y[ii] - radius > c_base_res.y + c_projectile_out_of_bounds_offset
-			)
+		)
 		{
 			e.active[ii] = false;
 		}
@@ -348,7 +348,7 @@ func void spawn_system(s_level level)
 					e.color[entity] = v4(0.1f, 0.1f, 0.9f, 1.0f);
 
 					e.flags[entity][e_entity_flag_projectile_spawner] = true;
-					e.particle_spawner[entity].type = e_particle_spawner_x;
+					e.particle_spawner[entity].type = e_particle_spawner_default;
 					e.particle_spawner[entity].spawn_delay = 1.0f;
 
 					e.speed[entity] *= level.speed_multiplier[proj_i];
