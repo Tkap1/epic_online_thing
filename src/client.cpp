@@ -589,6 +589,7 @@ func void parse_packet(ENetEvent event, s_config config)
 			game.attempt_count_on_current_level = data.attempt_count_on_current_level;
 			int entity = make_player(data.id, true, config.color);
 			e.name[entity] = main_menu.player_name;
+			log("Got welcome, my id is: %u", data.id);
 		} break;
 
 		case e_packet_already_connected_player:
@@ -604,6 +605,7 @@ func void parse_packet(ENetEvent event, s_config config)
 		{
 			s_another_player_connected_from_server data = *(s_another_player_connected_from_server*)cursor;
 			make_player(data.id, data.dead, v41f(1));
+			log("Another player connected, id: %u", data.id);
 		} break;
 
 		case e_packet_player_update:

@@ -98,7 +98,7 @@ int main(int argc, char** argv)
 						data.name = e.name[entity];
 						data.color = e.color[entity];
 						send_packet(event.peer, e_packet_already_connected_player, data, ENET_PACKET_FLAG_RELIABLE);
-						log("Sent already connected data to %u", id);
+						log("Sent already connected data to %u", event.peer->connectID);
 						log("Color: %f, %f, %f", data.color.x, data.color.y, data.color.z);
 					}
 
