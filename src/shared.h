@@ -1,12 +1,13 @@
 
-// #define c_port 9417
-#define c_port 9417
+#define c_port (9417)
 
 
 #ifdef m_client
 #define handle_instant_movement(entity) handle_instant_movement_(entity)
+#define handle_instant_resize(entity) handle_instant_resize_(entity)
 #else // m_client
 #define handle_instant_movement(entity)
+#define handle_instant_resize(entity)
 #endif
 
 struct s_name
@@ -246,6 +247,8 @@ struct s_entities
 	float prev_y[c_max_entities];
 	float x[c_max_entities];
 	float y[c_max_entities];
+	float prev_sx[c_max_entities];
+	float prev_sy[c_max_entities];
 	float sx[c_max_entities];
 	float sy[c_max_entities];
 	float dir_x[c_max_entities];

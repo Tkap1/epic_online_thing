@@ -85,6 +85,7 @@ func s_v2 get_text_size_with_count(char* text, e_font font_id, int count);
 func void connect_to_server(s_config config);
 func u32 load_shader(char* vertex_path, char* fragment_path);
 func void handle_instant_movement_(int entity);
+func void handle_instant_resize_(int entity);
 func s_config make_default_config(s_rng* in_rng);
 func s_name make_name(char* str);
 func void save_config(s_config config);

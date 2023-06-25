@@ -117,3 +117,8 @@ func int roundfi(float x)
 {
 	return (int)roundf(x);
 }
+
+func float sinf2(float t)
+{
+	return sinf(t) * 0.5f + 0.5f;
+}

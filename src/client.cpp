@@ -154,6 +154,8 @@ void update_game(s_platform_data platform_data, s_platform_funcs platform_funcs)
 		game.update_timer -= c_update_delay;
 		memcpy(e.prev_x, e.x, sizeof(e.x));
 		memcpy(e.prev_y, e.y, sizeof(e.y));
+		memcpy(e.prev_sx, e.sx, sizeof(e.sx));
+		memcpy(e.prev_sy, e.sy, sizeof(e.sy));
 		update(game.config);
 
 		for(int k_i = 0; k_i < c_max_keys; k_i++)
@@ -525,17 +527,20 @@ func void draw_system(int start, int count, float dt)
 		float x = lerp(e.prev_x[ii], e.x[ii], dt);
 		float y = lerp(e.prev_y[ii], e.y[ii], dt);
 
+		float sx = lerp(e.prev_sx[ii], e.sx[ii], dt);
+		float sy = lerp(e.prev_sy[ii], e.sy[ii], dt);
+
 		s_v4 color = e.color[ii];
 		if(e.dead[ii])
 		{
 			color.w = 0.25f;
 		}
-		draw_rect(v2(x, y), 0, v2(e.sx[ii], e.sy[ii]), color, zero);
+		draw_rect(v2(x, y), 0, v2(sx, sy), color, zero);
 
 		s_v2 pos = v2(
 			x, y
 		);
-		pos.y -= e.sy[ii];
+		pos.y -= sy;
 
 		if(!e.dead[ii])
 		{
@@ -564,12 +569,13 @@ func void draw_circle_system(int start, int count, float dt)
 
 		float x = lerp(e.prev_x[ii], e.x[ii], dt);
 		float y = lerp(e.prev_y[ii], e.y[ii], dt);
+		float radius = lerp(e.prev_sx[ii], e.sx[ii], dt);
 
 		s_v4 light_color = e.color[ii];
 		light_color.w *= 0.2f;
-		draw_light(v2(x, y), 0, e.sx[ii] * 8.0f, light_color, zero);
-		draw_circle(v2(x, y), 1, e.sx[ii], e.color[ii], zero);
-		draw_circle(v2(x, y), 2, e.sx[ii] * 0.7f, v41f(1), zero);
+		draw_light(v2(x, y), 0, radius * 8.0f, light_color, zero);
+		draw_circle(v2(x, y), 1, radius, e.color[ii], zero);
+		draw_circle(v2(x, y), 2, radius * 0.7f, v41f(1), zero);
 	}
 }
 
@@ -1023,6 +1029,13 @@ func void handle_instant_movement_(int entity)
 	assert(entity != c_invalid_entity);
 	e.prev_x[entity] = e.x[entity];
 	e.prev_y[entity] = e.y[entity];
+}
+
+func void handle_instant_resize_(int entity)
+{
+	assert(entity != c_invalid_entity);
+	e.prev_sx[entity] = e.sx[entity];
+	e.prev_sy[entity] = e.sy[entity];
 }
 
 func s_config read_config_or_make_default(s_lin_arena* arena, s_rng* in_rng)

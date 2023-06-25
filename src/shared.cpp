@@ -163,6 +163,7 @@ func int make_player(u32 player_id, b8 dead, s_v4 color)
 	handle_instant_movement(entity);
 	e.sx[entity] = 32;
 	e.sy[entity] = 64;
+	handle_instant_resize(entity);
 	e.player_id[entity] = player_id;
 	e.speed[entity] = 400;
 	e.dead[entity] = dead;
@@ -225,6 +226,7 @@ func void spawn_system(s_level level)
 
 					e.speed[entity] *= level.speed_multiplier[proj_i];
 					handle_instant_movement(entity);
+					handle_instant_resize(entity);
 				} break;
 
 				case e_projectile_type_left_basic:
@@ -232,6 +234,7 @@ func void spawn_system(s_level level)
 					make_side_projectile(entity, -c_projectile_spawn_offset, 1);
 					e.speed[entity] *= level.speed_multiplier[proj_i];
 					handle_instant_movement(entity);
+					handle_instant_resize(entity);
 				} break;
 
 				case e_projectile_type_right_basic:
@@ -239,6 +242,7 @@ func void spawn_system(s_level level)
 					make_side_projectile(entity, c_base_res.x + c_projectile_spawn_offset, -1);
 					e.speed[entity] *= level.speed_multiplier[proj_i];
 					handle_instant_movement(entity);
+					handle_instant_resize(entity);
 				} break;
 
 				case e_projectile_type_diagonal_left:
@@ -246,6 +250,7 @@ func void spawn_system(s_level level)
 					make_diagonal_top_projectile(entity, 0, c_base_res.x);
 					e.speed[entity] *= level.speed_multiplier[proj_i];
 					handle_instant_movement(entity);
+					handle_instant_resize(entity);
 				} break;
 
 				case e_projectile_type_diagonal_right:
@@ -253,6 +258,7 @@ func void spawn_system(s_level level)
 					make_diagonal_top_projectile(entity, c_base_res.x, 0);
 					e.speed[entity] *= level.speed_multiplier[proj_i];
 					handle_instant_movement(entity);
+					handle_instant_resize(entity);
 				} break;
 
 				case e_projectile_type_diagonal_bottom_left:
@@ -261,6 +267,7 @@ func void spawn_system(s_level level)
 					make_diagonal_bottom_projectile(entity, 0.0f, angle);
 					e.speed[entity] *= level.speed_multiplier[proj_i];
 					handle_instant_movement(entity);
+					handle_instant_resize(entity);
 				} break;
 
 				case e_projectile_type_diagonal_bottom_right:
@@ -269,6 +276,7 @@ func void spawn_system(s_level level)
 					make_diagonal_bottom_projectile(entity, c_base_res.x, angle);
 					e.speed[entity] *= level.speed_multiplier[proj_i];
 					handle_instant_movement(entity);
+					handle_instant_resize(entity);
 				} break;
 
 				case e_projectile_type_cross:
@@ -307,6 +315,7 @@ func void spawn_system(s_level level)
 					e.dir_y[entity] = 0.0f;
 					e.color[entity] = col;
 					handle_instant_movement(entity);
+					handle_instant_resize(entity);
 
 					entity = make_projectile();
 					e.x[entity] = x;
@@ -317,6 +326,7 @@ func void spawn_system(s_level level)
 					e.dir_y[entity] = 0.0f;
 					e.color[entity] = col;
 					handle_instant_movement(entity);
+					handle_instant_resize(entity);
 
 					entity = make_projectile();
 					e.x[entity] = x;
@@ -327,6 +337,7 @@ func void spawn_system(s_level level)
 					e.dir_y[entity] = -1.0f;
 					e.color[entity] = col;
 					handle_instant_movement(entity);
+					handle_instant_resize(entity);
 
 					entity = make_projectile();
 					e.x[entity] = x;
@@ -337,6 +348,7 @@ func void spawn_system(s_level level)
 					e.dir_y[entity] = 1.0f;
 					e.color[entity] = col;
 					handle_instant_movement(entity);
+					handle_instant_resize(entity);
 				} break;
 
 				case e_projectile_type_spawner:
@@ -354,6 +366,7 @@ func void spawn_system(s_level level)
 
 					e.speed[entity] *= level.speed_multiplier[proj_i];
 					handle_instant_movement(entity);
+					handle_instant_resize(entity);
 				} break;
 
 				invalid_default_case;
@@ -542,6 +555,7 @@ func void projectile_spawner_system(int start, int count)
 						e.dir_y[entity] = sinf(angle);
 						e.color[entity] = v41f(0.5f);
 						handle_instant_movement(entity);
+						handle_instant_resize(entity);
 					}
 				} break;
 
@@ -556,6 +570,7 @@ func void projectile_spawner_system(int start, int count)
 					e.dir_y[entity] = 0.0f;
 					e.color[entity] = e.color[ii];
 					handle_instant_movement(entity);
+					handle_instant_resize(entity);
 
 					entity = make_projectile();
 					e.x[entity] = e.x[ii];
@@ -566,6 +581,7 @@ func void projectile_spawner_system(int start, int count)
 					e.dir_y[entity] = 0.0f;
 					e.color[entity] = e.color[ii];
 					handle_instant_movement(entity);
+					handle_instant_resize(entity);
 
 					entity = make_projectile();
 					e.x[entity] = e.x[ii];
@@ -576,6 +592,7 @@ func void projectile_spawner_system(int start, int count)
 					e.dir_y[entity] = -1.0f;
 					e.color[entity] = e.color[ii];
 					handle_instant_movement(entity);
+					handle_instant_resize(entity);
 
 					entity = make_projectile();
 					e.x[entity] = e.x[ii];
@@ -586,6 +603,7 @@ func void projectile_spawner_system(int start, int count)
 					e.dir_y[entity] = 1.0f;
 					e.color[entity] = e.color[ii];
 					handle_instant_movement(entity);
+					handle_instant_resize(entity);
 				} break;
 
 				case e_particle_spawner_x:
@@ -599,6 +617,7 @@ func void projectile_spawner_system(int start, int count)
 					e.dir_y[entity] = 0.5f;
 					e.color[entity] = e.color[ii];
 					handle_instant_movement(entity);
+					handle_instant_resize(entity);
 
 					entity = make_projectile();
 					e.x[entity] = e.x[ii];
@@ -609,6 +628,7 @@ func void projectile_spawner_system(int start, int count)
 					e.dir_y[entity] = -0.5f;
 					e.color[entity] = e.color[ii];
 					handle_instant_movement(entity);
+					handle_instant_resize(entity);
 
 					entity = make_projectile();
 					e.x[entity] = e.x[ii];
@@ -619,6 +639,7 @@ func void projectile_spawner_system(int start, int count)
 					e.dir_y[entity] = 0.5f;
 					e.color[entity] = e.color[ii];
 					handle_instant_movement(entity);
+					handle_instant_resize(entity);
 
 					entity = make_projectile();
 					e.x[entity] = e.x[ii];
@@ -629,6 +650,7 @@ func void projectile_spawner_system(int start, int count)
 					e.dir_y[entity] = -0.5f;
 					e.color[entity] = e.color[ii];
 					handle_instant_movement(entity);
+					handle_instant_resize(entity);
 				} break;
 
 				invalid_default_case;
