@@ -122,3 +122,13 @@ func float sinf2(float t)
 {
 	return sinf(t) * 0.5f + 0.5f;
 }
+
+func float deg_to_rad(float d)
+{
+	return d * (pi / 180.f);
+}
+
+func float rad_to_deg(float r)
+{
+	return r * (180.f / pi);
+}
