@@ -306,7 +306,7 @@ func void spawn_system(s_level level)
 						e.x[entity] = x;
 						e.y[entity] = y;
 						e.sx[entity] = size;
-						e.speed[entity] = speed * level.speed_multiplier[proj_i];
+						e.speed[entity] = speed;
 						e.dir_x[entity] = sinf(shock_proj_i * inc * 2 * pi);
 						e.dir_y[entity] = cosf(shock_proj_i * inc * 2 * pi);
 						e.color[entity] = col;
@@ -342,7 +342,7 @@ func void spawn_system(s_level level)
 						e.x[entity] = x;
 						e.y[entity] = y;
 						e.sx[entity] = size;
-						e.speed[entity] = speed * level.speed_multiplier[proj_i];
+						e.speed[entity] = speed;
 						e.dir_x[entity] = sinf(shock_proj_i * inc * 2 * pi);
 						e.dir_y[entity] = cosf(shock_proj_i * inc * 2 * pi);
 						e.color[entity] = col;
