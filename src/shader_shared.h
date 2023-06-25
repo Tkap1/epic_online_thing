@@ -5,7 +5,7 @@
 	#define shader_v4 alignas(16) s_v4
 	#define shader_float alignas(4) float
 	#define shader_int alignas(4) int
-	#define shader_bool alignas(4) b32
+	#define shader_bool alignas(4) s32
 #else
 	#define shader_v2 vec2
 	#define shader_v4 vec4
