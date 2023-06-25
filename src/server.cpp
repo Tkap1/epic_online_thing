@@ -440,11 +440,6 @@ func void parse_packet(ENetEvent event)
 			revive_every_player();
 		} break;
 		#endif // m_debug
-
-		default:
-		{
-			assert(0);
-		} break;
 	}
 }
 

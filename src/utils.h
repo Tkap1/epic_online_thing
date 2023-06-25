@@ -1,6 +1,6 @@
 
 
-#define zero {0}
+#define zero {}
 #define func static
 #define global static
 #define null NULL
@@ -20,9 +20,6 @@
 
 #define array_count(arr) (sizeof((arr)) / sizeof((arr)[0]))
 
-#define true 1
-#define false 0
-
 #ifndef _WIN32
 #define max(a,b) (a)<(b)?(b):(a)
 #define min(a,b) (a)<(b)?(a):(b)
@@ -35,7 +32,7 @@
 #define log(...) printf("Client: " __VA_ARGS__); printf("\n")
 #endif
 
-func void on_failed_assert(char* cond, char* file, int line);
+func void on_failed_assert(const char* cond, const char* file, int line);
 
 func void* buffer_read(u8** cursor, size_t size)
 {

@@ -31,7 +31,7 @@ func void set_swap_interval(int interval)
 {
 	if(wglSwapIntervalEXT)
 	{
-		wglSwapIntervalEXT(1);
+		wglSwapIntervalEXT(interval);
 	}
 }
 
@@ -448,13 +448,13 @@ func void do_gamepad_shit(void)
 
 	s_button_to_key button_to_key_arr[] = {
 		// {XINPUT_GAMEPAD_DPAD_UP, key_space},
-		{XINPUT_GAMEPAD_DPAD_DOWN, key_down},
-		{XINPUT_GAMEPAD_DPAD_LEFT, key_left},
-		{XINPUT_GAMEPAD_DPAD_RIGHT, key_right},
-		{XINPUT_GAMEPAD_A, key_space},
-		{XINPUT_GAMEPAD_B, key_down},
-		{XINPUT_GAMEPAD_X, key_down},
-		{XINPUT_GAMEPAD_Y, key_down},
+		{XINPUT_GAMEPAD_DPAD_DOWN, c_key_down},
+		{XINPUT_GAMEPAD_DPAD_LEFT, c_key_left},
+		{XINPUT_GAMEPAD_DPAD_RIGHT, c_key_right},
+		{XINPUT_GAMEPAD_A, c_key_space},
+		{XINPUT_GAMEPAD_B, c_key_down},
+		{XINPUT_GAMEPAD_X, c_key_down},
+		{XINPUT_GAMEPAD_Y, c_key_down},
 	};
 
 	for(int gamepad_i = 0; gamepad_i < XUSER_MAX_COUNT; gamepad_i++)
@@ -491,28 +491,28 @@ func void do_gamepad_shit(void)
 		{
 			s_stored_input event = zero;
 			event.is_down = true;
-			event.key = key_right;
+			event.key = c_key_right;
 			apply_event_to_input(&g_input, event);
 		}
 		else if(!right_now && right_before)
 		{
 			s_stored_input event = zero;
 			event.is_down = false;
-			event.key = key_right;
+			event.key = c_key_right;
 			apply_event_to_input(&g_input, event);
 		}
 		if(left_now && !left_before)
 		{
 			s_stored_input event = zero;
 			event.is_down = true;
-			event.key = key_left;
+			event.key = c_key_left;
 			apply_event_to_input(&g_input, event);
 		}
 		else if(!left_now && left_before)
 		{
 			s_stored_input event = zero;
 			event.is_down = false;
-			event.key = key_left;
+			event.key = c_key_left;
 			apply_event_to_input(&g_input, event);
 		}
 
