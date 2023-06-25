@@ -249,7 +249,7 @@ func void update(void)
 		}
 	}
 	level_timer += delta;
-	if(level_timer >= c_level_duration && at_least_one_player_alive)
+	if(level_timer >= levels[current_level].duration && at_least_one_player_alive)
 	{
 		s_beat_level_from_server data = zero;
 		data.current_level = current_level;

@@ -455,11 +455,12 @@ func void init_levels(void)
 	{
 		for(int proj_i = 0; proj_i < e_projectile_type_count; proj_i++)
 		{
+			levels[level_i].duration = c_level_duration;
 			levels[level_i].speed_multiplier[proj_i] = 1;
 		}
 	}
 
-	levels[level_count].spawn_delay[e_projectile_type_top_basic] = speed(3500);
+	levels[level_count].spawn_delay[e_projectile_type_top_basic] = speed(4000);
 	level_count++;
 
 	levels[level_count].spawn_delay[e_projectile_type_left_basic] = speed(2000);

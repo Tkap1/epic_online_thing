@@ -14,5 +14,4 @@ multithreading?
 global variable specific to each thread!
 __declspec(thread)
 
-rpelace virutal alloc with malloc
-make lin arena generic
+there is a bug. if you die on the same frame you beat the level, you spawn dead??

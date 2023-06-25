@@ -281,6 +281,7 @@ enum e_projectile_type
 
 struct s_level
 {
+	int duration;
 	float spawn_delay[e_projectile_type_count];
 	float speed_multiplier[e_projectile_type_count];
 };

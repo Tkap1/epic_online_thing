@@ -342,7 +342,7 @@ func void render(float dt)
 
 			// @Note(tkap, 23/06/2023): Display how many seconds left to beat the level
 			{
-				float seconds_left = c_level_duration - level_timer;
+				float seconds_left = levels[current_level].duration - level_timer;
 				s_v2 pos = v2(
 					g_window.center.x,
 					g_window.size.y * 0.3f
