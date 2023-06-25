@@ -13,3 +13,6 @@ multithreading?
 
 global variable specific to each thread!
 __declspec(thread)
+
+rpelace virutal alloc with malloc
+make lin arena generic

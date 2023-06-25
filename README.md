@@ -10,8 +10,11 @@ Run build.bat (if on Windows)
 If you want to run your own server for testing, create (or modify if you played before) a config.txt that looks like:
 
 name=tkap1
+
 ip=127.0.0.1
+
 port=9417
+
 color=a727ea
 
 Then run server.exe, and then run client.exe (or start run.bat)
