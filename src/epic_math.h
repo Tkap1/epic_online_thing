@@ -132,3 +132,8 @@ func float rad_to_deg(float r)
 {
 	return r * (180.f / pi);
 }
+
+func float at_least(float a, float b)
+{
+	return a > b ? a : b;
+}

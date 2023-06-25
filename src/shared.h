@@ -219,6 +219,7 @@ enum e_entity_flag
 	e_entity_flag_collide,
 	e_entity_flag_projectile_spawner,
 	e_entity_flag_increase_time_lived,
+	e_entity_flag_modify_speed,
 	e_entity_flag_count,
 };
 
@@ -227,6 +228,12 @@ enum e_entity_type
 	e_entity_type_player,
 	e_entity_type_projectile,
 	e_entity_type_count,
+};
+
+struct s_speed_over_time_modifier
+{
+	float seconds;
+	float speed;
 };
 
 struct s_entities
@@ -255,10 +262,12 @@ struct s_entities
 	float dir_y[c_max_entities];
 	float vel_x[c_max_entities];
 	float vel_y[c_max_entities];
-	float speed[c_max_entities];
+	float base_speed[c_max_entities];
+	float modified_speed[c_max_entities];
 	float time_lived[c_max_entities];
 	float duration[c_max_entities];
 	s_particle_spawner particle_spawner[c_max_entities];
+	s_speed_over_time_modifier speed_modifier[c_max_entities];
 	s_v4 color[c_max_entities];
 	s_name name[c_max_entities];
 };
@@ -279,11 +288,19 @@ enum e_projectile_type
 	e_projectile_type_count,
 };
 
+struct s_projectile_spawn_data
+{
+	e_projectile_type type;
+	float delay;
+	float speed_multiplier = 1;
+	float size_multiplier = 1;
+	s_speed_over_time_modifier speed_modifier;
+};
+
 struct s_level
 {
 	int duration;
-	float spawn_delay[e_projectile_type_count];
-	float speed_multiplier[e_projectile_type_count];
+	s_sarray<s_projectile_spawn_data, c_max_spawns_per_level> spawn_data;
 };
 
 global s_level levels[c_max_levels];
@@ -307,3 +324,6 @@ func void send_packet_(ENetPeer* peer, e_packet packet_id, void* data, size_t si
 
 #define broadcast_packet(host, packet_id, data, flag) broadcast_packet_(host, packet_id, &data, sizeof(data), flag)
 func void broadcast_packet_(ENetHost* in_host, e_packet packet_id, void* data, size_t size, int flag);
+
+func void apply_projectile_modifiers(int entity, s_projectile_spawn_data data);
+func void set_speed(int entity, float speed);

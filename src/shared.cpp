@@ -1,5 +1,5 @@
 
-global float spawn_timer[e_projectile_type_count];
+global float spawn_timer[c_max_spawns_per_level];
 global int current_level;
 global float level_timer;
 
@@ -11,7 +11,7 @@ func void player_movement_system(int start, int count)
 		if(!e.active[ii]) { continue; }
 		if(!e.flags[ii][e_entity_flag_player_movement]) { continue; }
 
-		e.x[ii] += e.dir_x[ii] * e.speed[ii] * delta;
+		e.x[ii] += e.dir_x[ii] * e.modified_speed[ii] * delta;
 		e.y[ii] += e.vel_y[ii] * delta;
 
 		if(e.vel_y[ii] >= 0) { e.jumping[ii] = false; }
@@ -26,8 +26,8 @@ func void move_system(int start, int count)
 		if(!e.active[ii]) { continue; }
 		if(!e.flags[ii][e_entity_flag_move]) { continue; }
 
-		e.x[ii] += e.dir_x[ii] * e.speed[ii] * delta;
-		e.y[ii] += e.dir_y[ii] * e.speed[ii] * delta;
+		e.x[ii] += e.dir_x[ii] * e.modified_speed[ii] * delta;
+		e.y[ii] += e.dir_y[ii] * e.modified_speed[ii] * delta;
 	}
 }
 
@@ -68,7 +68,8 @@ func void zero_entity(int index)
 	e.y[index] = 0;
 	e.sx[index] = 0;
 	e.sy[index] = 0;
-	e.speed[index] = 0;
+	set_speed(index, 0);
+	e.speed_modifier[index] = zero;
 	e.dir_x[index] = 0;
 	e.dir_y[index] = 0;
 	e.vel_x[index] = 0;
@@ -165,7 +166,7 @@ func int make_player(u32 player_id, b8 dead, s_v4 color)
 	e.sy[entity] = 64;
 	handle_instant_resize(entity);
 	e.player_id[entity] = player_id;
-	e.speed[entity] = 400;
+	set_speed(entity, 400);
 	e.dead[entity] = dead;
 	e.flags[entity][e_entity_flag_draw] = true;
 	e.flags[entity][e_entity_flag_increase_time_lived] = true;
@@ -186,16 +187,20 @@ func int make_player(u32 player_id, b8 dead, s_v4 color)
 	return entity;
 }
 
-func int make_projectile(void)
+func int make_projectile(s_speed_over_time_modifier speed_modifier)
 {
 	int entity = make_entity();
 	assert(entity != c_invalid_entity);
+	e.speed_modifier[entity] = speed_modifier;
 	e.type[entity] = e_entity_type_projectile;
 	e.flags[entity][e_entity_flag_move] = true;
 	e.flags[entity][e_entity_flag_draw_circle] = true;
 	e.flags[entity][e_entity_flag_expire] = true;
 	e.flags[entity][e_entity_flag_collide] = true;
 	e.flags[entity][e_entity_flag_projectile_bounds_check] = true;
+	e.flags[entity][e_entity_flag_increase_time_lived] = true;
+	e.flags[entity][e_entity_flag_modify_speed] = true;
+
 
 	return entity;
 }
@@ -203,28 +208,27 @@ func int make_projectile(void)
 
 func void spawn_system(s_level level)
 {
-
-	for(int proj_i = 0; proj_i < e_projectile_type_count; proj_i++)
+	for(int spawn_i = 0; spawn_i < level.spawn_data.count; spawn_i++)
 	{
-		if(level.spawn_delay[proj_i] <= 0) { continue; }
-		spawn_timer[proj_i] += delta;
-		while(spawn_timer[proj_i] >= level.spawn_delay[proj_i])
+		s_projectile_spawn_data data = level.spawn_data[spawn_i];
+		spawn_timer[spawn_i] += delta;
+		while(spawn_timer[spawn_i] >= data.delay)
 		{
-			spawn_timer[proj_i] -= level.spawn_delay[proj_i];
-			int entity = make_projectile();
+			spawn_timer[spawn_i] -= data.delay;
 
-			switch(proj_i)
+			int entity = make_projectile(data.speed_modifier);
+			switch(data.type)
 			{
 				case e_projectile_type_top_basic:
 				{
 					e.x[entity] = randf32(&rng) * c_base_res.x;
 					e.y[entity] = -c_projectile_spawn_offset;
 					e.dir_y[entity] = 1;
-					e.speed[entity] = randf_range(&rng, 400, 500);
+					set_speed(entity, randf_range(&rng, 400, 500));
 					e.sx[entity] = randf_range(&rng, 48, 56);
 					e.color[entity] = v4(0.9f, 0.1f, 0.1f, 1.0f);
 
-					e.speed[entity] *= level.speed_multiplier[proj_i];
+					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 				} break;
@@ -232,7 +236,7 @@ func void spawn_system(s_level level)
 				case e_projectile_type_left_basic:
 				{
 					make_side_projectile(entity, -c_projectile_spawn_offset, 1);
-					e.speed[entity] *= level.speed_multiplier[proj_i];
+					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 				} break;
@@ -240,7 +244,7 @@ func void spawn_system(s_level level)
 				case e_projectile_type_right_basic:
 				{
 					make_side_projectile(entity, c_base_res.x + c_projectile_spawn_offset, -1);
-					e.speed[entity] *= level.speed_multiplier[proj_i];
+					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 				} break;
@@ -248,7 +252,7 @@ func void spawn_system(s_level level)
 				case e_projectile_type_diagonal_left:
 				{
 					make_diagonal_top_projectile(entity, 0, c_base_res.x);
-					e.speed[entity] *= level.speed_multiplier[proj_i];
+					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 				} break;
@@ -256,7 +260,7 @@ func void spawn_system(s_level level)
 				case e_projectile_type_diagonal_right:
 				{
 					make_diagonal_top_projectile(entity, c_base_res.x, 0);
-					e.speed[entity] *= level.speed_multiplier[proj_i];
+					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 				} break;
@@ -265,7 +269,7 @@ func void spawn_system(s_level level)
 				{
 					float angle = pi * -0.25f;
 					make_diagonal_bottom_projectile(entity, 0.0f, angle);
-					e.speed[entity] *= level.speed_multiplier[proj_i];
+					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 				} break;
@@ -274,7 +278,7 @@ func void spawn_system(s_level level)
 				{
 					float angle = pi * -0.75f;
 					make_diagonal_bottom_projectile(entity, c_base_res.x, angle);
-					e.speed[entity] *= level.speed_multiplier[proj_i];
+					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 				} break;
@@ -284,16 +288,17 @@ func void spawn_system(s_level level)
 					float x = (randu(&rng) & 1) ? 0 : c_base_res.x;
 					float y = 0;
 					float size = (rand_range_ii(&rng, 0, 99) < 6) ? 200.f : randf_range(&rng, 45, 65);
-					float speed = randf_range(&rng, 166, 311) * level.speed_multiplier[proj_i];
+					float speed = randf_range(&rng, 166, 311);
 					s_v4 col = v4(randf_range(&rng, 0.775f, 1.0f), 0.0f, 0.0f, 1.0f);
 
 					e.x[entity] = x;
 					e.y[entity] = y;
 					e.sx[entity] = 300.0f;
-					e.speed[entity] = randf_range(&rng, 125, 455) * level.speed_multiplier[proj_i];
+					set_speed(entity, randf_range(&rng, 125, 455));
 					e.dir_x[entity] = 0.0f;
 					e.dir_y[entity] = 0.0f;
 					e.color[entity] = col;
+					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
@@ -302,14 +307,15 @@ func void spawn_system(s_level level)
 
 					for(int shock_proj_i = 0; shock_proj_i < shock_proj_num; shock_proj_i++)
 					{
-						entity = make_projectile();
+						entity = make_projectile(data.speed_modifier);
 						e.x[entity] = x;
 						e.y[entity] = y;
 						e.sx[entity] = size;
-						e.speed[entity] = speed;
+						set_speed(entity, speed);
 						e.dir_x[entity] = sinf(shock_proj_i * inc * 2 * pi);
 						e.dir_y[entity] = cosf(shock_proj_i * inc * 2 * pi);
 						e.color[entity] = col;
+						apply_projectile_modifiers(entity, data);
 						handle_instant_movement(entity);
 						handle_instant_resize(entity);
 					}
@@ -324,28 +330,30 @@ func void spawn_system(s_level level)
 					e.x[entity] = x;
 					e.y[entity] = y;
 					e.sx[entity] = 66.f;
-					e.speed[entity] = randf_range(&rng, 125, 455) * level.speed_multiplier[proj_i];
+					set_speed(entity, randf_range(&rng, 125, 455));
 					e.dir_x[entity] = 0.0f;
 					e.dir_y[entity] = 1.0f;
 					e.color[entity] = col;
+					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
 					int shock_proj_num = rand_range_ii(&rng, 7, 14);
 					float inc = deg_to_rad(360.f / shock_proj_num);
 					float size = randf_range(&rng, 15, 55);
-					float speed = randf_range(&rng, 166, 311) * level.speed_multiplier[proj_i];
+					float speed = randf_range(&rng, 166, 311);
 
 					for(int shock_proj_i = 0; shock_proj_i < shock_proj_num; shock_proj_i++)
 					{
-						entity = make_projectile();
+						entity = make_projectile(data.speed_modifier);
 						e.x[entity] = x;
 						e.y[entity] = y;
 						e.sx[entity] = size;
-						e.speed[entity] = speed;
+						set_speed(entity, speed);
 						e.dir_x[entity] = sinf(shock_proj_i * inc * 2 * pi);
 						e.dir_y[entity] = cosf(shock_proj_i * inc * 2 * pi);
 						e.color[entity] = col;
+						apply_projectile_modifiers(entity, data);
 						handle_instant_movement(entity);
 						handle_instant_resize(entity);
 					}
@@ -382,43 +390,47 @@ func void spawn_system(s_level level)
 					e.x[entity] = x;
 					e.y[entity] = y;
 					e.sx[entity] = size;
-					e.speed[entity] = speed * level.speed_multiplier[proj_i];;
+					set_speed(entity, speed);
 					e.dir_x[entity] = -1.0f;
 					e.dir_y[entity] = 0.0f;
 					e.color[entity] = col;
+					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile();
+					entity = make_projectile(data.speed_modifier);
 					e.x[entity] = x;
 					e.y[entity] = y;
 					e.sx[entity] = size;
-					e.speed[entity] = speed * level.speed_multiplier[proj_i];;
+					set_speed(entity, speed);
 					e.dir_x[entity] = 1.0f;
 					e.dir_y[entity] = 0.0f;
 					e.color[entity] = col;
+					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile();
+					entity = make_projectile(data.speed_modifier);
 					e.x[entity] = x;
 					e.y[entity] = y;
 					e.sx[entity] = size;
-					e.speed[entity] = 133 * level.speed_multiplier[proj_i];;
+					set_speed(entity, 133);
 					e.dir_x[entity] = 0.0f;
 					e.dir_y[entity] = -1.0f;
 					e.color[entity] = col;
+					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile();
+					entity = make_projectile(data.speed_modifier);
 					e.x[entity] = x;
 					e.y[entity] = y;
 					e.sx[entity] = size;
-					e.speed[entity] = 133 * level.speed_multiplier[proj_i];;
+					set_speed(entity, 133);
 					e.dir_x[entity] = 0.0f;
 					e.dir_y[entity] = 1.0f;
 					e.color[entity] = col;
+					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 				} break;
@@ -428,7 +440,7 @@ func void spawn_system(s_level level)
 					e.x[entity] = -c_projectile_spawn_offset;
 					e.y[entity] = c_base_res.y * 0.5f;
 					e.dir_x[entity] = 1;
-					e.speed[entity] = 300;
+					set_speed(entity, 300);
 					e.sx[entity] = 50;
 					e.color[entity] = v4(0.1f, 0.1f, 0.9f, 1.0f);
 
@@ -436,7 +448,7 @@ func void spawn_system(s_level level)
 					e.particle_spawner[entity].type = e_particle_spawner_default;
 					e.particle_spawner[entity].spawn_delay = 1.0f;
 
-					e.speed[entity] *= level.speed_multiplier[proj_i];
+					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 				} break;
@@ -453,83 +465,200 @@ func void init_levels(void)
 
 	for(int level_i = 0; level_i < c_max_levels; level_i++)
 	{
-		for(int proj_i = 0; proj_i < e_projectile_type_count; proj_i++)
-		{
-			levels[level_i].duration = c_level_duration;
-			levels[level_i].speed_multiplier[proj_i] = 1;
-		}
+		levels[level_i].duration = c_level_duration;
 	}
 
-	levels[level_count].spawn_delay[e_projectile_type_top_basic] = speed(4000);
+	// -----------------------------------------------------------------------------
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_top_basic,
+		.delay = speed(4000),
+	});
 	level_count++;
+	// -----------------------------------------------------------------------------
 
-	levels[level_count].spawn_delay[e_projectile_type_left_basic] = speed(2000);
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_left_basic,
+		.delay = speed(2000),
+	});
 	level_count++;
+	// -----------------------------------------------------------------------------
 
-	levels[level_count].spawn_delay[e_projectile_type_diagonal_right] = speed(3000);
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_diagonal_right,
+		.delay = speed(3000),
+	});
 	level_count++;
+	// -----------------------------------------------------------------------------
 
-	levels[level_count].spawn_delay[e_projectile_type_right_basic] = speed(2500);
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_right_basic,
+		.delay = speed(2500),
+	});
 	level_count++;
+	// -----------------------------------------------------------------------------
 
-	levels[level_count].spawn_delay[e_projectile_type_diagonal_left] = speed(2800);
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_diagonal_left,
+		.delay = speed(2800),
+	});
 	level_count++;
+	// -----------------------------------------------------------------------------
 
-	levels[level_count].spawn_delay[e_projectile_type_diagonal_bottom_right] = speed(2800);
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_diagonal_bottom_right,
+		.delay = speed(2800),
+	});
 	level_count++;
+	// -----------------------------------------------------------------------------
 
-	levels[level_count].spawn_delay[e_projectile_type_spawner] = speed(1000);
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_spawner,
+		.delay = speed(1000),
+	});
 	level_count++;
+	// -----------------------------------------------------------------------------
 
-	levels[level_count].spawn_delay[e_projectile_type_diagonal_bottom_left] = speed(3300);
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_diagonal_bottom_left,
+		.delay = speed(3300),
+	});
 	level_count++;
+	// -----------------------------------------------------------------------------
 
-	levels[level_count].spawn_delay[e_projectile_type_left_basic] = speed(1000);
-	levels[level_count].spawn_delay[e_projectile_type_right_basic] = speed(1000);
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_left_basic,
+		.delay = speed(1000),
+	});
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_right_basic,
+		.delay = speed(1000),
+	});
 	level_count++;
+	// -----------------------------------------------------------------------------
 
-	levels[level_count].spawn_delay[e_projectile_type_cross] = speed(2777);
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_cross,
+		.delay = speed(2777),
+	});
 	level_count++;
+	// -----------------------------------------------------------------------------
 
-	levels[level_count].spawn_delay[e_projectile_type_top_basic] = speed(3000);
-	levels[level_count].spawn_delay[e_projectile_type_left_basic] = speed(2500);
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_top_basic,
+		.delay = speed(3000),
+	});
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_left_basic,
+		.delay = speed(2500),
+	});
 	level_count++;
+	// -----------------------------------------------------------------------------
 
-	levels[level_count].spawn_delay[e_projectile_type_diagonal_left] = speed(3500);
-	levels[level_count].spawn_delay[e_projectile_type_diagonal_bottom_right] = speed(2500);
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_diagonal_left,
+		.delay = speed(3500),
+	});
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_diagonal_bottom_right,
+		.delay = speed(2500),
+	});
 	level_count++;
+	// -----------------------------------------------------------------------------
 
-	levels[level_count].spawn_delay[e_projectile_type_top_basic] = speed(2000);
-	levels[level_count].spawn_delay[e_projectile_type_spawner] = speed(1500);
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_top_basic,
+		.delay = speed(2000),
+	});
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_spawner,
+		.delay = speed(1500),
+	});
 	level_count++;
+	// -----------------------------------------------------------------------------
 
-	levels[level_count].spawn_delay[e_projectile_type_right_basic] = speed(2200);
-	levels[level_count].spawn_delay[e_projectile_type_diagonal_bottom_left] = speed(1000);
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_right_basic,
+		.delay = speed(2200),
+	});
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_diagonal_bottom_left,
+		.delay = speed(1000),
+	});
 	level_count++;
+	// -----------------------------------------------------------------------------
 
-	levels[level_count].spawn_delay[e_projectile_type_diagonal_left] = speed(4000);
-	levels[level_count].spawn_delay[e_projectile_type_diagonal_right] = speed(4000);
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_diagonal_left,
+		.delay = speed(4000),
+	});
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_diagonal_right,
+		.delay = speed(4000),
+	});
 	level_count++;
+	// -----------------------------------------------------------------------------
 
-	levels[level_count].spawn_delay[e_projectile_type_top_basic] = speed(4000);
-	levels[level_count].spawn_delay[e_projectile_type_left_basic] = speed(1200);
-	levels[level_count].spawn_delay[e_projectile_type_right_basic] = speed(1200);
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_top_basic,
+		.delay = speed(4000),
+	});
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_left_basic,
+		.delay = speed(1200),
+	});
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_right_basic,
+		.delay = speed(1200),
+	});
 	level_count++;
+	// -----------------------------------------------------------------------------
 
-	levels[level_count].spawn_delay[e_projectile_type_diagonal_bottom_left] = speed(2200);
-	levels[level_count].spawn_delay[e_projectile_type_diagonal_bottom_right] = speed(2200);
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_diagonal_bottom_left,
+		.delay = speed(2200),
+	});
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_diagonal_bottom_right,
+		.delay = speed(2200),
+	});
 	level_count++;
+	// -----------------------------------------------------------------------------
 
-	levels[level_count].spawn_delay[e_projectile_type_corner_shot] = speed(3333);
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_corner_shot,
+		.delay = speed(3333),
+	});
 	level_count++;
+	// -----------------------------------------------------------------------------
 
-	levels[level_count].spawn_delay[e_projectile_type_shockwave] = speed(2777);
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_shockwave,
+		.delay = speed(2777),
+	});
 	level_count++;
+	// -----------------------------------------------------------------------------
 
-	levels[level_count].spawn_delay[e_projectile_type_cross] = speed(1111);
-	levels[level_count].spawn_delay[e_projectile_type_shockwave] = speed(2000);
-
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_cross,
+		.delay = speed(1000),
+	});
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_shockwave,
+		.delay = speed(2000),
+	});
 	level_count++;
+	// -----------------------------------------------------------------------------
+
+	// @Note(tkap, 25/06/2023): Maze
+	levels[level_count].spawn_data.add({
+		.type = e_projectile_type_top_basic,
+		.delay = speed(25000),
+		.speed_multiplier = 0.33f,
+		.size_multiplier = 0.25f,
+		.speed_modifier = {.seconds = 1, .speed = 5},
+	});
+	level_count++;
+	// -----------------------------------------------------------------------------
 
 	#undef speed
 }
@@ -605,7 +734,7 @@ func void make_diagonal_top_projectile(int entity, float x, float opposite_x)
 	s_v2 dir = v2_from_angle(angle);
 	e.dir_x[entity] = dir.x;
 	e.dir_y[entity] = dir.y;
-	e.speed[entity] = randf_range(&rng, 400, 500);
+	set_speed(entity, randf_range(&rng, 400, 500));
 	e.sx[entity] = randf_range(&rng, 38, 46);
 	e.color[entity] = v4(0.9f, 0.9f, 0.1f, 1.0f);
 }
@@ -629,12 +758,12 @@ func void projectile_spawner_system(int start, int count)
 				{
 					for(int proj_i = 0; proj_i < 2; proj_i++)
 					{
-						int entity = make_projectile();
+						int entity = make_projectile(zero);
 						float angle = randf_range(&rng, pi * 0.3f, pi * 0.7f);
 						e.x[entity] = e.x[ii];
 						e.y[entity] = e.y[ii];
 						e.sx[entity] = e.sx[ii] * 0.5f;
-						e.speed[entity] = e.speed[ii] * 0.5f;
+						set_speed(entity, e.base_speed[ii] * 0.5f);
 						e.dir_x[entity] = cosf(angle);
 						e.dir_y[entity] = sinf(angle);
 						e.color[entity] = v41f(0.5f);
@@ -645,44 +774,44 @@ func void projectile_spawner_system(int start, int count)
 
 				case e_particle_spawner_cross:
 				{
-					int entity = make_projectile();
+					int entity = make_projectile(zero);
 					e.x[entity] = e.x[ii];
 					e.y[entity] = e.y[ii];
 					e.sx[entity] = e.sx[ii] * 0.5f;
-					e.speed[entity] = e.speed[ii] * 0.5f;
+					set_speed(entity, e.base_speed[ii] * 0.5f);
 					e.dir_x[entity] = -1.0f;
 					e.dir_y[entity] = 0.0f;
 					e.color[entity] = e.color[ii];
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile();
+					entity = make_projectile(zero);
 					e.x[entity] = e.x[ii];
 					e.y[entity] = e.y[ii];
 					e.sx[entity] = e.sx[ii] * 0.5f;
-					e.speed[entity] = e.speed[ii] * 0.5f;
+					set_speed(entity, e.base_speed[ii] * 0.5f);
 					e.dir_x[entity] = 1.0f;
 					e.dir_y[entity] = 0.0f;
 					e.color[entity] = e.color[ii];
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile();
+					entity = make_projectile(zero);
 					e.x[entity] = e.x[ii];
 					e.y[entity] = e.y[ii];
 					e.sx[entity] = e.sx[ii] * 0.5f;
-					e.speed[entity] = e.speed[ii] * 0.5f;
+					set_speed(entity, e.base_speed[ii] * 0.5f);
 					e.dir_x[entity] = 0.0f;
 					e.dir_y[entity] = -1.0f;
 					e.color[entity] = e.color[ii];
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile();
+					entity = make_projectile(zero);
 					e.x[entity] = e.x[ii];
 					e.y[entity] = e.y[ii];
 					e.sx[entity] = e.sx[ii] * 0.5f;
-					e.speed[entity] = e.speed[ii] * 0.5f;
+					set_speed(entity, e.base_speed[ii] * 0.5f);
 					e.dir_x[entity] = 0.0f;
 					e.dir_y[entity] = 1.0f;
 					e.color[entity] = e.color[ii];
@@ -692,44 +821,44 @@ func void projectile_spawner_system(int start, int count)
 
 				case e_particle_spawner_x:
 				{
-					int entity = make_projectile();
+					int entity = make_projectile(zero);
 					e.x[entity] = e.x[ii];
 					e.y[entity] = e.y[ii];
 					e.sx[entity] = e.sx[ii] * 0.5f;
-					e.speed[entity] = e.speed[ii] * 0.5f;
+					set_speed(entity, e.base_speed[ii] * 0.5f);
 					e.dir_x[entity] = 0.5f;
 					e.dir_y[entity] = 0.5f;
 					e.color[entity] = e.color[ii];
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile();
+					entity = make_projectile(zero);
 					e.x[entity] = e.x[ii];
 					e.y[entity] = e.y[ii];
 					e.sx[entity] = e.sx[ii] * 0.5f;
-					e.speed[entity] = e.speed[ii] * 0.5f;
+					set_speed(entity, e.base_speed[ii] * 0.5f);
 					e.dir_x[entity] = -0.5f;
 					e.dir_y[entity] = -0.5f;
 					e.color[entity] = e.color[ii];
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile();
+					entity = make_projectile(zero);
 					e.x[entity] = e.x[ii];
 					e.y[entity] = e.y[ii];
 					e.sx[entity] = e.sx[ii] * 0.5f;
-					e.speed[entity] = e.speed[ii] * 0.5f;
+					set_speed(entity, e.base_speed[ii] * 0.5f);
 					e.dir_x[entity] = -0.5f;
 					e.dir_y[entity] = 0.5f;
 					e.color[entity] = e.color[ii];
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile();
+					entity = make_projectile(zero);
 					e.x[entity] = e.x[ii];
 					e.y[entity] = e.y[ii];
 					e.sx[entity] = e.sx[ii] * 0.5f;
-					e.speed[entity] = e.speed[ii] * 0.5f;
+					set_speed(entity, e.base_speed[ii] * 0.5f);
 					e.dir_x[entity] = 0.5f;
 					e.dir_y[entity] = -0.5f;
 					e.color[entity] = e.color[ii];
@@ -748,7 +877,7 @@ func void make_side_projectile(int entity, float x, float x_dir)
 	e.x[entity] = x;
 	e.y[entity] = randf_range(&rng, c_base_res.y * 0.6f, c_base_res.y);
 	e.dir_x[entity] = x_dir;
-	e.speed[entity] = randf_range(&rng, 400, 500);
+	set_speed(entity, randf_range(&rng, 400, 500));
 	e.sx[entity] = randf_range(&rng, 38, 46);
 	e.color[entity] = v4(0.1f, 0.9f, 0.1f, 1.0f);
 }
@@ -820,5 +949,37 @@ func void increase_time_lived_system(int start, int count)
 		if(!e.flags[ii][e_entity_flag_increase_time_lived]) { continue; }
 
 		e.time_lived[ii] += delta;
+	}
+}
+
+func void apply_projectile_modifiers(int entity, s_projectile_spawn_data data)
+{
+	e.sx[entity]*= data.size_multiplier;
+	e.sy[entity]*= data.size_multiplier;
+	e.base_speed[entity] *= data.speed_multiplier;
+	e.modified_speed[entity] *= data.speed_multiplier;
+}
+
+func void set_speed(int entity, float speed)
+{
+	e.base_speed[entity] = speed;
+	e.modified_speed[entity] = speed;
+}
+
+func void modify_speed_system(int start, int count)
+{
+	for(int i = 0; i < count; i++)
+	{
+		int ii = start + i;
+		if(!e.active[ii]) { continue; }
+		if(!e.flags[ii][e_entity_flag_modify_speed]) { continue; }
+
+		assert(e.flags[ii][e_entity_flag_increase_time_lived]);
+
+		float seconds = e.speed_modifier[ii].seconds;
+		float increase_at_start = e.speed_modifier[ii].speed;
+		float p = 1.0f - (e.time_lived[ii] / seconds);
+		p = at_least(0, p);
+		e.modified_speed[ii] = e.base_speed[ii] * (1 + increase_at_start * p);
 	}
 }

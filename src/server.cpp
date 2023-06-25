@@ -217,6 +217,15 @@ func void update(void)
 {
 	for(int i = 0; i < c_num_threads; i++)
 	{
+		increase_time_lived_system(i * c_entities_per_thread, c_entities_per_thread);
+	}
+	for(int i = 0; i < c_num_threads; i++)
+	{
+		modify_speed_system(i * c_entities_per_thread, c_entities_per_thread);
+		gravity_system(i * c_entities_per_thread, c_entities_per_thread);
+	}
+	for(int i = 0; i < c_num_threads; i++)
+	{
 		move_system(i * c_entities_per_thread, c_entities_per_thread);
 		player_movement_system(i * c_entities_per_thread, c_entities_per_thread);
 		physics_movement_system(i * c_entities_per_thread, c_entities_per_thread);
@@ -229,10 +238,6 @@ func void update(void)
 	for(int i = 0; i < c_num_threads; i++)
 	{
 		projectile_spawner_system(i * c_entities_per_thread, c_entities_per_thread);
-	}
-	for(int i = 0; i < c_num_threads; i++)
-	{
-		increase_time_lived_system(i * c_entities_per_thread, c_entities_per_thread);
 	}
 
 	spawn_system(levels[current_level]);

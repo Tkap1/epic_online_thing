@@ -258,6 +258,11 @@ func void update(s_config config)
 
 			for(int i = 0; i < c_num_threads; i++)
 			{
+				increase_time_lived_system(i * c_entities_per_thread, c_entities_per_thread);
+			}
+			for(int i = 0; i < c_num_threads; i++)
+			{
+				modify_speed_system(i * c_entities_per_thread, c_entities_per_thread);
 				gravity_system(i * c_entities_per_thread, c_entities_per_thread);
 			}
 			for(int i = 0; i < c_num_threads; i++)
@@ -282,10 +287,6 @@ func void update(s_config config)
 			for(int i = 0; i < c_num_threads; i++)
 			{
 				collision_system(i * c_entities_per_thread, c_entities_per_thread);
-			}
-			for(int i = 0; i < c_num_threads; i++)
-			{
-				increase_time_lived_system(i * c_entities_per_thread, c_entities_per_thread);
 			}
 
 			int my_player = find_player_by_id(my_id);
