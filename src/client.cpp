@@ -344,7 +344,7 @@ func void render(float dt)
 			// @Note(tkap, 23/06/2023): Display current level
 			{
 				s_v2 pos = v2(20, 20);
-				draw_text(format_text("Level %i", current_level + 1), pos, 1, v41f(1), e_font_medium, false, zero);
+				draw_text(format_text("Level %i (%i)", current_level + 1, game.attempt_count_on_current_level), pos, 1, v41f(1), e_font_medium, false, zero);
 			}
 
 			// @Note(tkap, 25/06/2023): Display time alive of each player
@@ -584,6 +584,9 @@ func void parse_packet(ENetEvent event, s_config config)
 		{
 			s_welcome_from_server data = *(s_welcome_from_server*)cursor;
 			my_id = data.id;
+			current_level = data.current_level;
+			rng.seed = data.seed;
+			game.attempt_count_on_current_level = data.attempt_count_on_current_level;
 			int entity = make_player(data.id, true, config.color);
 			e.name[entity] = main_menu.player_name;
 		} break;
@@ -633,6 +636,7 @@ func void parse_packet(ENetEvent event, s_config config)
 			s_beat_level_from_server data = *(s_beat_level_from_server*)cursor;
 			current_level = data.current_level + 1;
 			rng.seed = data.seed;
+			game.attempt_count_on_current_level = 0;
 			reset_level();
 			revive_every_player();
 			log("Beat level %i", current_level);
@@ -645,6 +649,7 @@ func void parse_packet(ENetEvent event, s_config config)
 			current_level = data.current_level;
 			log("Reset level %i", current_level + 1);
 			rng.seed = data.seed;
+			game.attempt_count_on_current_level = data.attempt_count_on_current_level;
 			reset_level();
 			revive_every_player();
 		} break;

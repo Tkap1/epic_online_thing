@@ -1,7 +1,5 @@
 
 show time spent on level
-show attempts on level
-show who has spent the most time alive in total, since connecting
 
 
 improve input system so it works for both windows and linux

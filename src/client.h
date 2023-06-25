@@ -62,6 +62,7 @@ struct s_config
 struct s_game
 {
 	s_config config;
+	int attempt_count_on_current_level;
 	f64 update_timer;
 };
 

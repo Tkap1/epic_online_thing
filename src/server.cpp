@@ -106,6 +106,9 @@ int main(int argc, char** argv)
 					{
 						s_welcome_from_server data = zero;
 						data.id = event.peer->connectID;
+						data.current_level = current_level;
+						data.seed = rng.seed;
+						data.attempt_count_on_current_level = game.attempt_count_on_current_level;
 						send_packet(event.peer, e_packet_welcome, data, ENET_PACKET_FLAG_RELIABLE);
 					}
 
@@ -244,6 +247,8 @@ func void update(void)
 
 		current_level += 1;
 
+		game.attempt_count_on_current_level = 0;
+
 		// @Note(tkap, 25/06/2023): Reset if we go past all levels
 		if(current_level >= level_count)
 		{
@@ -259,9 +264,23 @@ func void update(void)
 		reset_level();
 		revive_every_player();
 
+		if(peers.count > 0)
+		{
+			if(game.last_restart_had_players)
+			{
+				game.attempt_count_on_current_level += 1;
+			}
+			game.last_restart_had_players = true;
+		}
+		else
+		{
+			game.last_restart_had_players = false;
+		}
+
 		s_reset_level_from_server data = zero;
 		data.current_level = current_level;
 		data.seed = rng.seed;
+		data.attempt_count_on_current_level = game.attempt_count_on_current_level;
 		broadcast_packet(host, e_packet_reset_level, data, ENET_PACKET_FLAG_RELIABLE);
 	}
 
@@ -385,6 +404,7 @@ func void parse_packet(ENetEvent event)
 			data.seed = rng.seed;
 			broadcast_packet(host, e_packet_beat_level, data, ENET_PACKET_FLAG_RELIABLE);
 
+			game.attempt_count_on_current_level = 0;
 			current_level += 1;
 			reset_level();
 			revive_every_player();
@@ -395,6 +415,7 @@ func void parse_packet(ENetEvent event)
 			// if(peers.count > 1) { break; }
 			if(current_level <= 0) { break; }
 
+			game.attempt_count_on_current_level = 0;
 			current_level -= 1;
 
 			s_cheat_previous_level_from_server data = zero;

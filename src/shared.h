@@ -41,6 +41,9 @@ enum e_packet
 struct s_welcome_from_server
 {
 	u32 id;
+	int current_level;
+	u32 seed;
+	int attempt_count_on_current_level;
 };
 
 struct s_welcome_from_client
@@ -140,6 +143,7 @@ struct s_reset_level_from_server
 {
 	int current_level;
 	u32 seed;
+	int attempt_count_on_current_level;
 };
 
 struct s_reset_level_from_client
