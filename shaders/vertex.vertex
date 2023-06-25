@@ -41,8 +41,8 @@ void main()
 
 	s_transform t = transforms[gl_InstanceID];
 
-	float min_uv_x = t.flip_x ? t.uv_max.x : t.uv_min.x;
-	float max_uv_x = t.flip_x ? t.uv_min.x : t.uv_max.x;
+	float min_uv_x = t.flip_x != 0 ? t.uv_max.x : t.uv_min.x;
+	float max_uv_x = t.flip_x != 0 ? t.uv_min.x : t.uv_max.x;
 	vec2 topleft = vec2(
 		min_uv_x,
 		t.uv_min.y
