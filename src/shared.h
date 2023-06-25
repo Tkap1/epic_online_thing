@@ -178,6 +178,21 @@ struct s_cheat_previous_level_from_server
 
 #pragma pack(pop)
 
+enum e_particle_spawner_type
+{
+	e_particle_spawner_default, //Not sure what to call the random 2 blob spawner thingamajig
+	e_particle_spawner_cross,
+	e_particle_spawner_x,
+	e_particle_spawner_type_count,
+};
+
+struct s_particle_spawner
+{
+	e_particle_spawner_type type;
+	float spawn_timer;
+	float spawn_delay;
+};
+
 enum e_entity_flag
 {
 	e_entity_flag_move,
@@ -229,8 +244,7 @@ struct s_entities
 	float speed[c_max_entities];
 	float time_lived[c_max_entities];
 	float duration[c_max_entities];
-	float spawn_timer[c_max_entities];
-	float spawn_delay[c_max_entities];
+	s_particle_spawner particle_spawner[c_max_entities];
 	s_v4 color[c_max_entities];
 	s_name name[c_max_entities];
 };
