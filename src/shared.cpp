@@ -421,8 +421,8 @@ func void init_levels(void)
 	level_count++;
 
 	levels[level_count].spawn_delay[e_projectile_type_top_basic] = speed(4000);
-	levels[level_count].spawn_delay[e_projectile_type_left_basic] = speed(2000);
-	levels[level_count].spawn_delay[e_projectile_type_right_basic] = speed(2000);
+	levels[level_count].spawn_delay[e_projectile_type_left_basic] = speed(1000);
+	levels[level_count].spawn_delay[e_projectile_type_right_basic] = speed(1000);
 	level_count++;
 
 	current_level = 15;
