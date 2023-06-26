@@ -46,6 +46,7 @@ struct s_projectile_spawn_data
 	float speed_multiplier = 1;
 	float size_multiplier = 1;
 	s_float_curve speed_curve;
+	float x_override = c_max_f32;
 	float y_override = c_max_f32;
 };
 

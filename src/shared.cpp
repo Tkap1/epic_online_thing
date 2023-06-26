@@ -228,6 +228,11 @@ func void spawn_system(s_level level)
 					game->e.sx[entity] = randf_range(&game->rng, 48, 56);
 					game->e.color[entity] = v4(0.9f, 0.1f, 0.1f, 1.0f);
 
+					if(data.x_override != c_max_f32)
+					{
+						game->e.x[entity] = data.x_override;
+					}
+
 					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
@@ -714,6 +719,104 @@ func void init_levels(void)
 		.delay = speed(8000),
 		.size_multiplier = 0.9f,
 	});
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_spawner,
+		.delay = speed(2500),
+		.speed_curve = {
+			.start_seconds = {0, 1},
+			.end_seconds = {0.5f, 1.5f},
+			.multiplier = {5, 5},
+		},
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_diagonal_left,
+		.delay = speed(2000),
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_diagonal_right,
+		.delay = speed(2000),
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_left_basic,
+		.delay = speed(1000),
+	});
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_diagonal_left,
+		.delay = speed(2000),
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_diagonal_right,
+		.delay = speed(2000),
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_left_basic,
+		.delay = speed(1000),
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_right_basic,
+		.delay = speed(1000),
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_top_basic,
+		.delay = speed(1000),
+	});
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_diagonal_left,
+		.delay = speed(1500),
+		.size_multiplier = 0.25f,
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_diagonal_right,
+		.delay = speed(1500),
+		.size_multiplier = 0.25f,
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_left_basic,
+		.delay = speed(2000),
+		.size_multiplier = 0.25f,
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_right_basic,
+		.delay = speed(2000),
+		.size_multiplier = 0.25f,
+	});
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
+	levels[game->level_count].infinite_jumps = true;
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_left_basic,
+		.delay = speed(1000),
+		.y_override = c_base_res.y,
+	});
+
+	for(int i = 0; i < 5; i++)
+	{
+		levels[game->level_count].spawn_data.add({
+			.type = e_projectile_type_top_basic,
+			.delay = speed(800),
+			.size_multiplier = 2.6f,
+			.x_override = c_base_res.x * (i / 4.0f),
+		});
+	}
+	for(int i = 0; i < 5; i++)
+	{
+		levels[game->level_count].spawn_data.add({
+			.type = e_projectile_type_top_basic,
+			.delay = speed(300),
+			.size_multiplier = 2.6f,
+			.x_override = c_base_res.x * (i / 4.0f) + c_base_res.x * 0.12f,
+		});
+	}
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
