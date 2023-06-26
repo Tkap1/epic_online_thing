@@ -76,13 +76,14 @@ m_update_game(update_game)
 {
 	assert((c_max_entities % c_num_threads) == 0);
 	game = (s_game*)game_memory;
-
 	frame_arena = &platform_data.frame_arena;
 	g_platform_funcs = platform_funcs;
 	g_platform_data = platform_data;
 	g_network = game_network;
 	char_event_arr = platform_data.char_event_arr;
 	g_input = platform_data.input;
+	if(disgusting_recompile_hack) { return ; }
+
 	if(!game->initialized)
 	{
 		game->initialized = true;
@@ -727,8 +728,6 @@ m_parse_packet(parse_packet)
 		case e_packet_update_time_lived:
 		{
 			s_update_time_lived_from_server data = *(s_update_time_lived_from_server*)cursor;
-
-			log("time lived of %u is %f", data.id, data.time_lived);
 
 			int entity = find_player_by_id(data.id);
 			if(entity != c_invalid_entity)

@@ -261,5 +261,5 @@ struct s_game_network
 };
 
 
-#define m_update_game(name) void name(s_platform_data platform_data, s_platform_funcs platform_funcs, s_game_network* game_network, void* game_memory)
+#define m_update_game(name) void name(s_platform_data platform_data, s_platform_funcs platform_funcs, s_game_network* game_network, void* game_memory, b8 disgusting_recompile_hack)
 typedef m_update_game(t_update_game);

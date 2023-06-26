@@ -1,7 +1,4 @@
 
-#define c_port (9417)
-
-
 #ifdef m_client
 #define handle_instant_movement(entity) handle_instant_movement_(entity)
 #define handle_instant_resize(entity) handle_instant_resize_(entity)

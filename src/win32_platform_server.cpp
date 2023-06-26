@@ -14,8 +14,10 @@
 #include "shared_client_server.h"
 #include "win32_platform_server.h"
 #include "platform_shared.h"
+#include "win32_reload_dll.h"
 
 #include "memory.cpp"
+#include "enet_shared_server.cpp"
 
 
 int main(int argc, char** argv)
@@ -33,7 +35,7 @@ int main(int argc, char** argv)
 
 	ENetAddress address = zero;
 	address.host = ENET_HOST_ANY;
-	address.port = 9417;
+	address.port = c_internal_server_port;
 
 	s_platform_network platform_network = zero;
 	s_game_network game_network = zero;
@@ -75,20 +77,32 @@ int main(int argc, char** argv)
 	{
 		f64 start_of_frame_seconds = get_seconds();
 
-		if(!update_game)
+		if(need_to_reload_dll("build/server.dll"))
 		{
-			dll = LoadLibrary("build/server.dll");
-			assert(dll);
+			if(dll) { unload_dll(dll); }
+
+			for(int i = 0; i < 100; i++)
+			{
+				if(CopyFile("build/server.dll", "server.dll", false)) { break; }
+				assert(i != 99);
+				Sleep(10);
+			}
+			dll = load_dll("server.dll");
 			update_game = (t_update_game*)GetProcAddress(dll, "update_game");
 			assert(update_game);
 			parse_packet = (t_parse_packet*)GetProcAddress(dll, "parse_packet");
 			assert(parse_packet);
+			printf("Reloaded DLL!\n");
+			platform_data.recompiled = true;
+			update_game(platform_data, &game_network, game_memory, true);
 		}
+
 
 		enet_loop(&platform_network, &game_network, parse_packet);
 
 		platform_data.time_passed = time_passed;
-		update_game(platform_data, &game_network, game_memory);
+		update_game(platform_data, &game_network, game_memory, false);
+		platform_data.recompiled = false;
 
 		foreach_raw(packet_i, packet, game_network.out_packets)
 		{
@@ -127,82 +141,4 @@ int main(int argc, char** argv)
 	}
 
 	return 0;
-}
-
-func void enet_loop(s_platform_network* platform_network, s_game_network* game_network, t_parse_packet* parse_packet)
-{
-	ENetEvent event;
-	while(enet_host_service(platform_network->host, &event, 0) > 0)
-	{
-		switch(event.type)
-		{
-			case ENET_EVENT_TYPE_NONE:
-			{
-			} break;
-
-			case ENET_EVENT_TYPE_CONNECT:
-			{
-				if(platform_network->peers.count >= c_max_peers) { break; }
-
-				s_packet packet = zero;
-				packet.size = sizeof(e_packet_connect);
-				packet.data = (u8*)la_get(&game_network->read_arena, packet.size);
-				packet.from = event.peer->connectID;
-				u8* cursor = packet.data;
-				int temp = e_packet_connect;
-				buffer_write(&cursor, &temp, sizeof(temp));
-
-				s_peer peer = zero;
-				peer.id = event.peer->connectID;
-				peer.peer = event.peer;
-				platform_network->peers.add(peer);
-
-				game_network->peers.add(peer.id);
-
-				parse_packet(packet);
-
-			} break;
-
-			case ENET_EVENT_TYPE_DISCONNECT:
-			{
-				u32 disconnected_id = 0;
-				foreach_raw(peer_i, peer, platform_network->peers)
-				{
-					if(peer.peer->connectID == 0)
-					{
-						assert(peer.id != 0);
-						disconnected_id = peer.id;
-						platform_network->peers.remove_and_shift(peer_i);
-						game_network->peers.remove_and_shift(peer_i);
-						peer_i -= 1;
-						break;
-					}
-				}
-				assert(disconnected_id != 0);
-
-				s_packet packet = zero;
-				packet.size = sizeof(e_packet_disconnect);
-				packet.data = (u8*)la_get(&game_network->read_arena, packet.size);
-				packet.from = disconnected_id;
-				u8* cursor = packet.data;
-				int temp = e_packet_disconnect;
-				buffer_write(&cursor, &temp, sizeof(temp));
-				parse_packet(packet);
-
-			} break;
-
-			case ENET_EVENT_TYPE_RECEIVE:
-			{
-				s_packet packet = zero;
-				packet.size = (int)event.packet->dataLength;
-				packet.data = (u8*)la_get(&game_network->read_arena, packet.size);
-				packet.from = event.peer->connectID;
-				memcpy(packet.data, event.packet->data, packet.size);
-				parse_packet(packet);
-				enet_packet_destroy(event.packet);
-			} break;
-
-			invalid_default_case;
-		}
-	}
 }

@@ -45,9 +45,12 @@ extern "C"
 __declspec(dllexport)
 m_update_game(update_game)
 {
+
 	frame_arena = &platform_data.frame_arena;
 	g_network = game_network;
 	game = (s_game*)game_memory;
+	if(disgusting_recompile_hack) { return ; }
+
 	if(!game->initialized)
 	{
 		game->initialized = true;
@@ -172,7 +175,6 @@ func void update(void)
 				s_update_time_lived_from_server data = zero;
 				data.id = peer;
 				data.time_lived = game->e.time_lived[entity];
-				log("Time of %u is %f", peer, game->e.time_lived[entity]);
 				broadcast_packet(e_packet_update_time_lived, data, 0);
 			}
 		}
