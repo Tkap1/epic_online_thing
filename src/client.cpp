@@ -99,8 +99,6 @@ m_update_game(update_game)
 
 		platform_funcs.set_swap_interval(1);
 
-		init_levels();
-
 		game->jump_sound = load_wav("assets/jump.wav", frame_arena);
 		game->jump2_sound = load_wav("assets/jump2.wav", frame_arena);
 		game->big_dog_sound = load_wav("assets/big_dog.wav", frame_arena);
@@ -122,6 +120,16 @@ m_update_game(update_game)
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(transforms.elements), null, GL_DYNAMIC_DRAW);
 	}
+
+	if(platform_data.recompiled)
+	{
+		#define X(type, name) name = (type)platform_funcs.load_gl_func(#name);
+		m_gl_funcs
+		#undef X
+		init_levels();
+	}
+
+
 	g_window.width = platform_data.window_width;
 	g_window.height = platform_data.window_height;
 	g_window.size = v2ii(g_window.width, g_window.height);

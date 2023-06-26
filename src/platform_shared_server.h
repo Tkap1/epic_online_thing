@@ -22,6 +22,7 @@ struct s_game_network
 
 struct s_platform_data
 {
+	b8 recompiled;
 	f64 time_passed;
 	s_lin_arena frame_arena;
 };

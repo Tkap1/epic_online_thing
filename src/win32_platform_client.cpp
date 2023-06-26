@@ -72,6 +72,8 @@ int main(int argc, char** argv)
 	{
 		s_lin_arena all = zero;
 		all.capacity = 10 * c_mb;
+
+		// @Note(tkap, 26/06/2023): We expect this memory to be zero'd
 		all.memory = VirtualAlloc(null, all.capacity, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 		game_memory = la_get(&all, 1 * c_mb);

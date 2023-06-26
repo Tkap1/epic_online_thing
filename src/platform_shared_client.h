@@ -224,6 +224,7 @@ struct s_input
 
 struct s_platform_data
 {
+	b8 recompiled;
 	b8 quit_after_this_frame;
 	int window_width;
 	int window_height;

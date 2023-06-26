@@ -55,6 +55,11 @@ m_update_game(update_game)
 		game->rng.seed = (u32)__rdtsc();
 	}
 
+	if(platform_data.recompiled)
+	{
+		init_levels();
+	}
+
 	game->update_timer += platform_data.time_passed;
 	while(game->update_timer >= c_update_delay)
 	{
