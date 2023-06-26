@@ -48,8 +48,10 @@ set warn=%warn% -Wno-enum-constexpr-conversion
 @REM set warn=%warn% -Wno-unused-template
 
 pushd build
-	clang ..\src\win32_platform.cpp ..\src\client.cpp -g -o client.exe %libs% %comp% %warn% -lXinput -lOle32
-	clang ..\src\server.cpp -g -o server.exe %libs% %comp% %warn%
+	clang ..\src\client.cpp -shared -g -o client.dll %libs% %comp% %warn%
+	clang ..\src\server.cpp -shared -g -o server.dll %libs% %comp% %warn%
+	clang ..\src\win32_platform_client.cpp -g -o client.exe %libs% %comp% %warn% -lXinput -lOle32
+	clang ..\src\win32_platform_server.cpp -g -o server.exe %libs% %comp% %warn% -lXinput -lOle32
 popd
 
 stamp_timer.exe end

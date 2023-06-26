@@ -26,7 +26,6 @@ int main(int argc, char** argv)
 	unreferenced(argv);
 
 	init_performance();
-	// frame_arena = make_lin_arena(1 * c_mb);
 
 	if(enet_initialize() != 0)
 	{
