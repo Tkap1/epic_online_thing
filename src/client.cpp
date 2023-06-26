@@ -746,6 +746,13 @@ m_parse_packet(parse_packet)
 			}
 		} break;
 
+		case e_packet_update_levels:
+		{
+			s_update_levels_from_server data = *(s_update_levels_from_server*)cursor;
+			memcpy(levels, data.levels, sizeof(levels));
+			log("Got levels from server");
+		} break;
+
 		invalid_default_case;
 	}
 }

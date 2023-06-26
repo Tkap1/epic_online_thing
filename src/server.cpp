@@ -61,6 +61,10 @@ m_update_game(update_game)
 	if(platform_data.recompiled)
 	{
 		init_levels();
+
+		s_update_levels_from_server data = zero;
+		memcpy(data.levels, levels, sizeof(levels));
+		broadcast_packet(e_packet_update_levels, data, ENET_PACKET_FLAG_RELIABLE);
 	}
 
 	game->update_timer += platform_data.time_passed;

@@ -76,6 +76,7 @@ enum e_packet
 	e_packet_cheat_previous_level,
 	e_packet_all_levels_beat,
 	e_packet_update_time_lived,
+	e_packet_update_levels,
 
 	e_packet_connect = 9998,
 	e_packet_disconnect = 9999,
@@ -232,6 +233,12 @@ struct s_update_time_lived_from_server
 	u32 id;
 	float time_lived;
 };
+
+struct s_update_levels_from_server
+{
+	s_level levels[c_max_levels];
+};
+
 
 #pragma pack(pop)
 
