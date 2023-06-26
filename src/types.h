@@ -18,3 +18,5 @@ typedef uint32_t b32;
 typedef double f64;
 
 #define c_max_u64 UINT64_MAX
+
+constexpr float c_max_f32 = 999999999.0f;

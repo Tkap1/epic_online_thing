@@ -63,6 +63,7 @@ struct s_game
 {
 	b8 initialized;
 	int level_count;
+	int current_level;
 	u32 my_id;
 	float total_time;
 	int attempt_count_on_current_level;

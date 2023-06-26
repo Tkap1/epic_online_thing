@@ -287,7 +287,7 @@ func void update(s_config config)
 			}
 
 			level_timer += delta;
-			spawn_system(levels[current_level]);
+			spawn_system(levels[game->current_level]);
 
 		} break;
 
@@ -331,7 +331,7 @@ func void render(float dt)
 
 			// @Note(tkap, 23/06/2023): Display how many seconds left to beat the level
 			{
-				float seconds_left = levels[current_level].duration - level_timer;
+				float seconds_left = levels[game->current_level].duration - level_timer;
 				s_v2 pos = v2(
 					g_window.center.x,
 					g_window.size.y * 0.3f
@@ -342,7 +342,7 @@ func void render(float dt)
 			// @Note(tkap, 23/06/2023): Display current level
 			{
 				s_v2 pos = v2(20, 20);
-				draw_text(format_text("Level %i (%i)", current_level + 1, game->attempt_count_on_current_level), pos, 1, v41f(1), e_font_medium, false, zero);
+				draw_text(format_text("Level %i (%i)", game->current_level + 1, game->attempt_count_on_current_level), pos, 1, v41f(1), e_font_medium, false, zero);
 			}
 
 			// @Note(tkap, 25/06/2023): Display time alive of each player
@@ -473,6 +473,8 @@ func void input_system(int start, int count)
 	b8 jump = is_key_pressed(c_key_space) || is_key_pressed(c_key_w) || is_key_pressed(c_key_up);
 	b8 jump_released = is_key_released(c_key_space) || is_key_released(c_key_w) || is_key_released(c_key_up);
 
+	s_level level = levels[game->current_level];
+
 	for(int i = 0; i < count; i++)
 	{
 		int ii = start + i;
@@ -495,6 +497,11 @@ func void input_system(int start, int count)
 		}
 
 		b8 can_jump = game->e.jumps_done[ii] < 2;
+		if(level.infinite_jumps)
+		{
+			game->e.jumps_done[ii] = 1;
+			can_jump = true;
+		}
 		if(can_jump && jump)
 		{
 			if(game->e.jumps_done[ii] == 0)
@@ -609,7 +616,7 @@ m_parse_packet(parse_packet)
 		{
 			s_welcome_from_server data = *(s_welcome_from_server*)cursor;
 			game->my_id = data.id;
-			current_level = data.current_level;
+			game->current_level = data.current_level;
 			game->rng.seed = data.seed;
 			game->attempt_count_on_current_level = data.attempt_count_on_current_level;
 			int entity = make_player(data.id, true, game->config.color);
@@ -661,20 +668,20 @@ m_parse_packet(parse_packet)
 		case e_packet_beat_level:
 		{
 			s_beat_level_from_server data = *(s_beat_level_from_server*)cursor;
-			current_level = data.current_level + 1;
+			game->current_level = data.current_level + 1;
 			game->rng.seed = data.seed;
 			game->attempt_count_on_current_level = 0;
 			reset_level();
 			revive_every_player();
-			log("Beat level %i", current_level);
+			log("Beat level %i", game->current_level);
 			play_sound_if_supported(game->win_sound);
 		} break;
 
 		case e_packet_reset_level:
 		{
 			s_reset_level_from_server data = *(s_reset_level_from_server*)cursor;
-			current_level = data.current_level;
-			log("Reset level %i", current_level + 1);
+			game->current_level = data.current_level;
+			log("Reset level %i", game->current_level + 1);
 			game->rng.seed = data.seed;
 			game->attempt_count_on_current_level = data.attempt_count_on_current_level;
 			reset_level();
@@ -711,7 +718,7 @@ m_parse_packet(parse_packet)
 		case e_packet_cheat_previous_level:
 		{
 			s_cheat_previous_level_from_server data = *(s_cheat_previous_level_from_server*)cursor;
-			current_level = data.current_level;
+			game->current_level = data.current_level;
 			game->rng.seed = data.seed;
 			reset_level();
 			revive_every_player();
@@ -720,7 +727,7 @@ m_parse_packet(parse_packet)
 
 		case e_packet_all_levels_beat:
 		{
-			current_level = 0;
+			game->current_level = 0;
 			reset_level();
 			revive_every_player();
 		} break;

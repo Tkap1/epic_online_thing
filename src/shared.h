@@ -296,15 +296,15 @@ struct s_projectile_spawn_data
 	float speed_multiplier = 1;
 	float size_multiplier = 1;
 	s_float_curve speed_curve;
+	float y_override = c_max_f32;
 };
 
 struct s_level
 {
+	b8 infinite_jumps;
 	int duration;
 	s_sarray<s_projectile_spawn_data, c_max_spawns_per_level> spawn_data;
 };
-
-global s_level levels[c_max_levels];
 
 func int make_entity(void);
 func void zero_entity(int index);

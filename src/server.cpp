@@ -23,7 +23,6 @@ static constexpr int ENET_PACKET_FLAG_RELIABLE = 1;
 #include "epic_math.h"
 #include "shared_client_server.h"
 #include "config.h"
-#include "types.h"
 #include "platform_shared_server.h"
 #include "shared_all.h"
 #include "rng.h"
@@ -101,7 +100,7 @@ func void update(void)
 		projectile_spawner_system(i * c_entities_per_thread, c_entities_per_thread);
 	}
 
-	spawn_system(levels[current_level]);
+	spawn_system(levels[game->current_level]);
 
 	b8 at_least_one_player_alive = false;
 	foreach_raw(peer_i, peer, g_network->peers)
@@ -114,23 +113,23 @@ func void update(void)
 		}
 	}
 	level_timer += delta;
-	if(level_timer >= levels[current_level].duration && at_least_one_player_alive)
+	if(level_timer >= levels[game->current_level].duration && at_least_one_player_alive)
 	{
 		s_beat_level_from_server data = zero;
-		data.current_level = current_level;
+		data.current_level = game->current_level;
 		data.seed = game->rng.seed;
 		broadcast_packet(e_packet_beat_level, data, ENET_PACKET_FLAG_RELIABLE);
 
-		log("Level %i beaten", current_level + 1);
+		log("Level %i beaten", game->current_level + 1);
 
-		current_level += 1;
+		game->current_level += 1;
 
 		game->attempt_count_on_current_level = 0;
 
 		// @Note(tkap, 25/06/2023): Reset if we go past all levels
-		if(current_level >= game->level_count)
+		if(game->current_level >= game->level_count)
 		{
-			current_level = 0;
+			game->current_level = 0;
 			broadcast_simple_packet(e_packet_all_levels_beat, ENET_PACKET_FLAG_RELIABLE);
 		}
 		reset_level();
@@ -138,7 +137,7 @@ func void update(void)
 	}
 	if(!at_least_one_player_alive)
 	{
-		log("Level %i restarted", current_level + 1);
+		log("Level %i restarted", game->current_level + 1);
 		reset_level();
 		revive_every_player();
 
@@ -156,7 +155,7 @@ func void update(void)
 		}
 
 		s_reset_level_from_server data = zero;
-		data.current_level = current_level;
+		data.current_level = game->current_level;
 		data.seed = game->rng.seed;
 		data.attempt_count_on_current_level = game->attempt_count_on_current_level;
 		broadcast_packet(e_packet_reset_level, data, ENET_PACKET_FLAG_RELIABLE);
@@ -218,7 +217,7 @@ m_parse_packet(parse_packet)
 			{
 				s_welcome_from_server data = zero;
 				data.id = packet.from;
-				data.current_level = current_level;
+				data.current_level = game->current_level;
 				data.seed = game->rng.seed;
 				data.attempt_count_on_current_level = game->attempt_count_on_current_level;
 				send_packet(packet.from, e_packet_welcome, data, ENET_PACKET_FLAG_RELIABLE);
@@ -336,12 +335,12 @@ m_parse_packet(parse_packet)
 			// if(peers.count > 1) { break; }
 
 			s_beat_level_from_server data = zero;
-			data.current_level = current_level;
+			data.current_level = game->current_level;
 			data.seed = game->rng.seed;
 			broadcast_packet(e_packet_beat_level, data, ENET_PACKET_FLAG_RELIABLE);
 
 			game->attempt_count_on_current_level = 0;
-			current_level += 1;
+			game->current_level += 1;
 			reset_level();
 			revive_every_player();
 		} break;
@@ -349,13 +348,13 @@ m_parse_packet(parse_packet)
 		case e_packet_cheat_previous_level:
 		{
 			// if(peers.count > 1) { break; }
-			if(current_level <= 0) { break; }
+			if(game->current_level <= 0) { break; }
 
 			game->attempt_count_on_current_level = 0;
-			current_level -= 1;
+			game->current_level -= 1;
 
 			s_cheat_previous_level_from_server data = zero;
-			data.current_level = current_level;
+			data.current_level = game->current_level;
 			data.seed = game->rng.seed;
 			broadcast_packet(e_packet_cheat_previous_level, data, ENET_PACKET_FLAG_RELIABLE);
 

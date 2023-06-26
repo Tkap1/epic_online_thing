@@ -1,7 +1,7 @@
 
 global float spawn_timer[c_max_spawns_per_level];
-global int current_level;
 global float level_timer;
+global s_level levels[c_max_levels];
 
 func void player_movement_system(int start, int count)
 {
@@ -236,6 +236,10 @@ func void spawn_system(s_level level)
 				case e_projectile_type_left_basic:
 				{
 					make_side_projectile(entity, -c_projectile_spawn_offset, 1);
+					if(data.y_override != c_max_f32)
+					{
+						game->e.y[entity] = data.y_override;
+					}
 					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
@@ -244,6 +248,10 @@ func void spawn_system(s_level level)
 				case e_projectile_type_right_basic:
 				{
 					make_side_projectile(entity, c_base_res.x + c_projectile_spawn_offset, -1);
+					if(data.y_override != c_max_f32)
+					{
+						game->e.y[entity] = data.y_override;
+					}
 					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
@@ -467,6 +475,7 @@ func void init_levels(void)
 	for(int level_i = 0; level_i < c_max_levels; level_i++)
 	{
 		levels[level_i].duration = c_level_duration;
+		levels[level_i].infinite_jumps = false;
 	}
 
 	// -----------------------------------------------------------------------------
@@ -674,6 +683,35 @@ func void init_levels(void)
 		.type = e_projectile_type_right_basic,
 		.delay = speed(1500),
 		.speed_multiplier = 0.25f,
+	});
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
+	// @Note(tkap, 26/06/2023): Can't be on bottom, infinite jump
+	levels[game->level_count].infinite_jumps = true;
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_left_basic,
+		.delay = speed(3000),
+		.speed_multiplier = 2.0f,
+		.y_override = c_base_res.y * 0.96f,
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_right_basic,
+		.delay = speed(3000),
+		.speed_multiplier = 2.0f,
+		.y_override = c_base_res.y * 0.96f,
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_left_basic,
+		.delay = speed(1000),
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_right_basic,
+		.delay = speed(1000),
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_top_basic,
+		.delay = speed(6000),
 	});
 	game->level_count++;
 	// -----------------------------------------------------------------------------
