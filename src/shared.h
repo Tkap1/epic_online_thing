@@ -7,6 +7,57 @@
 #define handle_instant_resize(entity)
 #endif
 
+enum e_projectile_type
+{
+	e_projectile_type_top_basic,
+	e_projectile_type_left_basic,
+	e_projectile_type_right_basic,
+	e_projectile_type_diagonal_left,
+	e_projectile_type_diagonal_right,
+	e_projectile_type_diagonal_bottom_left,
+	e_projectile_type_diagonal_bottom_right,
+	e_projectile_type_corner_shot,
+	e_projectile_type_shockwave,
+	e_projectile_type_cross,
+	e_projectile_type_spawner,
+	e_projectile_type_count,
+};
+
+
+enum e_curve_type
+{
+	e_curve_type_linear,
+	e_curve_type_count,
+};
+
+struct s_float_curve
+{
+	e_curve_type type[4];
+	float start_seconds[4];
+	float end_seconds[4];
+	float multiplier[4];
+};
+
+
+struct s_projectile_spawn_data
+{
+	e_projectile_type type;
+	float delay;
+	float speed_multiplier = 1;
+	float size_multiplier = 1;
+	s_float_curve speed_curve;
+	float y_override = c_max_f32;
+};
+
+
+struct s_level
+{
+	b8 infinite_jumps;
+	int duration;
+	s_sarray<s_projectile_spawn_data, c_max_spawns_per_level> spawn_data;
+};
+
+
 enum e_packet
 {
 	e_packet_welcome,
@@ -30,6 +81,7 @@ enum e_packet
 	e_packet_disconnect = 9999,
 };
 
+
 #pragma pack(push, 1)
 
 struct s_welcome_from_server
@@ -38,6 +90,7 @@ struct s_welcome_from_server
 	int current_level;
 	u32 seed;
 	int attempt_count_on_current_level;
+	s_level levels[c_max_levels];
 };
 
 struct s_welcome_from_client
@@ -223,20 +276,6 @@ enum e_entity_type
 	e_entity_type_count,
 };
 
-enum e_curve_type
-{
-	e_curve_type_linear,
-	e_curve_type_count,
-};
-
-struct s_float_curve
-{
-	e_curve_type type[4];
-	float start_seconds[4];
-	float end_seconds[4];
-	float multiplier[4];
-};
-
 struct s_entities
 {
 	int count;
@@ -273,38 +312,8 @@ struct s_entities
 	s_name name[c_max_entities];
 };
 
-enum e_projectile_type
-{
-	e_projectile_type_top_basic,
-	e_projectile_type_left_basic,
-	e_projectile_type_right_basic,
-	e_projectile_type_diagonal_left,
-	e_projectile_type_diagonal_right,
-	e_projectile_type_diagonal_bottom_left,
-	e_projectile_type_diagonal_bottom_right,
-	e_projectile_type_corner_shot,
-	e_projectile_type_shockwave,
-	e_projectile_type_cross,
-	e_projectile_type_spawner,
-	e_projectile_type_count,
-};
 
-struct s_projectile_spawn_data
-{
-	e_projectile_type type;
-	float delay;
-	float speed_multiplier = 1;
-	float size_multiplier = 1;
-	s_float_curve speed_curve;
-	float y_override = c_max_f32;
-};
 
-struct s_level
-{
-	b8 infinite_jumps;
-	int duration;
-	s_sarray<s_projectile_spawn_data, c_max_spawns_per_level> spawn_data;
-};
 
 func int make_entity(void);
 func void zero_entity(int index);

@@ -44,6 +44,7 @@ extern "C"
 __declspec(dllexport)
 m_update_game(update_game)
 {
+	static_assert(c_game_memory >= sizeof(s_game));
 
 	frame_arena = &platform_data.frame_arena;
 	g_network = game_network;
@@ -220,6 +221,8 @@ m_parse_packet(parse_packet)
 				data.current_level = game->current_level;
 				data.seed = game->rng.seed;
 				data.attempt_count_on_current_level = game->attempt_count_on_current_level;
+				static_assert(sizeof(levels) == sizeof(data.levels));
+				memcpy(data.levels, levels, sizeof(levels));
 				send_packet(packet.from, e_packet_welcome, data, ENET_PACKET_FLAG_RELIABLE);
 				log("Sent welcome to %u", packet.from);
 			}

@@ -31,7 +31,6 @@ SETLOCAL ENABLEDELAYEDEXPANSION
 pushd build
 	..\stamp_timer.exe start
 
-
 	cl ..\src\client.cpp -LD -Feclient.dll %comp% -Dm_app -link %linker% -PDB:client.pdb opengl32.lib > temp_compiler_output.txt
 	if NOT !ErrorLevel! == 0 (
 		type temp_compiler_output.txt

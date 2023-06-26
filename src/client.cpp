@@ -74,7 +74,8 @@ extern "C"
 __declspec(dllexport)
 m_update_game(update_game)
 {
-	assert((c_max_entities % c_num_threads) == 0);
+	static_assert(c_game_memory >= sizeof(s_game));
+	static_assert((c_max_entities % c_num_threads) == 0);
 	game = (s_game*)game_memory;
 	frame_arena = &platform_data.frame_arena;
 	g_platform_funcs = platform_funcs;
@@ -619,6 +620,8 @@ m_parse_packet(parse_packet)
 			game->current_level = data.current_level;
 			game->rng.seed = data.seed;
 			game->attempt_count_on_current_level = data.attempt_count_on_current_level;
+			static_assert(sizeof(levels) == sizeof(data.levels));
+			memcpy(levels, data.levels, sizeof(levels));
 			int entity = make_player(data.id, true, game->config.color);
 			game->e.name[entity] = game->main_menu.player_name;
 			log("Got welcome, my id is: %u", data.id);

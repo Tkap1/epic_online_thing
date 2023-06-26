@@ -376,11 +376,11 @@ func void spawn_system(s_level level)
 
 					if((randu(&game->rng) & 1) == 0)
 					{
-						x = randf_range(&game->rng, 0, c_base_res.x / 4);
+						x = randf_range(&game->rng, 0, c_base_res.x / 6);
 					}
 					else
 					{
-						x = randf_range(&game->rng, c_base_res.x - c_base_res.x / 4, c_base_res.x);
+						x = randf_range(&game->rng, c_base_res.x - c_base_res.x / 6, c_base_res.x);
 						speed *= randf_range(&game->rng, 1.5f, 2.5f);
 					}
 
@@ -481,7 +481,7 @@ func void init_levels(void)
 	// -----------------------------------------------------------------------------
 	levels[game->level_count].spawn_data.add({
 		.type = e_projectile_type_top_basic,
-		.delay = speed(4000),
+		.delay = speed(40000),
 	});
 	game->level_count++;
 	// -----------------------------------------------------------------------------
@@ -711,10 +711,14 @@ func void init_levels(void)
 	});
 	levels[game->level_count].spawn_data.add({
 		.type = e_projectile_type_top_basic,
-		.delay = speed(6000),
+		.delay = speed(8000),
 	});
 	game->level_count++;
 	// -----------------------------------------------------------------------------
+
+
+	// @Note(tkap, 26/06/2023): Blank level to avoid wrapping
+	game->level_count++;
 
 	#undef speed
 }
