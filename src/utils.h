@@ -76,7 +76,7 @@ func char* format_text(const char* text, ...)
 
 func void on_failed_assert(const char* cond, const char* file, int line)
 {
-#ifdef _WIN32
+	#ifdef _WIN32
 	char* text = format_text("FAILED ASSERT IN %s (%i)\n%s\n", file, line, cond);
 	printf("%s\n", text);
 	int result = MessageBox(null, text, "Assertion failed", MB_RETRYCANCEL | MB_TOPMOST);
@@ -91,12 +91,20 @@ func void on_failed_assert(const char* cond, const char* file, int line)
 			exit(1);
 		}
 	}
-#else
+	#else
 	fprintf(stderr, "FAILED ASSERT IN %s:%i\n%s\n", file, line, cond);
 	abort();
-#endif
+	#endif
 }
 
+
+#define foreach__(a, index_name, element_name, array) if(0) finished##a: ; else for(auto element_name = &(array).elements[0];;) if(1) goto body##a; else while(1) if(1) goto finished##a; else body##a: for(int index_name = 0; index_name < (array).count && (bool)(element_name = &(array)[index_name]); index_name++)
+#define foreach_(a, index_name, element_name, array) foreach__(a, index_name, element_name, array)
+#define foreach(index_name, element_name, array) foreach_(__LINE__, index_name, element_name, array)
+
+#define foreach_raw__(a, index_name, element_name, array) if(0) finished##a: ; else for(auto element_name = (array).elements[0];;) if(1) goto body##a; else while(1) if(1) goto finished##a; else body##a: for(int index_name = 0; index_name < (array).count && (void*)&(element_name = (array)[index_name]); index_name++)
+#define foreach_raw_(a, index_name, element_name, array) foreach_raw__(a, index_name, element_name, array)
+#define foreach_raw(index_name, element_name, array) foreach_raw_(__LINE__, index_name, element_name, array)
 
 template <typename T, int N>
 struct s_sarray

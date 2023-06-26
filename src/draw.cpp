@@ -54,7 +54,7 @@ func void draw_text(const char* text, s_v2 in_pos, int layer, s_v4 color, e_font
 {
 	t.layer = layer;
 
-	s_font* font = &g_font_arr[font_id];
+	s_font* font = &game->font_arr[font_id];
 
 	int len = (int)strlen(text);
 	assert(len > 0);

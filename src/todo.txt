@@ -15,3 +15,7 @@ global variable specific to each thread!
 __declspec(thread)
 
 there is a bug. if you die on the same frame you beat the level, you spawn dead??
+
+why dont we get a message box in client after a failed assert outside debugger???
+
+do we have a bug now when someone disconnects in the same frame we try to send packets?? assert / think

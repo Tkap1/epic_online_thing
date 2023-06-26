@@ -2,9 +2,6 @@
 global u64 g_cycle_frequency;
 global u64 g_start_cycles;
 
-global float time_passed;
-global float total_time;
-
 #ifdef _WIN32
 func f64 get_seconds(void)
 {

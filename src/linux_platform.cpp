@@ -1,3 +1,5 @@
+#define m_client 1
+
 #include<GL/gl.h>
 #include<GL/glx.h>
 #include<GL/glext.h>
@@ -11,8 +13,10 @@
 #include "utils.h"
 #include "epic_math.h"
 #include "config.h"
+#include "platform_shared_client.h"
 #include "platform_shared.h"
-#include "platform_shared.cpp"
+
+#include "platform_shared_client.cpp"
 
 struct s_window
 {

@@ -1,15 +1,15 @@
 #define m_client 1
-
+static constexpr int ENET_PACKET_FLAG_RELIABLE = 1;
 
 #ifdef _WIN32
 // @Note(tkap, 24/06/2023): We don't want this Madeg
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <winsock2.h>
 
 #include <GL/gl.h>
 #include "external/glcorearb.h"
 #include "external/wglext.h"
+#include <stdlib.h>
 #else
 #include<X11/X.h>
 #include<X11/Xlib.h>
@@ -24,19 +24,20 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "external/enet/enet.h"
 #include "types.h"
 #include "utils.h"
 #include "epic_math.h"
 #include "config.h"
-#include "shared.h"
 #include "memory.h"
+#include "shared_client_server.h"
+#include "platform_shared_client.h"
+#include "shared.h"
 #include "rng.h"
-#include "platform_shared.h"
 #include "client.h"
 #include "shader_shared.h"
 #include "str_builder.h"
 #include "audio.h"
+#include "shared_all.h"
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STBTT_assert assert
@@ -45,35 +46,17 @@
 global s_sarray<s_transform, c_max_entities> transforms;
 global s_sarray<s_transform, c_max_entities> text_arr[e_font_count];
 
-global s_entities e;
-global u32 my_id = 0;
-global ENetPeer* server;
-global s_lin_arena frame_arena;
-global s_rng rng;
-global s_font g_font_arr[e_font_count];
-global e_state state;
-global b8 g_connected;
-global ENetHost* g_client;
-global s_main_menu main_menu;
-global u32 g_program;
-global float total_time;
-
-global s_sound big_dog_sound = zero;
-global s_sound jump_sound = zero;
-global s_sound jump2_sound = zero;
-global s_sound win_sound = zero;
-
-global int level_count = 0;
+global s_lin_arena* frame_arena;
 
 global s_game_window g_window;
 global s_input* g_input;
 global s_sarray<s_char_event, 1024>* char_event_arr;
 
-global b8 game_initialized;
 global s_platform_data g_platform_data;
 global s_platform_funcs g_platform_funcs;
+global s_game_network* g_network;
 
-global s_game game;
+global s_game* game;
 
 #define X(type, name) type name = null;
 m_gl_funcs
@@ -86,17 +69,23 @@ m_gl_funcs
 #include "str_builder.cpp"
 #include "audio.cpp"
 
-void update_game(s_platform_data platform_data, s_platform_funcs platform_funcs)
+extern "C"
+{
+__declspec(dllexport)
+m_update_game(update_game)
 {
 	assert((c_max_entities % c_num_threads) == 0);
+	game = (s_game*)game_memory;
 
+	frame_arena = &platform_data.frame_arena;
 	g_platform_funcs = platform_funcs;
 	g_platform_data = platform_data;
+	g_network = game_network;
 	char_event_arr = platform_data.char_event_arr;
 	g_input = platform_data.input;
-	if(!game_initialized)
+	if(!game->initialized)
 	{
-
+		game->initialized = true;
 		#define X(type, name) name = (type)platform_funcs.load_gl_func(#name);
 		m_gl_funcs
 		#undef X
@@ -104,28 +93,26 @@ void update_game(s_platform_data platform_data, s_platform_funcs platform_funcs)
 		glDebugMessageCallback(gl_debug_callback, null);
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 
-		rng.seed = (u32)__rdtsc();
-		frame_arena = make_lin_arena(10 * c_mb);
+		game->rng.seed = (u32)__rdtsc();
 
-		game.config = read_config_or_make_default(&frame_arena, &rng);
+		game->config = read_config_or_make_default(frame_arena, &game->rng);
 
 		platform_funcs.set_swap_interval(1);
 
-		game_initialized = true;
 		init_levels();
 
-		jump_sound = load_wav("assets/jump.wav", &frame_arena);
-		jump2_sound = load_wav("assets/jump2.wav", &frame_arena);
-		big_dog_sound = load_wav("assets/big_dog.wav", &frame_arena);
-		win_sound = load_wav("assets/win.wav", &frame_arena);
+		game->jump_sound = load_wav("assets/jump.wav", frame_arena);
+		game->jump2_sound = load_wav("assets/jump2.wav", frame_arena);
+		game->big_dog_sound = load_wav("assets/big_dog.wav", frame_arena);
+		game->win_sound = load_wav("assets/win.wav", frame_arena);
 
-		g_font_arr[e_font_small] = load_font("assets/consola.ttf", 24, &frame_arena);
-		g_font_arr[e_font_medium] = load_font("assets/consola.ttf", 36, &frame_arena);
-		g_font_arr[e_font_big] = load_font("assets/consola.ttf", 72, &frame_arena);
+		game->font_arr[e_font_small] = load_font("assets/consola.ttf", 24, frame_arena);
+		game->font_arr[e_font_medium] = load_font("assets/consola.ttf", 36, frame_arena);
+		game->font_arr[e_font_big] = load_font("assets/consola.ttf", 72, frame_arena);
 
 		u32 vao;
 		u32 ssbo;
-		g_program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
+		game->program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
 
 		glGenVertexArrays(1, &vao);
 		glBindVertexArray(vao);
@@ -140,25 +127,15 @@ void update_game(s_platform_data platform_data, s_platform_funcs platform_funcs)
 	g_window.size = v2ii(g_window.width, g_window.height);
 	g_window.center = v2_mul(g_window.size, 0.5f);
 
-	if(g_connected)
+	game->update_timer += g_platform_data.time_passed;
+	while(game->update_timer >= c_update_delay)
 	{
-		enet_loop(g_client, 0, game.config);
-		if(g_platform_data.quit_after_this_frame)
-		{
-			enet_peer_disconnect(server, 0);
-			enet_loop(g_client, 1000, game.config);
-		}
-	}
-
-	game.update_timer += g_platform_data.time_passed;
-	while(game.update_timer >= c_update_delay)
-	{
-		game.update_timer -= c_update_delay;
-		memcpy(e.prev_x, e.x, sizeof(e.x));
-		memcpy(e.prev_y, e.y, sizeof(e.y));
-		memcpy(e.prev_sx, e.sx, sizeof(e.sx));
-		memcpy(e.prev_sy, e.sy, sizeof(e.sy));
-		update(game.config);
+		game->update_timer -= c_update_delay;
+		memcpy(game->e.prev_x, game->e.x, sizeof(game->e.x));
+		memcpy(game->e.prev_y, game->e.y, sizeof(game->e.y));
+		memcpy(game->e.prev_sx, game->e.sx, sizeof(game->e.sx));
+		memcpy(game->e.prev_sy, game->e.sy, sizeof(game->e.sy));
+		update(game->config);
 
 		for(int k_i = 0; k_i < c_max_keys; k_i++)
 		{
@@ -167,33 +144,35 @@ void update_game(s_platform_data platform_data, s_platform_funcs platform_funcs)
 		char_event_arr->count = 0;
 	}
 
-	float interpolation_dt = (float)(game.update_timer / c_update_delay);
+	float interpolation_dt = (float)(game->update_timer / c_update_delay);
 	render(interpolation_dt);
-	memset(e.drawn_last_render, true, sizeof(e.drawn_last_render));
+	memset(game->e.drawn_last_render, true, sizeof(game->e.drawn_last_render));
 
-	frame_arena.used = 0;
-
-	total_time += (float)platform_data.time_passed;
+	game->total_time += (float)platform_data.time_passed;
 
 	if(g_platform_data.quit_after_this_frame)
 	{
-		game.config.player_name = main_menu.player_name;
-		save_config(game.config);
+		game->config.player_name = game->main_menu.player_name;
+		g_network->disconnect = true;
+		save_config(game->config);
 	}
 
+	frame_arena->used = 0;
+}
 }
 
 func void update(s_config config)
 {
 
-	switch(state)
+	switch(game->state)
 	{
+
 		case e_state_main_menu:
 		{
 			if(config.player_name.len >= 3)
 			{
-				main_menu.player_name = config.player_name;
-				state = e_state_game;
+				game->main_menu.player_name = config.player_name;
+				game->state = e_state_game;
 				connect_to_server(config);
 				break;
 			}
@@ -207,21 +186,21 @@ func void update(s_config config)
 				{
 					if(c == c_key_backspace)
 					{
-						if(main_menu.player_name.len > 0)
+						if(game->main_menu.player_name.len > 0)
 						{
-							main_menu.player_name.data[--main_menu.player_name.len] = 0;
+							game->main_menu.player_name.data[--game->main_menu.player_name.len] = 0;
 						}
 					}
 					else if(c == c_key_enter)
 					{
-						if(main_menu.player_name.len < 3)
+						if(game->main_menu.player_name.len < 3)
 						{
-							main_menu.error_str = "Character name needs to be at least 3 characters";
+							game->main_menu.error_str = "Character name needs to be at least 3 characters";
 						}
 						else
 						{
-							main_menu.error_str = null;
-							state = e_state_game;
+							game->main_menu.error_str = null;
+							game->state = e_state_game;
 							connect_to_server(config);
 							break;
 						}
@@ -231,9 +210,9 @@ func void update(s_config config)
 				{
 					if(c >= 32 && c <= 126)
 					{
-						if(main_menu.player_name.len < max_player_name_length)
+						if(game->main_menu.player_name.len < c_max_player_name_length)
 						{
-							main_menu.player_name.data[main_menu.player_name.len++] = (char)c;
+							game->main_menu.player_name.data[game->main_menu.player_name.len++] = (char)c;
 						}
 					}
 				}
@@ -247,11 +226,11 @@ func void update(s_config config)
 			#ifdef m_debug
 			if(is_key_pressed(c_key_add))
 			{
-				send_simple_packet(server, e_packet_cheat_next_level, ENET_PACKET_FLAG_RELIABLE);
+				send_simple_packet(e_packet_cheat_next_level, ENET_PACKET_FLAG_RELIABLE);
 			}
 			if(is_key_pressed(c_key_subtract))
 			{
-				send_simple_packet(server, e_packet_cheat_previous_level, ENET_PACKET_FLAG_RELIABLE);
+				send_simple_packet(e_packet_cheat_previous_level, ENET_PACKET_FLAG_RELIABLE);
 			}
 			#endif // m_debug
 			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		cheats, for testing end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -289,13 +268,13 @@ func void update(s_config config)
 				collision_system(i * c_entities_per_thread, c_entities_per_thread);
 			}
 
-			int my_player = find_player_by_id(my_id);
+			int my_player = find_player_by_id(game->my_id);
 			if(my_player != c_invalid_entity)
 			{
 				s_player_update_from_client data = zero;
-				data.x = e.x[my_player];
-				data.y = e.y[my_player];
-				send_packet(server, e_packet_player_update, data, 0);
+				data.x = game->e.x[my_player];
+				data.y = game->e.y[my_player];
+				send_packet(e_packet_player_update, data, 0);
 			}
 
 			level_timer += delta;
@@ -312,7 +291,7 @@ func void update(s_config config)
 
 func void render(float dt)
 {
-	switch(state)
+	switch(game->state)
 	{
 		case e_state_main_menu:
 		{
@@ -320,15 +299,15 @@ func void render(float dt)
 			pos.y -= 100;
 			draw_text("Enter character name", pos, 0, v41f(1), e_font_medium, true, zero);
 			pos.y += 100;
-			if(main_menu.player_name.len > 0)
+			if(game->main_menu.player_name.len > 0)
 			{
-				draw_text(main_menu.player_name.data, pos, 0, v41f(1), e_font_medium, true, zero);
+				draw_text(game->main_menu.player_name.data, pos, 0, v41f(1), e_font_medium, true, zero);
 				pos.y += 100;
 			}
 
-			if(main_menu.error_str)
+			if(game->main_menu.error_str)
 			{
-				draw_text(main_menu.error_str, pos, 0, v4(1, 0, 0, 1), e_font_medium, true, zero);
+				draw_text(game->main_menu.error_str, pos, 0, v4(1, 0, 0, 1), e_font_medium, true, zero);
 				pos.y += 100;
 			}
 		} break;
@@ -354,7 +333,7 @@ func void render(float dt)
 			// @Note(tkap, 23/06/2023): Display current level
 			{
 				s_v2 pos = v2(20, 20);
-				draw_text(format_text("Level %i (%i)", current_level + 1, game.attempt_count_on_current_level), pos, 1, v41f(1), e_font_medium, false, zero);
+				draw_text(format_text("Level %i (%i)", current_level + 1, game->attempt_count_on_current_level), pos, 1, v41f(1), e_font_medium, false, zero);
 			}
 
 			// @Note(tkap, 25/06/2023): Display time alive of each player
@@ -373,12 +352,12 @@ func void render(float dt)
 				s_sarray<s_player_and_time, 64> player_and_time_arr;
 				for(int i = 0; i < c_max_entities; i++)
 				{
-					if(!e.active[i]) { continue; }
-					if(!e.player_id[i]) { continue; }
+					if(!game->e.active[i]) { continue; }
+					if(!game->e.player_id[i]) { continue; }
 
 					s_player_and_time pat = zero;
 					pat.index = i;
-					pat.time = e.time_lived[i];
+					pat.time = game->e.time_lived[i];
 					player_and_time_arr.add(pat);
 				}
 				player_and_time_arr.small_sort();
@@ -387,9 +366,9 @@ func void render(float dt)
 				for(int pat_i = 0; pat_i < player_and_time_arr.count; pat_i++)
 				{
 					s_player_and_time pat = player_and_time_arr[pat_i];
-					char* text = format_text("%s: %i", e.name[pat.index].data, roundfi(pat.time));
+					char* text = format_text("%s: %i", game->e.name[pat.index].data, roundfi(pat.time));
 					draw_text(text, pos, 1, v41f(1), e_font_medium, false, zero);
-					pos.y += g_font_arr[e_font_medium].size;
+					pos.y += game->font_arr[e_font_medium].size;
 				}
 			}
 
@@ -405,7 +384,7 @@ func void render(float dt)
 	draw_rect(g_window.center, 0, g_window.size, v41f(1), {.do_background = true});
 
 	{
-		glUseProgram(g_program);
+		glUseProgram(game->program);
 		// glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClearDepth(0.0f);
@@ -415,12 +394,12 @@ func void render(float dt)
 		glDepthFunc(GL_GREATER);
 
 		{
-			int location = glGetUniformLocation(g_program, "window_size");
+			int location = glGetUniformLocation(game->program, "window_size");
 			glUniform2fv(location, 1, &g_window.size.x);
 		}
 		{
-			int location = glGetUniformLocation(g_program, "time");
-			glUniform1f(location, total_time);
+			int location = glGetUniformLocation(game->program, "time");
+			glUniform1f(location, game->total_time);
 		}
 
 		if(transforms.count > 0)
@@ -438,7 +417,7 @@ func void render(float dt)
 			glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 			if(text_arr[font_i].count > 0)
 			{
-				s_font* font = &g_font_arr[font_i];
+				s_font* font = &game->font_arr[font_i];
 				glBindTexture(GL_TEXTURE_2D, font->texture.id);
 				glEnable(GL_BLEND);
 				glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -488,43 +467,43 @@ func void input_system(int start, int count)
 	for(int i = 0; i < count; i++)
 	{
 		int ii = start + i;
-		if(!e.active[ii]) { continue; }
-		if(!e.flags[ii][e_entity_flag_input]) { continue; }
+		if(!game->e.active[ii]) { continue; }
+		if(!game->e.flags[ii][e_entity_flag_input]) { continue; }
 
-		e.dir_x[ii] = 0;
+		game->e.dir_x[ii] = 0;
 		if(go_right)
 		{
-			e.dir_x[ii] += 1;
+			game->e.dir_x[ii] += 1;
 		}
 		if(go_left)
 		{
-			e.dir_x[ii] -= 1;
+			game->e.dir_x[ii] -= 1;
 		}
 
 		if(go_down)
 		{
-			e.vel_y[ii] = max(e.vel_y[ii], c_fast_fall_speed);
+			game->e.vel_y[ii] = max(game->e.vel_y[ii], c_fast_fall_speed);
 		}
 
-		b8 can_jump = e.jumps_done[ii] < 2;
+		b8 can_jump = game->e.jumps_done[ii] < 2;
 		if(can_jump && jump)
 		{
-			if(e.jumps_done[ii] == 0)
+			if(game->e.jumps_done[ii] == 0)
 			{
-				play_sound_if_supported(jump_sound);
+				play_sound_if_supported(game->jump_sound);
 			}
 			else
 			{
-				play_sound_if_supported(jump2_sound);
+				play_sound_if_supported(game->jump2_sound);
 			}
-			float jump_multiplier = e.jumps_done[ii] == 0 ? 1.0f : 0.9f;
-			e.vel_y[ii] = c_jump_strength * jump_multiplier;
-			e.jumping[ii] = true;
-			e.jumps_done[ii] += 1;
+			float jump_multiplier = game->e.jumps_done[ii] == 0 ? 1.0f : 0.9f;
+			game->e.vel_y[ii] = c_jump_strength * jump_multiplier;
+			game->e.jumping[ii] = true;
+			game->e.jumps_done[ii] += 1;
 		}
-		else if(e.jumping[ii] && jump_released && e.vel_y[ii] < 0)
+		else if(game->e.jumping[ii] && jump_released && game->e.vel_y[ii] < 0)
 		{
-			e.vel_y[ii] *= 0.5f;
+			game->e.vel_y[ii] *= 0.5f;
 		}
 	}
 }
@@ -534,17 +513,17 @@ func void draw_system(int start, int count, float dt)
 	for(int i = 0; i < count; i++)
 	{
 		int ii = start + i;
-		if(!e.active[ii]) { continue; }
-		if(!e.flags[ii][e_entity_flag_draw]) { continue; }
+		if(!game->e.active[ii]) { continue; }
+		if(!game->e.flags[ii][e_entity_flag_draw]) { continue; }
 
-		float x = lerp(e.prev_x[ii], e.x[ii], dt);
-		float y = lerp(e.prev_y[ii], e.y[ii], dt);
+		float x = lerp(game->e.prev_x[ii], game->e.x[ii], dt);
+		float y = lerp(game->e.prev_y[ii], game->e.y[ii], dt);
 
-		float sx = lerp(e.prev_sx[ii], e.sx[ii], dt);
-		float sy = lerp(e.prev_sy[ii], e.sy[ii], dt);
+		float sx = lerp(game->e.prev_sx[ii], game->e.sx[ii], dt);
+		float sy = lerp(game->e.prev_sy[ii], game->e.sy[ii], dt);
 
-		s_v4 color = e.color[ii];
-		if(e.dead[ii])
+		s_v4 color = game->e.color[ii];
+		if(game->e.dead[ii])
 		{
 			color.w = 0.25f;
 		}
@@ -555,17 +534,17 @@ func void draw_system(int start, int count, float dt)
 		);
 		pos.y -= sy;
 
-		if(!e.dead[ii])
+		if(!game->e.dead[ii])
 		{
-			if(e.player_id[ii] == my_id)
+			if(game->e.player_id[ii] == game->my_id)
 			{
-				draw_text(main_menu.player_name.data, pos, 1, color, e_font_small, true, zero);
+				draw_text(game->main_menu.player_name.data, pos, 1, color, e_font_small, true, zero);
 			}
 			else
 			{
-				if(e.name[ii].len > 0)
+				if(game->e.name[ii].len > 0)
 				{
-					draw_text(e.name[ii].data, pos, 1, color, e_font_small, true, zero);
+					draw_text(game->e.name[ii].data, pos, 1, color, e_font_small, true, zero);
 				}
 			}
 		}
@@ -577,37 +556,55 @@ func void draw_circle_system(int start, int count, float dt)
 	for(int i = 0; i < count; i++)
 	{
 		int ii = start + i;
-		if(!e.active[ii]) { continue; }
-		if(!e.flags[ii][e_entity_flag_draw_circle]) { continue; }
+		if(!game->e.active[ii]) { continue; }
+		if(!game->e.flags[ii][e_entity_flag_draw_circle]) { continue; }
 
-		float x = lerp(e.prev_x[ii], e.x[ii], dt);
-		float y = lerp(e.prev_y[ii], e.y[ii], dt);
-		float radius = lerp(e.prev_sx[ii], e.sx[ii], dt);
+		float x = lerp(game->e.prev_x[ii], game->e.x[ii], dt);
+		float y = lerp(game->e.prev_y[ii], game->e.y[ii], dt);
+		float radius = lerp(game->e.prev_sx[ii], game->e.sx[ii], dt);
 
-		s_v4 light_color = e.color[ii];
+		s_v4 light_color = game->e.color[ii];
 		light_color.w *= 0.2f;
 		draw_light(v2(x, y), 0, radius * 8.0f, light_color, zero);
-		draw_circle(v2(x, y), 1, radius, e.color[ii], zero);
+		draw_circle(v2(x, y), 1, radius, game->e.color[ii], zero);
 		draw_circle(v2(x, y), 2, radius * 0.7f, v41f(1), zero);
 	}
 }
 
-func void parse_packet(ENetEvent event, s_config config)
+extern "C"
 {
-	u8* cursor = event.packet->data;
+__declspec(dllexport)
+m_parse_packet(parse_packet)
+{
+	u8* cursor = packet.data;
 	e_packet packet_id = *(e_packet*)buffer_read(&cursor, sizeof(packet_id));
 
 	switch(packet_id)
 	{
+
+		case e_packet_connect:
+		{
+			log("Connected!");
+			s_player_appearance_from_client data;
+			data.name = game->main_menu.player_name;
+			data.color = game->config.color;
+			send_packet(e_packet_player_appearance, data, ENET_PACKET_FLAG_RELIABLE);
+		} break;
+
+		case e_packet_disconnect:
+		{
+			log("Disconnected!\n");
+		} break;
+
 		case e_packet_welcome:
 		{
 			s_welcome_from_server data = *(s_welcome_from_server*)cursor;
-			my_id = data.id;
+			game->my_id = data.id;
 			current_level = data.current_level;
-			rng.seed = data.seed;
-			game.attempt_count_on_current_level = data.attempt_count_on_current_level;
-			int entity = make_player(data.id, true, config.color);
-			e.name[entity] = main_menu.player_name;
+			game->rng.seed = data.seed;
+			game->attempt_count_on_current_level = data.attempt_count_on_current_level;
+			int entity = make_player(data.id, true, game->config.color);
+			game->e.name[entity] = game->main_menu.player_name;
 			log("Got welcome, my id is: %u", data.id);
 		} break;
 
@@ -615,8 +612,8 @@ func void parse_packet(ENetEvent event, s_config config)
 		{
 			s_already_connected_player_from_server data = *(s_already_connected_player_from_server*)cursor;
 			int entity = make_player(data.id, data.dead, data.color);
-			e.name[entity] = data.name;
-			e.color[entity] = data.color;
+			game->e.name[entity] = data.name;
+			game->e.color[entity] = data.color;
 			log("Got already connected data of %u", data.id);
 		} break;
 
@@ -631,12 +628,12 @@ func void parse_packet(ENetEvent event, s_config config)
 		{
 			s_player_update_from_server data = *(s_player_update_from_server*)cursor;
 
-			assert(data.id != my_id);
+			assert(data.id != game->my_id);
 			int entity = find_player_by_id(data.id);
 			if(entity != c_invalid_entity)
 			{
-				e.x[entity] = data.x;
-				e.y[entity] = data.y;
+				game->e.x[entity] = data.x;
+				game->e.y[entity] = data.y;
 			}
 
 		} break;
@@ -644,11 +641,11 @@ func void parse_packet(ENetEvent event, s_config config)
 		case e_packet_player_disconnected:
 		{
 			s_player_disconnected_from_server data = *(s_player_disconnected_from_server*)cursor;
-			assert(data.id != my_id);
+			assert(data.id != game->my_id);
 			int entity = find_player_by_id(data.id);
 			if(entity != c_invalid_entity)
 			{
-				e.active[entity] = false;
+				game->e.active[entity] = false;
 			}
 		} break;
 
@@ -656,12 +653,12 @@ func void parse_packet(ENetEvent event, s_config config)
 		{
 			s_beat_level_from_server data = *(s_beat_level_from_server*)cursor;
 			current_level = data.current_level + 1;
-			rng.seed = data.seed;
-			game.attempt_count_on_current_level = 0;
+			game->rng.seed = data.seed;
+			game->attempt_count_on_current_level = 0;
 			reset_level();
 			revive_every_player();
 			log("Beat level %i", current_level);
-			play_sound_if_supported(win_sound);
+			play_sound_if_supported(game->win_sound);
 		} break;
 
 		case e_packet_reset_level:
@@ -669,8 +666,8 @@ func void parse_packet(ENetEvent event, s_config config)
 			s_reset_level_from_server data = *(s_reset_level_from_server*)cursor;
 			current_level = data.current_level;
 			log("Reset level %i", current_level + 1);
-			rng.seed = data.seed;
-			game.attempt_count_on_current_level = data.attempt_count_on_current_level;
+			game->rng.seed = data.seed;
+			game->attempt_count_on_current_level = data.attempt_count_on_current_level;
 			reset_level();
 			revive_every_player();
 		} break;
@@ -678,26 +675,26 @@ func void parse_packet(ENetEvent event, s_config config)
 		case e_packet_player_got_hit:
 		{
 			s_player_got_hit_from_server data = *(s_player_got_hit_from_server*)cursor;
-			assert(data.id != my_id);
+			assert(data.id != game->my_id);
 			int entity = find_player_by_id(data.id);
 			if(entity != c_invalid_entity)
 			{
 				log("Player %i with id %u died", entity, data.id);
-				e.dead[entity] = true;
+				game->e.dead[entity] = true;
 			}
 		} break;
 
 		case e_packet_player_appearance:
 		{
 			s_player_appearance_from_server data = *(s_player_appearance_from_server*)cursor;
-			assert(data.id != my_id);
+			assert(data.id != game->my_id);
 
 			int entity = find_player_by_id(data.id);
 			if(entity != c_invalid_entity)
 			{
-				e.name[entity] = data.name;
-				e.color[entity] = data.color;
-				log("Set %u's name to %s", data.id, e.name[entity].data);
+				game->e.name[entity] = data.name;
+				game->e.color[entity] = data.color;
+				log("Set %u's name to %s", data.id, game->e.name[entity].data);
 			}
 		} break;
 
@@ -706,7 +703,7 @@ func void parse_packet(ENetEvent event, s_config config)
 		{
 			s_cheat_previous_level_from_server data = *(s_cheat_previous_level_from_server*)cursor;
 			current_level = data.current_level;
-			rng.seed = data.seed;
+			game->rng.seed = data.seed;
 			reset_level();
 			revive_every_player();
 		} break;
@@ -723,64 +720,29 @@ func void parse_packet(ENetEvent event, s_config config)
 		{
 			s_update_time_lived_from_server data = *(s_update_time_lived_from_server*)cursor;
 
+			log("time lived of %u is %f", data.id, data.time_lived);
+
 			int entity = find_player_by_id(data.id);
 			if(entity != c_invalid_entity)
 			{
-				e.time_lived[entity] = data.time_lived;
+				game->e.time_lived[entity] = data.time_lived;
 			}
 		} break;
 
 		invalid_default_case;
 	}
 }
-
-func void enet_loop(ENetHost* client, int timeout, s_config config)
-{
-	ENetEvent event;
-	while(enet_host_service(client, &event, timeout) > 0)
-	{
-		switch(event.type)
-		{
-			case ENET_EVENT_TYPE_NONE:
-			{
-			} break;
-
-			case ENET_EVENT_TYPE_CONNECT:
-			{
-				log("Connected!");
-
-				s_player_appearance_from_client data;
-				data.name = main_menu.player_name;
-				data.color = config.color;
-				send_packet(server, e_packet_player_appearance, data, ENET_PACKET_FLAG_RELIABLE);
-
-			} break;
-
-			case ENET_EVENT_TYPE_DISCONNECT:
-			{
-				log("Disconnected!\n");
-				return;
-			} break;
-
-			case ENET_EVENT_TYPE_RECEIVE:
-			{
-				parse_packet(event, config);
-				enet_packet_destroy(event.packet);
-			} break;
-
-			invalid_default_case;
-		}
-	}
 }
+
 
 func void revive_every_player(void)
 {
 	for(int i = 0; i < c_max_entities; i++)
 	{
-		if(!e.active[i]) { continue; }
-		if(!e.player_id[i]) { continue; }
-		e.dead[i] = false;
-		log("Revived player at index %i with id %u", i, e.player_id[i]);
+		if(!game->e.active[i]) { continue; }
+		if(!game->e.player_id[i]) { continue; }
+		game->e.dead[i] = false;
+		log("Revived player at index %i with id %u. I'm %u", i, game->e.player_id[i], game->my_id);
 	}
 }
 
@@ -789,23 +751,23 @@ func void collision_system(int start, int count)
 	for(int i = 0; i < count; i++)
 	{
 		int ii = start + i;
-		if(!e.active[ii]) { continue; }
-		if(!e.flags[ii][e_entity_flag_collide]) { continue; }
+		if(!game->e.active[ii]) { continue; }
+		if(!game->e.flags[ii][e_entity_flag_collide]) { continue; }
 
 		for(int j = 0; j < c_max_entities; j++)
 		{
-			if(!e.active[j]) { continue; }
-			if(e.dead[j]) { continue; }
-			if(e.type[j] != e_entity_type_player) { continue; }
-			if(e.player_id[j] != my_id) { continue; }
+			if(!game->e.active[j]) { continue; }
+			if(game->e.dead[j]) { continue; }
+			if(game->e.type[j] != e_entity_type_player) { continue; }
+			if(game->e.player_id[j] != game->my_id) { continue; }
 
 			if(
-				rect_collides_circle(v2(e.x[j], e.y[j]), v2(e.sx[j], e.sy[j]), v2(e.x[ii], e.y[ii]), e.sx[ii] * 0.48f)
+				rect_collides_circle(v2(game->e.x[j], game->e.y[j]), v2(game->e.sx[j], game->e.sy[j]), v2(game->e.x[ii], game->e.y[ii]), game->e.sx[ii] * 0.48f)
 			)
 			{
-				e.dead[j] = true;
+				game->e.dead[j] = true;
 				s_player_got_hit_from_client data = zero;
-				send_packet(server, e_packet_player_got_hit, data, ENET_PACKET_FLAG_RELIABLE);
+				send_packet(e_packet_player_got_hit, data, ENET_PACKET_FLAG_RELIABLE);
 			}
 		}
 	}
@@ -917,7 +879,7 @@ func s_v2 get_text_size_with_count(const char* text, e_font font_id, int count)
 {
 	assert(count >= 0);
 	if(count <= 0) { return zero; }
-	s_font* font = &g_font_arr[font_id];
+	s_font* font = &game->font_arr[font_id];
 
 	s_v2 size = zero;
 	size.y = font->size;
@@ -944,40 +906,6 @@ func s_v2 get_text_size(const char* text, e_font font_id)
 	return get_text_size_with_count(text, font_id, (int)strlen(text));
 }
 
-func void connect_to_server(s_config config)
-{
-	if(enet_initialize() != 0)
-	{
-		error(false);
-	}
-
-	g_client = enet_host_create(
-		null /* create a client host */,
-		1, /* only allow 1 outgoing connection */
-		2, /* allow up 2 channels to be used, 0 and 1 */
-		0, /* assume any amount of incoming bandwidth */
-		0 /* assume any amount of outgoing bandwidth */
-	);
-
-	if(g_client == null)
-	{
-		error(false);
-	}
-
-	ENetAddress address = zero;
-	enet_address_set_host(&address, config.ip.data);
-	// enet_address_set_host(&address, "127.0.0.1");
-	address.port = (u16)config.port;
-
-	server = enet_host_connect(g_client, &address, 2, 0);
-	if(server == null)
-	{
-		error(false);
-	}
-
-	g_connected = true;
-
-}
 
 #ifdef _WIN32
 #ifdef m_debug
@@ -994,12 +922,12 @@ func void hot_reload_shaders(void)
 		u32 new_program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
 		if(new_program)
 		{
-			if(g_program)
+			if(game->program)
 			{
 				glUseProgram(0);
-				glDeleteProgram(g_program);
+				glDeleteProgram(game->program);
 			}
-			g_program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
+			game->program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
 			last_write_time = find_data.ftLastWriteTime;
 		}
 	}
@@ -1015,12 +943,12 @@ func u32 load_shader(const char* vertex_path, const char* fragment_path)
 	u32 vertex = glCreateShader(GL_VERTEX_SHADER);
 	u32 fragment = glCreateShader(GL_FRAGMENT_SHADER);
 	const char* header = "#version 430 core\n";
-	char* vertex_src = read_file(vertex_path, &frame_arena);
+	char* vertex_src = read_file(vertex_path, frame_arena);
 	if(!vertex_src || !vertex_src[0]) { return 0; }
-	char* fragment_src = read_file(fragment_path, &frame_arena);
+	char* fragment_src = read_file(fragment_path, frame_arena);
 	if(!fragment_src || !fragment_src[0]) { return 0; }
-	const char* vertex_src_arr[] = {header, read_file("src/shader_shared.h", &frame_arena), vertex_src};
-	const char* fragment_src_arr[] = {header, read_file("src/shader_shared.h", &frame_arena), fragment_src};
+	const char* vertex_src_arr[] = {header, read_file("src/shader_shared.h", frame_arena), vertex_src};
+	const char* fragment_src_arr[] = {header, read_file("src/shader_shared.h", frame_arena), fragment_src};
 	glShaderSource(vertex, array_count(vertex_src_arr), (const GLchar * const *)vertex_src_arr, null);
 	glShaderSource(fragment, array_count(fragment_src_arr), (const GLchar * const *)fragment_src_arr, null);
 	glCompileShader(vertex);
@@ -1040,15 +968,15 @@ func u32 load_shader(const char* vertex_path, const char* fragment_path)
 func void handle_instant_movement_(int entity)
 {
 	assert(entity != c_invalid_entity);
-	e.prev_x[entity] = e.x[entity];
-	e.prev_y[entity] = e.y[entity];
+	game->e.prev_x[entity] = game->e.x[entity];
+	game->e.prev_y[entity] = game->e.y[entity];
 }
 
 func void handle_instant_resize_(int entity)
 {
 	assert(entity != c_invalid_entity);
-	e.prev_sx[entity] = e.sx[entity];
-	e.prev_sy[entity] = e.sy[entity];
+	game->e.prev_sx[entity] = game->e.sx[entity];
+	game->e.prev_sy[entity] = game->e.sy[entity];
 }
 
 func s_config read_config_or_make_default(s_lin_arena* arena, s_rng* in_rng)
@@ -1186,7 +1114,7 @@ func s_name make_name(const char* str)
 {
 	s_name result = zero;
 	int len = (int)strlen(str);
-	assert(len < max_player_name_length);
+	assert(len < c_max_player_name_length);
 	memcpy(result.data, str, len);
 	result.len = len;
 	return result;
@@ -1239,4 +1167,37 @@ void gl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, G
 		printf("GL ERROR: %s\n", message);
 		assert(false);
 	}
+}
+
+func void send_simple_packet(e_packet packet_id, int flag)
+{
+	assert(flag == 0 || flag == ENET_PACKET_FLAG_RELIABLE);
+
+	s_packet packet = zero;
+	packet.size = sizeof(packet_id);
+	packet.data = (u8*)la_get(&g_network->write_arena, packet.size);
+	packet.flag = flag;
+	*(e_packet*)packet.data = packet_id;
+	g_network->out_packets.add(packet);
+}
+
+func void send_packet_(e_packet packet_id, void* data, size_t size, int flag)
+{
+	assert(flag == 0 || flag == ENET_PACKET_FLAG_RELIABLE);
+
+	s_packet packet = zero;
+	packet.size = (int)(size + sizeof(packet_id));
+	packet.data = (u8*)la_get(&g_network->write_arena, packet.size);
+	packet.flag = flag;
+	u8* cursor = packet.data;
+	buffer_write(&cursor, &packet_id, sizeof(packet_id));
+	buffer_write(&cursor, data, size);
+	g_network->out_packets.add(packet);
+}
+
+func void connect_to_server(s_config config)
+{
+	g_network->ip = config.ip;
+	g_network->port = config.port;
+	g_network->connect_to_server = true;
 }

@@ -17,6 +17,12 @@ struct s_gamepad
 	int buttons;
 };
 
+struct s_platform_network
+{
+	ENetHost* client;
+	ENetPeer* server;
+};
+
 struct s_voice : IXAudio2VoiceCallback
 {
 	IXAudio2SourceVoice* voice;
@@ -57,3 +63,6 @@ func b8 play_sound(s_sound sound);
 func void init_performance();
 func f64 get_seconds();
 func void do_gamepad_shit(void);
+func void set_swap_interval(int interval);
+func void enet_loop(ENetHost* client, int timeout, s_game_network* game_network, t_parse_packet* parse_packet);
+func void connect_to_server(s_platform_network* platform_network, s_game_network* game_network);

@@ -10,13 +10,6 @@
 #define handle_instant_resize(entity)
 #endif
 
-struct s_name
-{
-	int len;
-	char data[max_player_name_length];
-};
-
-
 enum e_packet
 {
 	e_packet_welcome,
@@ -35,6 +28,9 @@ enum e_packet
 	e_packet_cheat_previous_level,
 	e_packet_all_levels_beat,
 	e_packet_update_time_lived,
+
+	e_packet_connect = 9998,
+	e_packet_disconnect = 9999,
 };
 
 #pragma pack(push, 1)
@@ -326,12 +322,6 @@ func void make_side_projectile(int entity, float x, float x_dir);
 func s_name str_to_name(char* str);
 func int make_entity(void);
 func void init_levels(void);
-
-#define send_packet(peer, packet_id, data, flag) send_packet_(peer, packet_id, &data, sizeof(data), flag)
-func void send_packet_(ENetPeer* peer, e_packet packet_id, void* data, size_t size, int flag);
-
-#define broadcast_packet(host, packet_id, data, flag) broadcast_packet_(host, packet_id, &data, sizeof(data), flag)
-func void broadcast_packet_(ENetHost* in_host, e_packet packet_id, void* data, size_t size, int flag);
 
 func void apply_projectile_modifiers(int entity, s_projectile_spawn_data data);
 func void set_speed(int entity, float speed);

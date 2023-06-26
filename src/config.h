@@ -27,7 +27,6 @@ global constexpr int c_max_concurrent_sounds = 8;
 #define c_level_duration (15)
 #define c_fast_fall_speed (600)
 
-#define max_player_name_length 32
 #define c_str_builder_size 1024
 
 #define c_projectile_spawn_offset (100)

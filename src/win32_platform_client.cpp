@@ -1,3 +1,4 @@
+#define m_client 1
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -8,13 +9,19 @@
 #include <xaudio2.h>
 #include <stdio.h>
 #include <math.h>
+#include <winsock2.h>
+#include "external/enet/enet.h"
 
 #include "types.h"
 #include "utils.h"
+#include "memory.h"
 #include "epic_math.h"
 #include "config.h"
 #include "platform_shared.h"
-#include "win32_platform.h"
+#include "shared_client_server.h"
+#include "platform_shared_client.h"
+#include "shared_all.h"
+#include "win32_platform_client.h"
 
 global s_window g_window;
 global s_input g_input;
@@ -24,22 +31,21 @@ global u64 g_start_cycles;
 global s_gamepad g_gamepads[XUSER_MAX_COUNT];
 
 global s_sarray<s_char_event, 1024> char_event_arr;
+PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 
-#include "platform_shared.cpp"
 
-func void set_swap_interval(int interval)
-{
-	if(wglSwapIntervalEXT)
-	{
-		wglSwapIntervalEXT(interval);
-	}
-}
+#include "memory.cpp"
+#include "platform_shared_client.cpp"
 
 int main(int argc, char** argv)
 {
 	unreferenced(argc);
 	unreferenced(argv);
 
+	if(enet_initialize() != 0)
+	{
+		error(false);
+	}
 
 	create_window((int)c_base_res.x, (int)c_base_res.y);
 	if(!init_audio())
@@ -48,10 +54,32 @@ int main(int argc, char** argv)
 	}
 	init_performance();
 
+	wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)load_gl_func("wglSwapIntervalEXT");
+
 	s_platform_funcs platform_funcs = zero;
 	platform_funcs.play_sound = play_sound;
 	platform_funcs.load_gl_func = (t_load_gl_func)load_gl_func;
 	platform_funcs.set_swap_interval = set_swap_interval;
+
+	t_update_game* update_game = null;
+	t_parse_packet* parse_packet = null;
+	HMODULE dll = null;
+	void* game_memory = null;
+	s_game_network game_network = zero;
+	s_platform_network platform_network = zero;
+	s_platform_data platform_data = zero;
+
+	{
+		s_lin_arena all = zero;
+		all.capacity = 10 * c_mb;
+		all.memory = VirtualAlloc(null, all.capacity, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+		game_memory = la_get(&all, 1 * c_mb);
+		game_network.read_arena = make_lin_arena_from_memory(1 * c_mb, la_get(&all, 1 * c_mb));
+		game_network.write_arena = make_lin_arena_from_memory(1 * c_mb, la_get(&all, 1 * c_mb));
+		platform_data.frame_arena = make_lin_arena_from_memory(5 * c_mb, la_get(&all, 5 * c_mb));
+
+	}
 
 	b8 running = true;
 	f64 time_passed = 0;
@@ -64,11 +92,6 @@ int main(int argc, char** argv)
 		{
 			if(msg.message == WM_QUIT)
 			{
-				// if(g_connected)
-				// {
-				// 	enet_peer_disconnect(server, 0);
-				// 	enet_loop(g_client, 1000, config);
-				// }
 				running = false;
 			}
 			TranslateMessage(&msg);
@@ -77,7 +100,6 @@ int main(int argc, char** argv)
 
 		do_gamepad_shit();
 
-		s_platform_data platform_data;
 		platform_data.input = &g_input;
 		platform_data.quit_after_this_frame = !running;
 		platform_data.window_width = g_window.width;
@@ -85,7 +107,40 @@ int main(int argc, char** argv)
 		platform_data.time_passed = time_passed;
 		platform_data.char_event_arr = &char_event_arr;
 
-		update_game(platform_data, platform_funcs);
+		if(!update_game)
+		{
+			dll = LoadLibraryA("build/client.dll");
+			assert(dll);
+			update_game = (t_update_game*)GetProcAddress(dll, "update_game");
+			assert(update_game);
+			parse_packet = (t_parse_packet*)GetProcAddress(dll, "parse_packet");
+			assert(parse_packet);
+		}
+
+		if(game_network.connect_to_server)
+		{
+			game_network.connect_to_server = false;
+			connect_to_server(&platform_network, &game_network);
+		}
+		if(game_network.connected)
+		{
+			enet_loop(platform_network.client, 0, &game_network, parse_packet);
+			if(game_network.disconnect)
+			{
+				enet_peer_disconnect(platform_network.server, 0);
+				enet_loop(platform_network.client, 1000, &game_network, parse_packet);
+			}
+		}
+		update_game(platform_data, platform_funcs, &game_network, game_memory);
+
+		foreach_raw(packet_i, packet, game_network.out_packets)
+		{
+			ENetPacket* enet_packet = enet_packet_create(packet.data, packet.size, packet.flag);
+			enet_peer_send(platform_network.server, 0, enet_packet);
+		}
+		game_network.out_packets.count = 0;
+		game_network.read_arena.used = 0;
+		game_network.write_arena.used = 0;
 
 		SwapBuffers(g_window.dc);
 
@@ -522,4 +577,94 @@ func void do_gamepad_shit(void)
 		gamepad->left_thumb_x = 0;
 
 	}
+}
+
+func void set_swap_interval(int interval)
+{
+	if(wglSwapIntervalEXT)
+	{
+		wglSwapIntervalEXT(interval);
+	}
+}
+
+func void enet_loop(ENetHost* client, int timeout, s_game_network* game_network, t_parse_packet* parse_packet)
+{
+	ENetEvent event;
+	while(enet_host_service(client, &event, timeout) > 0)
+	{
+		switch(event.type)
+		{
+			case ENET_EVENT_TYPE_NONE:
+			{
+			} break;
+
+			case ENET_EVENT_TYPE_CONNECT:
+			{
+				s_packet packet = zero;
+				packet.size = sizeof(e_packet_connect);
+				packet.data = (u8*)la_get(&game_network->read_arena, packet.size);
+				u8* cursor = packet.data;
+				int temp = e_packet_connect;
+				buffer_write(&cursor, &temp, sizeof(temp));
+				parse_packet(packet);
+			} break;
+
+			case ENET_EVENT_TYPE_DISCONNECT:
+			{
+				s_packet packet = zero;
+				packet.size = sizeof(e_packet_disconnect);
+				packet.data = (u8*)la_get(&game_network->read_arena, packet.size);
+				u8* cursor = packet.data;
+				int temp = e_packet_disconnect;
+				buffer_write(&cursor, &temp, sizeof(temp));
+				parse_packet(packet);
+			} break;
+
+			case ENET_EVENT_TYPE_RECEIVE:
+			{
+				s_packet packet = zero;
+				packet.size = (int)event.packet->dataLength;
+				packet.data = (u8*)la_get(&game_network->read_arena, packet.size);;
+				memcpy(packet.data, event.packet->data, packet.size);
+				parse_packet(packet);
+				enet_packet_destroy(event.packet);
+			} break;
+
+			invalid_default_case;
+		}
+	}
+}
+
+func void connect_to_server(s_platform_network* platform_network, s_game_network* game_network)
+{
+	if(enet_initialize() != 0)
+	{
+		error(false);
+	}
+
+	platform_network->client = enet_host_create(
+		null /* create a client host */,
+		1, /* only allow 1 outgoing connection */
+		2, /* allow up 2 channels to be used, 0 and 1 */
+		0, /* assume any amount of incoming bandwidth */
+		0 /* assume any amount of outgoing bandwidth */
+	);
+
+	if(platform_network->client == null)
+	{
+		error(false);
+	}
+
+	ENetAddress address = zero;
+	enet_address_set_host(&address, game_network->ip.data);
+	address.port = (u16)game_network->port;
+
+	platform_network->server = enet_host_connect(platform_network->client, &address, 2, 0);
+	if(platform_network->server == null)
+	{
+		error(false);
+	}
+
+	game_network->connected = true;
+
 }
