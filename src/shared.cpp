@@ -475,6 +475,8 @@ func void spawn_system(s_level level)
 func void init_levels(void)
 {
 	game->level_count = 0;
+	memset(levels, 0, sizeof(levels));
+
 	#define speed(val) (1000.0f / val)
 
 	for(int level_i = 0; level_i < c_max_levels; level_i++)
