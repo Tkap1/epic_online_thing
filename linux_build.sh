@@ -6,9 +6,15 @@ else
 	diag="-fno-caret-diagnostics"
 fi
 warn="-Werror -Wall -Wno-char-subscripts -Wno-unused-function -Wno-switch"
-opt="-std=c++17 -Isrc/ -g -Dm_app"
-opt_release="-std=c++17 -O2 -DNDEBUG -Dm_app"
+serverdef="-Dm_server -Dm_app"
+clientdef="-Dm_client -Dm_app"
+opt_debug="-std=c++17 -Isrc/ -g -Dm_debug"
+opt_release="-std=c++17 -O2 -DNDEBUG"
 libs="-lm -lGL -lX11 -lenet"
+
+compile_client=0
+compile_server=0
+debug=1
 
 if [ $# -gt 0 ] ; then
 	case $1 in
@@ -16,23 +22,42 @@ if [ $# -gt 0 ] ; then
 			ctags src/*.cpp src/*.h
 			;;
 		"client" )
-			$cc $warn $diag $opt src/linux_platform.cpp src/client.cpp -o client $libs
+			compile_client=1
 			;;
 		"server" )
-			$cc $warn $diag $opt src/server.cpp -o server $libs
+			compile_server=1
 			;;
 		"clean" )
-			rm -f client server
+			rm -f client server client.so server.so
 			;;
 		"release" )
-			$cc $warn $diag $opt_release src/linux_platform.cpp src/client.cpp -o client $libs &
-			$cc $warn $diag $opt_release src/server.cpp -o server $libs &
-			wait $(jobs -p)
+			compile_client=1
+			compile_server=1
+			debug=0
 			;;
 	esac
 else
-	$cc $warn $diag $opt src/linux_platform.cpp src/client.cpp -o client $libs &
-	$cc $warn $diag $opt src/server.cpp -o server $libs &
-	wait $(jobs -p)
+	# compile both client and server by defaultif no other args given
+	compile_client=1
+	compile_server=1
 fi
 
+if [ $debug = 0 ] ; then
+	opt=$opt_debug
+else
+	opt=$opt_release
+fi
+
+if [ $compile_client = 1 ] ; then
+	$cc -shared -fPIC $warn $diag $opt $clientdef src/client.cpp -o client.so $libs &
+	$cc -fPIC $warn $diag $opt $clientdef src/linux_platform_client.cpp src/client.cpp -o client $libs &
+fi
+
+if [ $compile_server = 1 ] ; then
+	$cc -shared -fPIC $warn $diag $opt $serverdef src/server.cpp -o server.so $libs &
+	$cc -fPIC $warn $diag $opt $serverdef src/linux_platform_server.cpp src/server.cpp -o server $libs &
+fi
+
+if [ $compile_server = 1 ] || [ $compile_client = 1 ] ; then
+	wait $(jobs -p)
+fi

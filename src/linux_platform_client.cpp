@@ -9,14 +9,22 @@
 #include <unistd.h>
 #include <math.h>
 #include <time.h>
+#include <dlfcn.h>
+#include "external/enet/enet.h"
+#include "memory.h"
 #include "types.h"
 #include "utils.h"
 #include "epic_math.h"
+#include "shared_client_server.h"
 #include "config.h"
+#include "shared_all.h"
 #include "platform_shared_client.h"
 #include "platform_shared.h"
 
+#include "memory.cpp"
 #include "platform_shared_client.cpp"
+
+#define EPIC_DLLEXPORT
 
 struct s_window
 {
@@ -30,6 +38,15 @@ struct s_window
 	Cursor invisible_cursor;
 	XIC input_context;
 };
+
+
+struct s_platform_network
+{
+	ENetHost* client;
+	ENetPeer* server;
+};
+
+#include "enet_shared_client.cpp"
 
 global s_window g_window;
 global s_input g_input;
@@ -265,7 +282,7 @@ func void (*load_gl_func(const char *name))(void)
 	return res;
 }
 
-func void set_swap_interval(int interval)
+void set_swap_interval(int interval)
 {
 	glXSwapIntervalEXT(g_window.display, g_window.window, interval);
 }
@@ -292,12 +309,34 @@ int main(void)
 	create_window((int)c_base_res.x, (int)c_base_res.y);
 	u64 start_cycles = get_ticks();
 
+	s_lin_arena all = zero;
+	all.capacity = 10 * c_mb;
+	all.memory = calloc(all.capacity, 1);
+
+	void *game_memory = la_get(&all, 1 * c_mb);
+	s_game_network game_network = zero;
+	s_platform_network platform_network = zero;
+	s_platform_data platform_data = zero;
+	game_network.read_arena = make_lin_arena_from_memory(1 * c_mb, la_get(&all, 1*c_mb));
+	game_network.write_arena = make_lin_arena_from_memory(1 * c_mb, la_get(&all, 1*c_mb));
+	platform_data.frame_arena = make_lin_arena_from_memory(5 * c_mb, la_get(&all, 5*c_mb));
+	glXSwapIntervalEXTProc = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddress((const GLubyte*)"glXSwapIntervalEXT");
+
 	s_platform_funcs platform_funcs = zero;
 	platform_funcs.load_gl_func = (t_load_gl_func)load_gl_func;
 	platform_funcs.set_swap_interval = set_swap_interval;
 
+	int dl_flags = RTLD_NOW; // resolve function symbols immediately upon loading
+	void *client_so = dlopen("./client.so", dl_flags);
+	assert(client_so);
+	t_update_game *update_game_proc = (t_update_game*)dlsym(client_so, "update_game");
+	assert(update_game_proc);
+	t_parse_packet *parse_packet_proc = (t_parse_packet*)dlsym(client_so, "parse_packet");
+	assert(parse_packet_proc);
+
 	b8 running = true;
 	f64 time_passed = 0;
+	platform_data.recompiled = true;
 	while(running)
 	{
 		f64 start_of_frame_seconds = get_seconds(start_cycles);
@@ -306,15 +345,43 @@ int main(void)
 
 		//do_gamepad_shit();
 
-		s_platform_data platform_data;
 		platform_data.input = &g_input;
 		platform_data.quit_after_this_frame = !running;
 		platform_data.window_width = g_window.width;
 		platform_data.window_height = g_window.height;
 		platform_data.time_passed = time_passed;
 		platform_data.char_event_arr = &char_event_arr;
+		{
+			// TODO: hot reload client so and set platform_data.recompiled to true again
+		}
 
-		update_game(platform_data, platform_funcs);
+		if(game_network.connect_to_server)
+		{
+			game_network.connect_to_server = false;
+			connect_to_server(&platform_network, &game_network);
+		}
+		if(game_network.connected)
+		{
+			enet_loop(platform_network.client, 0, &game_network, parse_packet_proc);
+			if(game_network.disconnect)
+			{
+				enet_peer_disconnect(platform_network.server, 0);
+				enet_loop(platform_network.client, 1000, &game_network, parse_packet_proc);
+			}
+		}
+
+		(*update_game_proc)(platform_data, platform_funcs, &game_network, game_memory, false);
+		platform_data.recompiled = false;
+
+		for (int packet_i = 0; packet_i < game_network.out_packets.count; ++packet_i)
+		{
+			s_packet packet = game_network.out_packets[packet_i];
+			ENetPacket* enet_packet = enet_packet_create(packet.data, packet.size, packet.flag);
+			enet_peer_send(platform_network.server, 0, enet_packet);
+		}
+		game_network.out_packets.count = 0;
+		game_network.read_arena.used = 0;
+		game_network.write_arena.used = 0;
 
 		glXSwapBuffers(g_window.display, g_window.window);
 

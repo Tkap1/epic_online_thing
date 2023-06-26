@@ -10,6 +10,7 @@ static constexpr int ENET_PACKET_FLAG_RELIABLE = 1;
 #include "external/glcorearb.h"
 #include "external/wglext.h"
 #include <stdlib.h>
+#define EPIC_DLLEXPORT __declspec(dllexport)
 #else
 #include<X11/X.h>
 #include<X11/Xlib.h>
@@ -20,6 +21,7 @@ static constexpr int ENET_PACKET_FLAG_RELIABLE = 1;
 #include <string.h>
 #include <stdarg.h>
 #include <unistd.h>
+#define EPIC_DLLEXPORT
 #endif // _WIN32
 
 #include <stdio.h>
@@ -71,7 +73,7 @@ m_gl_funcs
 
 extern "C"
 {
-__declspec(dllexport)
+EPIC_DLLEXPORT
 m_update_game(update_game)
 {
 	static_assert(c_game_memory >= sizeof(s_game));
@@ -499,11 +501,9 @@ func void render(float dt)
 		}
 	}
 
-	#ifdef _WIN32
 	#ifdef m_debug
 	hot_reload_shaders();
 	#endif // m_debug
-	#endif // _WIN32
 }
 
 func b8 check_for_shader_errors(u32 id, char* out_error)
@@ -651,7 +651,7 @@ func void draw_circle_system(int start, int count, float dt)
 
 extern "C"
 {
-__declspec(dllexport)
+EPIC_DLLEXPORT
 m_parse_packet(parse_packet)
 {
 	u8* cursor = packet.data;
@@ -1021,8 +1021,8 @@ func s_v2 get_text_size(const char* text, e_font font_id)
 }
 
 
-#ifdef _WIN32
 #ifdef m_debug
+#ifdef _WIN32
 global FILETIME last_write_time = zero;
 func void hot_reload_shaders(void)
 {
@@ -1049,8 +1049,29 @@ func void hot_reload_shaders(void)
 	FindClose(handle);
 
 }
-#endif // m_debug
+#else
+#include <sys/stat.h>
+global time_t last_write_time;
+func void hot_reload_shaders(void)
+{
+	struct stat s;
+	stat("shaders/fragment.fragment", &s);
+	if (s.st_mtime > last_write_time) {
+		u32 new_program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
+		if(new_program)
+		{
+			if(game->program)
+			{
+				glUseProgram(0);
+				glDeleteProgram(game->program);
+			}
+			game->program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
+			last_write_time = s.st_mtime;
+		}
+	}
+}
 #endif // _WIN32
+#endif // m_debug
 
 func u32 load_shader(const char* vertex_path, const char* fragment_path)
 {

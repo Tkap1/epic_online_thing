@@ -134,9 +134,7 @@ func void connect_to_server(s_config config);
 template <typename T>
 func e_string_input_result handle_string_input(T* str);
 
-#ifdef _WIN32
 #ifdef m_debug
 func void hot_reload_shaders(void);
 #endif // m_debug
-#endif // _WIN32
 

@@ -34,8 +34,6 @@ func f64 get_seconds(void)
 
 func void init_performance(void)
 {
-	time_passed = 0.0f;
-	total_time = 0.0f;
 	struct timespec ts;
 	g_cycle_frequency = 1000000000L;
 	timespec_get(&ts, TIME_UTC);
