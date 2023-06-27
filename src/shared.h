@@ -10,6 +10,7 @@
 enum e_projectile_type
 {
 	e_projectile_type_top_basic,
+	e_projectile_type_bottom_basic,
 	e_projectile_type_left_basic,
 	e_projectile_type_right_basic,
 	e_projectile_type_diagonal_left,
