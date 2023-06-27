@@ -1,3 +1,4 @@
+#define m_server 1
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -9,8 +10,8 @@
 #include "utils.h"
 #include "memory.h"
 #include "epic_time.h"
-#include "platform_shared_server.h"
 #include "shared_all.h"
+#include "platform_shared_server.h"
 #include "shared_client_server.h"
 #include "win32_platform_server.h"
 #include "platform_shared.h"

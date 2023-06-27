@@ -21,10 +21,10 @@ static constexpr int ENET_PACKET_FLAG_RELIABLE = 1;
 #include "memory.h"
 #include "utils.h"
 #include "epic_math.h"
+#include "shared_all.h"
 #include "shared_client_server.h"
 #include "config.h"
 #include "platform_shared_server.h"
-#include "shared_all.h"
 #include "rng.h"
 #include "shared.h"
 #include "server.h"
@@ -308,7 +308,7 @@ m_parse_packet(parse_packet)
 			u32 player_id = packet.from;
 			s_player_appearance_from_client data = *(s_player_appearance_from_client*)cursor;
 
-			if(data.name.len < 3 || data.name.len > c_max_player_name_length)
+			if(data.name.len < 3 || data.name.len > data.name.max_chars)
 			{
 				// @TODO(tkap, 23/06/2023): Kick player?
 				break;
@@ -369,6 +369,17 @@ m_parse_packet(parse_packet)
 			revive_every_player();
 		} break;
 		#endif // m_debug
+
+		case e_packet_chat_msg:
+		{
+			s_chat_msg_from_client data = *(s_chat_msg_from_client*)cursor;
+			if(data.msg.len <= 0 || data.msg.len > data.msg.max_chars) { break; }
+
+			s_chat_msg_from_server out_data = zero;
+			out_data.id = packet.from;
+			out_data.msg = data.msg;
+			broadcast_packet(e_packet_chat_msg, out_data, ENET_PACKET_FLAG_RELIABLE);
+		} break;
 	}
 }
 }

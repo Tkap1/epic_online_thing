@@ -17,10 +17,10 @@
 #include "memory.h"
 #include "epic_math.h"
 #include "config.h"
+#include "shared_all.h"
 #include "platform_shared.h"
 #include "shared_client_server.h"
 #include "platform_shared_client.h"
-#include "shared_all.h"
 #include "win32_platform_client.h"
 #include "win32_reload_dll.h"
 

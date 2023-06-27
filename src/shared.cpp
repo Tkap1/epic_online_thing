@@ -1048,38 +1048,14 @@ func void make_side_projectile(int entity, float x, float x_dir)
 	game->e.color[entity] = v4(0.1f, 0.9f, 0.1f, 1.0f);
 }
 
-// func void send_packet_(ENetPeer* peer, e_packet packet_id, void* data, size_t size, int flag)
-// {
-// 	assert(flag == 0 || flag == ENET_PACKET_FLAG_RELIABLE);
-// 	assert(size <= 1024 - sizeof(packet_id));
-
-// 	u8 packet_data[1024];
-// 	u8* cursor = packet_data;
-// 	buffer_write(&cursor, &packet_id, sizeof(packet_id));
-// 	buffer_write(&cursor, data, size);
-// 	ENetPacket* packet = enet_packet_create(packet_data, cursor - packet_data, flag);
-// 	enet_peer_send(peer, 0, packet);
-// }
-
-func s_name str_to_name(char* str)
+func s_small_str str_to_name(char* str)
 {
-	s_name result = zero;
+	s_small_str result = zero;
 	result.len = (int)strlen(str);
-	assert(result.len < c_max_player_name_length);
+	assert(result.len <= result.max_chars);
 	memcpy(result.data, str, result.len + 1);
 	return result;
 }
-
-// func void send_simple_packet(ENetPeer* peer, e_packet packet_id, int flag)
-// {
-// 	assert(flag == 0 || flag == ENET_PACKET_FLAG_RELIABLE);
-
-// 	u8 packet_data[4];
-// 	u8* cursor = packet_data;
-// 	buffer_write(&cursor, &packet_id, sizeof(packet_id));
-// 	ENetPacket* packet = enet_packet_create(packet_data, sizeof(packet_id), flag);
-// 	enet_peer_send(peer, 0, packet);
-// }
 
 func void increase_time_lived_system(int start, int count)
 {

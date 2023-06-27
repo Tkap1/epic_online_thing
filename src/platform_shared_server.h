@@ -1,17 +1,4 @@
 
-global constexpr int c_max_peers = 32;
-
-
-struct s_packet
-{
-	b8 broadcast;
-	int flag;
-	int size;
-	u32 target;
-	u32 from;
-	u8* data;
-};
-
 struct s_game_network
 {
 	s_sarray<u32, c_max_peers> peers;

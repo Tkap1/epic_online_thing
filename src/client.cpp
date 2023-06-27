@@ -29,6 +29,7 @@ static constexpr int ENET_PACKET_FLAG_RELIABLE = 1;
 #include "epic_math.h"
 #include "config.h"
 #include "memory.h"
+#include "shared_all.h"
 #include "shared_client_server.h"
 #include "platform_shared_client.h"
 #include "shared.h"
@@ -37,7 +38,6 @@ static constexpr int ENET_PACKET_FLAG_RELIABLE = 1;
 #include "shader_shared.h"
 #include "str_builder.h"
 #include "audio.h"
-#include "shared_all.h"
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STBTT_assert assert
@@ -186,45 +186,20 @@ func void update(s_config config)
 				connect_to_server(config);
 				break;
 			}
-			while(true)
-			{
-				s_char_event event = get_char_event();
-				int c = event.c;
-				if(!c) { break; }
 
-				if(event.is_symbol)
+			e_string_input_result string_input_result = handle_string_input(&game->main_menu.player_name);
+			if(string_input_result == e_string_input_result_submit)
+			{
+				if(game->main_menu.player_name.len < 3)
 				{
-					if(c == c_key_backspace)
-					{
-						if(game->main_menu.player_name.len > 0)
-						{
-							game->main_menu.player_name.data[--game->main_menu.player_name.len] = 0;
-						}
-					}
-					else if(c == c_key_enter)
-					{
-						if(game->main_menu.player_name.len < 3)
-						{
-							game->main_menu.error_str = "Character name needs to be at least 3 characters";
-						}
-						else
-						{
-							game->main_menu.error_str = null;
-							game->state = e_state_game;
-							connect_to_server(config);
-							break;
-						}
-					}
+					game->main_menu.error_str = "Character name needs to be at least 3 characters";
 				}
 				else
 				{
-					if(c >= 32 && c <= 126)
-					{
-						if(game->main_menu.player_name.len < c_max_player_name_length)
-						{
-							game->main_menu.player_name.data[game->main_menu.player_name.len++] = (char)c;
-						}
-					}
+					game->main_menu.error_str = null;
+					game->state = e_state_game;
+					connect_to_server(config);
+					break;
 				}
 			}
 		} break;
@@ -289,6 +264,50 @@ func void update(s_config config)
 
 			level_timer += delta;
 			spawn_system(levels[game->current_level]);
+
+			if(game->chatting)
+			{
+				e_string_input_result input_result = handle_string_input(&game->my_chat_msg);
+				if(input_result == e_string_input_result_submit)
+				{
+					if(game->my_chat_msg.len > 0)
+					{
+						s_chat_msg_from_client data;
+						data.msg = game->my_chat_msg;
+						send_packet(e_packet_chat_msg, data, ENET_PACKET_FLAG_RELIABLE);
+						game->my_chat_msg.len = 0;
+					}
+					game->chatting = false;
+				}
+				if(is_key_pressed(c_key_escape))
+				{
+					game->my_chat_msg.len = 0;
+					game->chatting = false;
+				}
+			}
+			else
+			{
+				if(is_key_pressed(c_key_enter))
+				{
+					game->chatting = true;
+				}
+			}
+
+			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		chat messages start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+			{
+				for(int msg_i = 0; msg_i < c_max_peers; msg_i++)
+				{
+					if(game->chat_message_ids[msg_i])
+					{
+						game->chat_message_times[msg_i] += delta;
+						if(game->chat_message_times[msg_i] >= 5)
+						{
+							game->chat_message_ids[msg_i] = 0;
+						}
+					}
+				}
+			}
+			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		chat messages end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 		} break;
 
@@ -392,6 +411,38 @@ func void render(float dt)
 				}
 			}
 
+			if(game->chatting && game->my_id && game->my_chat_msg.len > 0)
+			{
+				int entity = find_player_by_id(game->my_id);
+				if(entity != c_invalid_entity)
+				{
+					s_v2 pos = v2(
+						game->e.x[entity],
+						game->e.y[entity] - game->e.sy[entity] * 2
+					);
+					draw_text(game->my_chat_msg.data, pos, 1, v41f(1), e_font_small, true, zero);
+				}
+			}
+
+			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		render chat messages start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+			{
+				for(int msg_i = 0; msg_i < c_max_peers; msg_i++)
+				{
+					if(game->chat_message_ids[msg_i] && !(game->chat_message_ids[msg_i] == game->my_id && game->chatting))
+					{
+						int entity = find_player_by_id(game->chat_message_ids[msg_i]);
+						if(entity != c_invalid_entity)
+						{
+							s_v2 pos = v2(
+								game->e.x[entity],
+								game->e.y[entity] - game->e.sy[entity] * 2
+							);
+							draw_text(game->my_chat_msg.data, pos, 1, v41f(1), e_font_small, true, zero);
+						}
+					}
+				}
+			}
+			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		render chat messages end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 		} break;
 
@@ -478,10 +529,10 @@ func b8 check_for_shader_errors(u32 id, char* out_error)
 
 func void input_system(int start, int count)
 {
-	b8 go_left = is_key_down(c_key_a) || is_key_down(c_key_left);
-	b8 go_right = is_key_down(c_key_d) || is_key_down(c_key_right);
-	b8 go_down = is_key_pressed(c_key_s) || is_key_pressed(c_key_down);
-	b8 jump = is_key_pressed(c_key_space) || is_key_pressed(c_key_w) || is_key_pressed(c_key_up);
+	b8 go_left = (is_key_down(c_key_a) || is_key_down(c_key_left)) && !game->chatting;
+	b8 go_right = (is_key_down(c_key_d) || is_key_down(c_key_right)) && !game->chatting;
+	b8 go_down = (is_key_pressed(c_key_s) || is_key_pressed(c_key_down)) && !game->chatting;
+	b8 jump = (is_key_pressed(c_key_space) || is_key_pressed(c_key_w) || is_key_pressed(c_key_up)) && !game->chatting;
 	b8 jump_released = is_key_released(c_key_space) || is_key_released(c_key_w) || is_key_released(c_key_up);
 
 	s_level level = levels[game->current_level];
@@ -761,6 +812,35 @@ m_parse_packet(parse_packet)
 			s_update_levels_from_server data = *(s_update_levels_from_server*)cursor;
 			memcpy(levels, data.levels, sizeof(levels));
 			log("Got levels from server");
+		} break;
+
+		case e_packet_chat_msg:
+		{
+			s_chat_msg_from_server data = *(s_chat_msg_from_server*)cursor;
+			assert(data.msg.len > 0 || data.msg.len <= data.msg.max_chars);
+
+			int best_index = -1;
+			for(int msg_i = 0; msg_i < c_max_peers; msg_i++)
+			{
+				if(game->chat_message_ids[msg_i] == data.id)
+				{
+					best_index = msg_i;
+					break;
+				}
+				else if(!game->chat_message_ids[msg_i])
+				{
+					best_index = msg_i;
+				}
+			}
+
+			// @Note(tkap, 27/06/2023): I think this could fail if we were at the maximum amount of clients, a chatting client disconnected, and another one
+			// connected and chatted. Probably will never happen.
+			assert(best_index != -1);
+
+			game->chat_message_times[best_index] = 0;
+			game->chat_message_ids[best_index] = data.id;
+			game->chat_messages[best_index] = data.msg;
+
 		} break;
 
 		invalid_default_case;
@@ -1075,7 +1155,7 @@ func s_config read_config_or_make_default(s_lin_arena* arena, s_rng* in_rng)
 				// @Note(tkap, 24/06/2023): string
 				if(query.type == 0)
 				{
-					s_name* name = (s_name*)query.target;
+					s_small_str* name = (s_small_str*)query.target;
 					memcpy(name->data, start, cursor - start);
 					name->len = (int)(cursor - start);
 					break;
@@ -1144,11 +1224,11 @@ func void save_config(s_config config)
 	}
 }
 
-func s_name make_name(const char* str)
+func s_small_str make_name(const char* str)
 {
-	s_name result = zero;
+	s_small_str result = zero;
 	int len = (int)strlen(str);
-	assert(len < c_max_player_name_length);
+	assert(len <= result.max_chars);
 	memcpy(result.data, str, len);
 	result.len = len;
 	return result;
@@ -1234,4 +1314,44 @@ func void connect_to_server(s_config config)
 	g_network->ip = config.ip;
 	g_network->port = config.port;
 	g_network->connect_to_server = true;
+}
+
+template <typename T>
+func e_string_input_result handle_string_input(T* str)
+{
+	e_string_input_result result = e_string_input_result_none;
+	while(true)
+	{
+		s_char_event event = get_char_event();
+		int c = event.c;
+		if(!c) { break; }
+
+		if(event.is_symbol)
+		{
+			if(c == c_key_backspace)
+			{
+				if(str->len > 0)
+				{
+					str->data[--str->len] = 0;
+				}
+			}
+			else if(c == c_key_enter)
+			{
+				result = e_string_input_result_submit;
+				break;
+			}
+		}
+		else
+		{
+			if(c >= 32 && c <= 126)
+			{
+				if(str->len < str->max_chars)
+				{
+					str->data[str->len++] = (char)c;
+					str->data[str->len] = '\0';
+				}
+			}
+		}
+	}
+	return result;
 }

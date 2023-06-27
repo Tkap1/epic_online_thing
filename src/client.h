@@ -1,4 +1,10 @@
 
+enum e_string_input_result
+{
+	e_string_input_result_none,
+	e_string_input_result_submit,
+};
+
 enum e_state
 {
 	e_state_main_menu,
@@ -48,13 +54,13 @@ struct s_font
 struct s_main_menu
 {
 	const char* error_str;
-	s_name player_name;
+	s_small_str player_name;
 };
 
 struct s_config
 {
-	s_name player_name;
-	s_name ip;
+	s_small_str player_name;
+	s_small_str ip;
 	int port;
 	s_v4 color;
 };
@@ -81,6 +87,13 @@ struct s_game
 	s_sound jump2_sound;
 	s_sound win_sound;
 
+	b8 chatting;
+	s_medium_str my_chat_msg;
+
+	// @Note(tkap, 27/06/2023): id of 0 means the message is not active
+	u32 chat_message_ids[c_max_peers];
+	float chat_message_times[c_max_peers];
+	s_medium_str chat_messages[c_max_peers];
 };
 
 
@@ -103,7 +116,7 @@ func u32 load_shader(const char* vertex_path, const char* fragment_path);
 func void handle_instant_movement_(int entity);
 func void handle_instant_resize_(int entity);
 func s_config make_default_config(s_rng* in_rng);
-func s_name make_name(const char* str);
+func s_small_str make_name(const char* str);
 func void save_config(s_config config);
 func s_config read_config_or_make_default(s_lin_arena* arena, s_rng* in_rng);
 func b8 is_key_down(int key);
@@ -117,6 +130,9 @@ void gl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, G
 func void send_simple_packet(e_packet packet_id, int flag);
 func void send_packet_(e_packet packet_id, void* data, size_t size, int flag);
 func void connect_to_server(s_config config);
+
+template <typename T>
+func e_string_input_result handle_string_input(T* str);
 
 #ifdef _WIN32
 #ifdef m_debug

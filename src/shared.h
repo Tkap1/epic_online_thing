@@ -78,6 +78,7 @@ enum e_packet
 	e_packet_all_levels_beat,
 	e_packet_update_time_lived,
 	e_packet_update_levels,
+	e_packet_chat_msg,
 
 	e_packet_connect = 9998,
 	e_packet_disconnect = 9999,
@@ -104,7 +105,7 @@ struct s_already_connected_player_from_server
 {
 	u32 id;
 	b8 dead;
-	s_name name;
+	s_small_str name;
 	s_v4 color;
 };
 
@@ -213,13 +214,13 @@ struct s_player_got_hit_from_client
 struct s_player_appearance_from_server
 {
 	u32 id;
-	s_name name;
+	s_small_str name;
 	s_v4 color;
 };
 
 struct s_player_appearance_from_client
 {
-	s_name name;
+	s_small_str name;
 	s_v4 color;
 };
 
@@ -238,6 +239,17 @@ struct s_update_time_lived_from_server
 struct s_update_levels_from_server
 {
 	s_level levels[c_max_levels];
+};
+
+struct s_chat_msg_from_server
+{
+	u32 id;
+	s_medium_str msg;
+};
+
+struct s_chat_msg_from_client
+{
+	s_medium_str msg;
 };
 
 
@@ -317,7 +329,7 @@ struct s_entities
 	s_particle_spawner particle_spawner[c_max_entities];
 	s_float_curve speed_curve[c_max_entities];
 	s_v4 color[c_max_entities];
-	s_name name[c_max_entities];
+	s_small_str name[c_max_entities];
 };
 
 
@@ -333,7 +345,7 @@ func void expire_system(int start, int count);
 func void make_diagonal_bottom_projectile(int entity, float x, float angle);
 func void make_diagonal_top_projectile(int entity, float x, float opposite_x);
 func void make_side_projectile(int entity, float x, float x_dir);
-func s_name str_to_name(char* str);
+func s_small_str str_to_name(char* str);
 func int make_entity(void);
 func void init_levels(void);
 

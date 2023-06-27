@@ -1,9 +1,16 @@
 
 
-global constexpr int c_max_player_name_length = 32;
-
-struct s_name
+struct s_small_str
 {
+	static constexpr int max_chars = 31;
 	int len;
-	char data[c_max_player_name_length];
+	char data[max_chars + 1];
 };
+
+struct s_medium_str
+{
+	static constexpr int max_chars = 63;
+	int len;
+	char data[max_chars + 1];
+};
+

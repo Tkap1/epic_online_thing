@@ -241,17 +241,10 @@ struct s_platform_funcs
 	t_set_swap_interval set_swap_interval;
 };
 
-struct s_packet
-{
-	int flag;
-	int size;
-	u8* data;
-};
-
 struct s_game_network
 {
 	int port;
-	s_name ip;
+	s_small_str ip;
 	b8 connect_to_server;
 	b8 connected;
 	b8 disconnect;
