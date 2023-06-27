@@ -118,7 +118,7 @@ int main(int argc, char** argv)
 			for(int i = 0; i < 100; i++)
 			{
 				if(CopyFile("build/client.dll", "client.dll", false)) { break; }
-				assert(i != 99);
+				// assert(i != 99);
 				Sleep(10);
 			}
 			dll = load_dll("client.dll");

@@ -437,7 +437,7 @@ func void render(float dt)
 								game->e.x[entity],
 								game->e.y[entity] - game->e.sy[entity] * 2
 							);
-							draw_text(game->my_chat_msg.data, pos, 1, v41f(1), e_font_small, true, zero);
+							draw_text(game->chat_messages[msg_i].data, pos, 1, v41f(1), e_font_small, true, zero);
 						}
 					}
 				}
