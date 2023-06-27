@@ -139,6 +139,11 @@ func float at_least(float a, float b)
 	return a > b ? a : b;
 }
 
+func int at_least(int a, int b)
+{
+	return a > b ? a : b;
+}
+
 func b8 floats_equal(float a, float b)
 {
 	return (a >= b - epsilon && a <= b + epsilon);

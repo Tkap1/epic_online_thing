@@ -58,3 +58,4 @@ tags
 *.swp
 client
 server
+stored_state

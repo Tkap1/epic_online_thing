@@ -1,6 +1,5 @@
 
 size curve, just like speed curve
-make server send level data so no pulling/pushhing necessary just for levels?
 
 show time spent on level
 

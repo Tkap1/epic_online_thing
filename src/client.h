@@ -130,6 +130,8 @@ void gl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, G
 func void send_simple_packet(e_packet packet_id, int flag);
 func void send_packet_(e_packet packet_id, void* data, size_t size, int flag);
 func void connect_to_server(s_config config);
+func void save_game_state(s_game* in_game);
+func void load_game(s_game* in_game);
 
 template <typename T>
 func e_string_input_result handle_string_input(T* str);

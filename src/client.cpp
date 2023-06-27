@@ -71,6 +71,10 @@ m_gl_funcs
 #include "str_builder.cpp"
 #include "audio.cpp"
 
+global b8 playback;
+global int frame;
+global FILE* state_file;
+
 extern "C"
 {
 EPIC_DLLEXPORT
@@ -89,6 +93,9 @@ m_update_game(update_game)
 
 	if(!game->initialized)
 	{
+
+		remove("stored_state");
+
 		game->initialized = true;
 		#define X(type, name) name = (type)platform_funcs.load_gl_func(#name);
 		m_gl_funcs
@@ -139,6 +146,10 @@ m_update_game(update_game)
 	g_window.size = v2ii(g_window.width, g_window.height);
 	g_window.center = v2_mul(g_window.size, 0.5f);
 
+	b8 f1 = is_key_pressed(c_key_f1);
+	b8 left = is_key_down(c_key_left);
+	b8 right = is_key_down(c_key_right);
+
 	game->update_timer += g_platform_data.time_passed;
 	while(game->update_timer >= c_update_delay)
 	{
@@ -154,7 +165,39 @@ m_update_game(update_game)
 			g_input->keys[k_i].count = 0;
 		}
 		char_event_arr->count = 0;
+
+		if(!playback)
+		{
+			save_game_state(game);
+		}
 	}
+
+
+	if(f1)
+	{
+		playback = !playback;
+	}
+	if(playback)
+	{
+		if(left)
+		{
+			frame = at_least(0, frame - 1);
+		}
+		if(right)
+		{
+			// frame = at_most(??, frame + 1);
+			frame++;
+		}
+		printf("%i\n", frame);
+
+		if(state_file)
+		{
+			fclose(state_file);
+			state_file = null;
+		}
+		load_game(game);
+	}
+
 
 	float interpolation_dt = (float)(game->update_timer / c_update_delay);
 	render(interpolation_dt);
@@ -170,12 +213,12 @@ m_update_game(update_game)
 	}
 
 	frame_arena->used = 0;
+
 }
 }
 
 func void update(s_config config)
 {
-
 	switch(game->state)
 	{
 
@@ -1388,4 +1431,118 @@ func e_string_input_result handle_string_input(T* str)
 		}
 	}
 	return result;
+}
+
+func void save_game_state(s_game* in_game)
+{
+	if(!state_file)
+	{
+		state_file = fopen("stored_state", "ab");
+		assert(state_file);
+	}
+
+	la_push(&g_platform_data.frame_arena);
+	u8* data = (u8*)la_get(&g_platform_data.frame_arena, sizeof(*in_game));
+
+	u8* write_cursor = data;
+	u8* read_cursor = (u8*)in_game;
+
+	u8 last = *read_cursor;
+	int start = 0;
+	for(int i = 0; i < sizeof(*in_game); i++)
+	{
+		u8 current = *read_cursor;
+		if(current != last || i == sizeof(*in_game) - 1)
+		{
+			int how_many = i - start;
+			assert(how_many > 0);
+			*(int*)write_cursor = how_many;
+			write_cursor += sizeof(int);
+			*write_cursor = last;
+			write_cursor += 1;
+			start = i;
+		}
+		last = current;
+		read_cursor += 1;
+	}
+
+	int compressed_size = (int)(write_cursor - data);
+
+	{
+		assert(state_file);
+		fwrite(&compressed_size, sizeof(compressed_size), 1, state_file);
+		fwrite(data, compressed_size, 1, state_file);
+	}
+
+	// read_cursor = data;
+	// write_cursor = (u8*)in_game;
+
+	// for(int i = 0; i < compressed_size / 5; i++)
+	// {
+	// 	int how_many = *(int*)read_cursor;
+	// 	read_cursor += sizeof(int);
+	// 	u8 value = *read_cursor;
+	// 	read_cursor += 1;
+	// 	memset(write_cursor, value, how_many);
+	// 	write_cursor += how_many;
+	// }
+
+	// printf("original game state size is: %i\n", (int)sizeof(*in_game));
+	// printf("compressed game state size is: %i\n", compressed_size);
+	// float ratio = compressed_size / (float)((int)sizeof(*in_game));
+	// printf("compression ratio is: %f%%\n", (1.0f-ratio) * 100);
+
+
+	la_pop(&g_platform_data.frame_arena);
+}
+
+
+func u8* get_game_state_for_frame(FILE* file, int target_frame)
+{
+	int current_frame = 0;
+	u8* data = (u8*)la_get(&g_platform_data.frame_arena, sizeof(s_game));
+	int frame_size = 0;
+	fread(&frame_size, sizeof(frame_size), 1, file);
+
+	while(current_frame != target_frame)
+	{
+		current_frame += 1;
+		fseek(file, frame_size, SEEK_CUR);
+		fread(&frame_size, sizeof(frame_size), 1, file);
+	}
+
+	fseek(file, -((int)sizeof(frame_size)), SEEK_CUR);
+	fread(data, sizeof(frame_size) + sizeof(s_game), 1, file);
+
+	return data;
+}
+
+func void load_game(s_game* in_game)
+{
+	if(!state_file)
+	{
+		state_file = fopen("stored_state", "rb");
+		assert(state_file);
+	}
+	la_push(&g_platform_data.frame_arena);
+
+	u8* data = get_game_state_for_frame(state_file, frame);
+
+	u8* read_cursor = data;
+	int compressed_size = *(int*)read_cursor;
+	read_cursor += sizeof(compressed_size);
+	u8* write_cursor = (u8*)in_game;
+
+	for(int i = 0; i < compressed_size / 5; i++)
+	{
+		int how_many = *(int*)read_cursor;
+		read_cursor += sizeof(int);
+		u8 value = *read_cursor;
+		read_cursor += 1;
+		memset(write_cursor, value, how_many);
+		write_cursor += how_many;
+	}
+
+
+	la_pop(&g_platform_data.frame_arena);
 }
