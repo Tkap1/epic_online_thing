@@ -340,6 +340,16 @@ func void render(float dt)
 				draw_text(format_text("%i", (int)ceilf(seconds_left)), pos, 1, v41f(1), e_font_medium, true, zero);
 			}
 
+			// @Note(tkap, 27/06/2023): Display if level has infinite jumps
+			if(levels[game->current_level].infinite_jumps)
+			{
+				s_v2 pos = v2(
+					g_window.center.x,
+					g_window.size.y * 0.35f
+				);
+				draw_text("Infinite jumps!", pos, 1, v41f(1), e_font_small, true, zero);
+			}
+
 			// @Note(tkap, 23/06/2023): Display current level
 			{
 				s_v2 pos = v2(20, 20);

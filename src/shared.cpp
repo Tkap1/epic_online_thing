@@ -688,7 +688,7 @@ func void init_levels(void)
 	});
 	levels[game->level_count].spawn_data.add({
 		.type = e_projectile_type_right_basic,
-		.delay = speed(1500),
+		.delay = speed(1400),
 		.speed_multiplier = 0.25f,
 	});
 	game->level_count++;
