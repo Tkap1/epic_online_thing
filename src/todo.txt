@@ -21,5 +21,3 @@ why dont we get a message box in client after a failed assert outside debugger??
 do we have a bug now when someone disconnects in the same frame we try to send packets?? assert / think
 
 projectile that shields you? you can't be damaged while colliding with it
-
-disconnecting players dont properly leave

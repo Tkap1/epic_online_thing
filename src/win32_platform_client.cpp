@@ -138,14 +138,15 @@ int main(int argc, char** argv)
 		if(game_network.connected)
 		{
 			enet_loop(platform_network.client, 0, &game_network, parse_packet);
-			if(game_network.disconnect)
-			{
-				enet_peer_disconnect(platform_network.server, 0);
-				enet_loop(platform_network.client, 1000, &game_network, parse_packet);
-			}
 		}
 		update_game(platform_data, platform_funcs, &game_network, game_memory, false);
 		platform_data.recompiled = false;
+
+		if(game_network.connected && game_network.disconnect)
+		{
+			enet_peer_disconnect(platform_network.server, 0);
+			enet_loop(platform_network.client, 1000, &game_network, parse_packet);
+		}
 
 		foreach_raw(packet_i, packet, game_network.out_packets)
 		{

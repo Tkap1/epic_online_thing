@@ -31,6 +31,7 @@ func void enet_loop(ENetHost* client, int timeout, s_game_network* game_network,
 				int temp = e_packet_disconnect;
 				buffer_write(&cursor, &temp, sizeof(temp));
 				parse_packet(packet);
+				return;
 			} break;
 
 			case ENET_EVENT_TYPE_RECEIVE:
