@@ -22,3 +22,4 @@ do we have a bug now when someone disconnects in the same frame we try to send p
 
 projectile that shields you? you can't be damaged while colliding with it
 
+disconnecting players dont properly leave

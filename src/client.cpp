@@ -588,6 +588,13 @@ func void input_system(int start, int count)
 
 func void draw_system(int start, int count, float dt)
 {
+	b8 am_i_dead = true;
+	int my_character = find_player_by_id(game->my_id);
+	if(!game->e.dead[my_character])
+	{
+		am_i_dead = false;
+	}
+
 	for(int i = 0; i < count; i++)
 	{
 		int ii = start + i;
@@ -600,10 +607,16 @@ func void draw_system(int start, int count, float dt)
 		float sx = lerp(game->e.prev_sx[ii], game->e.sx[ii], dt);
 		float sy = lerp(game->e.prev_sy[ii], game->e.sy[ii], dt);
 
+		b8 this_character_is_me = game->e.player_id[ii] == game->my_id;
+
 		s_v4 color = game->e.color[ii];
 		if(game->e.dead[ii])
 		{
-			color.w = 0.25f;
+			color.w *= 0.25f;
+		}
+		if(!am_i_dead && !this_character_is_me)
+		{
+			color.w *= 0.15f;
 		}
 		draw_rect(v2(x, y), 0, v2(sx, sy), color, zero);
 

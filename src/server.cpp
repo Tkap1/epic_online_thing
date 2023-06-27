@@ -136,6 +136,17 @@ func void update(void)
 		{
 			game->current_level = 0;
 			broadcast_simple_packet(e_packet_all_levels_beat, ENET_PACKET_FLAG_RELIABLE);
+
+			// @Note(tkap, 27/06/2023): Reset time_lived for each player
+			foreach_raw(peer_i, peer, g_network->peers)
+			{
+				int entity = find_player_by_id(peer);
+				if(entity != c_invalid_entity)
+				{
+					game->e.time_lived[entity] = 0;
+				}
+			}
+
 		}
 		reset_level();
 		revive_every_player();
