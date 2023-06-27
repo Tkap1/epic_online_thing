@@ -23,5 +23,7 @@ Then run server.exe, and then run client.exe (or start run.bat)
 
 # How to make a level
 Find init_levels in shared.c
+
 See how the other levels are done, do that
-You can press keypad ADD and keypadd SUBTRACT to go up/down levels
+
+You can press keypad ADD and keypad SUBTRACT to go up/down levels
