@@ -22,8 +22,10 @@ color=a727ea
 Then run server.exe, and then run client.exe (or start run.bat)
 
 # How to make a level
-Find init_levels in shared.c
+Find init_levels in shared.cpp
 
 See how the other levels are done, do that
+
+Make a pull request
 
 You can press keypad ADD and keypad SUBTRACT to go up/down levels
