@@ -848,7 +848,6 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	game->current_level = 28;
 	levels[game->level_count].duration = 25;
 	levels[game->level_count].spawn_data.add({
 		.type = e_projectile_type_left_basic,
