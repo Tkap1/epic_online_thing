@@ -5,13 +5,13 @@ static constexpr int ENET_PACKET_FLAG_RELIABLE = 1;
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <intrin.h>
-#define EPIC_DLLEXPORT __declspec(dllexport)
+#define m_dll_export __declspec(dllexport)
 #else
 #include <x86intrin.h>
 #include <string.h>
 #include <stdarg.h>
 #include <unistd.h>
-#define EPIC_DLLEXPORT
+#define m_dll_export
 #endif
 
 #include <stdlib.h>
@@ -43,7 +43,7 @@ global s_game_network* g_network;
 extern "C"
 {
 
-EPIC_DLLEXPORT
+m_dll_export
 m_update_game(update_game)
 {
 	static_assert(c_game_memory >= sizeof(s_game));
@@ -201,7 +201,7 @@ func void update(void)
 extern "C"
 {
 
-EPIC_DLLEXPORT
+m_dll_export
 m_parse_packet(parse_packet)
 {
 	u8* cursor = packet.data;

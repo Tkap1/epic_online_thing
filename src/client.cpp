@@ -2,15 +2,15 @@
 static constexpr int ENET_PACKET_FLAG_RELIABLE = 1;
 
 #ifdef _WIN32
-// @Note(tkap, 24/06/2023): We don't want this Madeg
 #define WIN32_LEAN_AND_MEAN
+// @Note(tkap, 24/06/2023): We don't want this Madeg
 #include <windows.h>
 
 #include <GL/gl.h>
 #include "external/glcorearb.h"
 #include "external/wglext.h"
 #include <stdlib.h>
-#define EPIC_DLLEXPORT __declspec(dllexport)
+#define m_dll_export __declspec(dllexport)
 #else
 #include<X11/X.h>
 #include<X11/Xlib.h>
@@ -21,7 +21,7 @@ static constexpr int ENET_PACKET_FLAG_RELIABLE = 1;
 #include <string.h>
 #include <stdarg.h>
 #include <unistd.h>
-#define EPIC_DLLEXPORT
+#define m_dll_export
 #endif // _WIN32
 
 #include <stdio.h>
@@ -73,7 +73,7 @@ m_gl_funcs
 
 extern "C"
 {
-EPIC_DLLEXPORT
+m_dll_export
 m_update_game(update_game)
 {
 	static_assert(c_game_memory >= sizeof(s_game));
@@ -664,7 +664,7 @@ func void draw_circle_system(int start, int count, float dt)
 
 extern "C"
 {
-EPIC_DLLEXPORT
+m_dll_export
 m_parse_packet(parse_packet)
 {
 	u8* cursor = packet.data;

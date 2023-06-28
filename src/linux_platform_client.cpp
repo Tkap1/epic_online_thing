@@ -24,7 +24,7 @@
 #include "memory.cpp"
 #include "platform_shared_client.cpp"
 
-#define EPIC_DLLEXPORT
+#define m_dll_export
 
 struct s_window
 {
