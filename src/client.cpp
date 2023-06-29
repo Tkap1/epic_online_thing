@@ -896,8 +896,8 @@ func void collision_system(int start, int count)
 		if(!game->e.active[ii]) { continue; }
 		if(!game->e.flags[ii][e_entity_flag_collide]) { continue; }
 
-		bool onGroundOnlyCollision = game->e.flags[ii][e_entity_flag_collide_on_ground_only];
-		bool airOnlyCollision = game->e.flags[ii][e_entity_flag_collide_in_air_only];
+		bool ground_only_collision = game->e.flags[ii][e_entity_flag_collide_ground_only];
+		bool air_only_collision = game->e.flags[ii][e_entity_flag_collide_air_only];
 
 		for(int j = 0; j < c_max_entities; j++)
 		{
@@ -905,8 +905,8 @@ func void collision_system(int start, int count)
 			if(game->e.dead[j]) { continue; }
 			if(game->e.type[j] != e_entity_type_player) { continue; }
 			if(game->e.player_id[j] != game->my_id) { continue; }
-			if(onGroundOnlyCollision && !game->e.on_ground[j]) { continue; }
-			if(airOnlyCollision && game->e.on_ground[j]) { continue; }
+			if(ground_only_collision && !game->e.on_ground[j]) { continue; }
+			if(air_only_collision && game->e.on_ground[j]) { continue; }
 
 			if(
 				rect_collides_circle(

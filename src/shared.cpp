@@ -470,17 +470,17 @@ func void spawn_system(s_level level)
 
 				case e_projectile_type_ground_shot:
 				{
-					float x = c_base_res.x;
+					float x = c_base_res.x + c_projectile_spawn_offset;
 					float y = (randf_range(&game->rng, c_base_res.y - 250, c_base_res.y)/16)*16;
 
 					game->e.x[entity] = x;
 					game->e.y[entity] = y;
-					game->e.sx[entity] = 50;
+					set_size(entity, 50, 0);
 					set_speed(entity, 444);
 					game->e.dir_x[entity] = -1.0f;
 					game->e.dir_y[entity] = 0.0f;
 					game->e.color[entity] = v4(0.0f, 1.0f, 1.0f, 1.0f);
-					game->e.flags[entity][e_entity_flag_collide_on_ground_only] = true;
+					game->e.flags[entity][e_entity_flag_collide_ground_only] = true;
 					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
@@ -489,16 +489,16 @@ func void spawn_system(s_level level)
 				case e_projectile_type_air_shot:
 				{
 					float x = (randf_range(&game->rng, 0, c_base_res.x*2)/32)*32;
-					float y = 0;
+					float y = -c_projectile_spawn_offset;
 
 					game->e.x[entity] = x;
 					game->e.y[entity] = y;
-					game->e.sx[entity] = 50;
+					set_size(entity, 50, 0);
 					set_speed(entity, 444);
 					game->e.dir_x[entity] = -0.5f;
 					game->e.dir_y[entity] = 0.5f;
 					game->e.color[entity] = v4(1.0f, 0.0f, 1.0f, 1.0f);
-					game->e.flags[entity][e_entity_flag_collide_in_air_only] = true;
+					game->e.flags[entity][e_entity_flag_collide_air_only] = true;
 					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
@@ -565,7 +565,11 @@ func void init_levels(void)
 
 	levels[game->level_count].spawn_data.add({
 		.type = e_projectile_type_right_basic,
-		.delay = speed(2500),
+		.delay = speed(1000),
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_ground_shot,
+		.delay = speed(3500),
 	});
 	game->level_count++;
 	// -----------------------------------------------------------------------------
@@ -573,6 +577,10 @@ func void init_levels(void)
 	levels[game->level_count].spawn_data.add({
 		.type = e_projectile_type_diagonal_left,
 		.delay = speed(2800),
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_air_shot,
+		.delay = speed(10000),
 	});
 	game->level_count++;
 	// -----------------------------------------------------------------------------
@@ -914,6 +922,7 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	// @Note(tkap, 29/06/2023): Giant green balls
 	levels[game->level_count].spawn_data.add({
 		.type = e_projectile_type_left_basic,
 		.delay = speed(1000),
@@ -934,8 +943,6 @@ func void init_levels(void)
 	});
 	game->level_count++;
 	// -----------------------------------------------------------------------------
-
-	game->current_level = 30;
 
 	// @Note(tkap, 26/06/2023): Blank level to avoid wrapping
 	game->level_count++;
