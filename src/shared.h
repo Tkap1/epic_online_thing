@@ -20,6 +20,8 @@ enum e_projectile_type
 	e_projectile_type_corner_shot,
 	e_projectile_type_shockwave,
 	e_projectile_type_cross,
+	e_projectile_type_ground_shot,
+	e_projectile_type_air_shot,
 	e_projectile_type_spawner,
 	e_projectile_type_count,
 };
@@ -77,6 +79,7 @@ enum e_packet
 	e_packet_player_appearance,
 	e_packet_cheat_next_level,
 	e_packet_cheat_previous_level,
+	e_packet_cheat_last_level,
 	e_packet_all_levels_beat,
 	e_packet_update_time_lived,
 	e_packet_update_levels,
@@ -232,6 +235,12 @@ struct s_cheat_previous_level_from_server
 	u32 seed;
 };
 
+struct s_cheat_last_level_from_server
+{
+	int current_level;
+	u32 seed;
+};
+
 struct s_update_time_lived_from_server
 {
 	u32 id;
@@ -285,6 +294,8 @@ enum e_entity_flag
 	e_entity_flag_projectile_bounds_check,
 	e_entity_flag_expire,
 	e_entity_flag_collide,
+	e_entity_flag_collide_on_ground_only,
+	e_entity_flag_collide_in_air_only,
 	e_entity_flag_projectile_spawner,
 	e_entity_flag_increase_time_lived,
 	e_entity_flag_modify_speed,
@@ -307,6 +318,7 @@ struct s_entities
 	b8 active[c_max_entities];
 	b8 flags[c_max_entities][e_entity_flag_count];
 	b8 jumping[c_max_entities];
+	b8 on_ground[c_max_entities];
 	b8 dead[c_max_entities];
 	b8 drawn_last_render[c_max_entities];
 	e_entity_type type[c_max_entities];

@@ -219,6 +219,10 @@ func void update(s_config config)
 			{
 				send_simple_packet(e_packet_cheat_previous_level, ENET_PACKET_FLAG_RELIABLE);
 			}
+			if(is_key_pressed(c_key_f1))
+			{
+				send_simple_packet(e_packet_cheat_last_level, ENET_PACKET_FLAG_RELIABLE);
+			}
 			#endif // m_debug
 			// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		cheats, for testing end		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -578,6 +582,7 @@ func void input_system(int start, int count)
 			float jump_multiplier = game->e.jumps_done[ii] == 0 ? 1.0f : 0.9f;
 			game->e.vel_y[ii] = c_jump_strength * jump_multiplier;
 			game->e.jumping[ii] = true;
+			game->e.on_ground[ii] = false;
 			game->e.jumps_done[ii] += 1;
 		}
 		else if(game->e.jumping[ii] && jump_released && game->e.vel_y[ii] < 0)
@@ -801,6 +806,15 @@ m_parse_packet(parse_packet)
 			reset_level();
 			revive_every_player();
 		} break;
+
+		case e_packet_cheat_last_level:
+		{
+			s_cheat_last_level_from_server data = *(s_cheat_last_level_from_server*)cursor;
+			game->current_level = data.current_level;
+			game->rng.seed = data.seed;
+			reset_level();
+			revive_every_player();
+		} break;
 		#endif // m_debug
 
 		case e_packet_all_levels_beat:
@@ -882,12 +896,17 @@ func void collision_system(int start, int count)
 		if(!game->e.active[ii]) { continue; }
 		if(!game->e.flags[ii][e_entity_flag_collide]) { continue; }
 
+		bool onGroundOnlyCollision = game->e.flags[ii][e_entity_flag_collide_on_ground_only];
+		bool airOnlyCollision = game->e.flags[ii][e_entity_flag_collide_in_air_only];
+
 		for(int j = 0; j < c_max_entities; j++)
 		{
 			if(!game->e.active[j]) { continue; }
 			if(game->e.dead[j]) { continue; }
 			if(game->e.type[j] != e_entity_type_player) { continue; }
 			if(game->e.player_id[j] != game->my_id) { continue; }
+			if(onGroundOnlyCollision && !game->e.on_ground[j]) { continue; }
+			if(airOnlyCollision && game->e.on_ground[j]) { continue; }
 
 			if(
 				rect_collides_circle(

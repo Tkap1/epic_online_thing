@@ -77,6 +77,7 @@ func void zero_entity(int index)
 	game->e.jumps_done[index] = 0;
 	game->e.player_id[index] = 0;
 	game->e.jumping[index] = false;
+	game->e.on_ground[index] = false;
 	game->e.dead[index] = false;
 	game->e.time_lived[index] = 0;
 	game->e.duration[index] = 0;
@@ -127,6 +128,7 @@ func void player_bounds_check_system(int start, int count)
 		if(game->e.y[ii] + half_y > c_base_res.y)
 		{
 			game->e.jumping[ii] = false;
+			game->e.on_ground[ii] = true;
 			game->e.jumps_done[ii] = 0;
 			game->e.vel_y[ii] = 0;
 			game->e.y[ii] = c_base_res.y - half_y;
@@ -461,6 +463,42 @@ func void spawn_system(s_level level)
 					game->e.dir_x[entity] = 0.0f;
 					game->e.dir_y[entity] = 1.0f;
 					game->e.color[entity] = col;
+					apply_projectile_modifiers(entity, data);
+					handle_instant_movement(entity);
+					handle_instant_resize(entity);
+				} break;
+
+				case e_projectile_type_ground_shot:
+				{
+					float x = c_base_res.x;
+					float y = (randf_range(&game->rng, c_base_res.y - 250, c_base_res.y)/16)*16;
+
+					game->e.x[entity] = x;
+					game->e.y[entity] = y;
+					game->e.sx[entity] = 50;
+					set_speed(entity, 444);
+					game->e.dir_x[entity] = -1.0f;
+					game->e.dir_y[entity] = 0.0f;
+					game->e.color[entity] = v4(0.0f, 1.0f, 1.0f, 1.0f);
+					game->e.flags[entity][e_entity_flag_collide_on_ground_only] = true;
+					apply_projectile_modifiers(entity, data);
+					handle_instant_movement(entity);
+					handle_instant_resize(entity);
+				} break;
+
+				case e_projectile_type_air_shot:
+				{
+					float x = (randf_range(&game->rng, 0, c_base_res.x*2)/32)*32;
+					float y = 0;
+
+					game->e.x[entity] = x;
+					game->e.y[entity] = y;
+					game->e.sx[entity] = 50;
+					set_speed(entity, 444);
+					game->e.dir_x[entity] = -0.5f;
+					game->e.dir_y[entity] = 0.5f;
+					game->e.color[entity] = v4(1.0f, 0.0f, 1.0f, 1.0f);
+					game->e.flags[entity][e_entity_flag_collide_in_air_only] = true;
 					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
@@ -887,19 +925,17 @@ func void init_levels(void)
 	// -----------------------------------------------------------------------------
 
 	levels[game->level_count].spawn_data.add({
-		.type = e_projectile_type_left_basic,
-		.delay = speed(1000),
-		.size_curve = {
-			.start_seconds = {0},
-			.end_seconds = {1.0f},
-			.multiplier = {20, 1, 20},
-		}
+		.type = e_projectile_type_air_shot,
+		.delay = speed(6000),
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_ground_shot,
+		.delay = speed(4444),
 	});
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
 	game->current_level = 30;
-
 
 	// @Note(tkap, 26/06/2023): Blank level to avoid wrapping
 	game->level_count++;
@@ -931,6 +967,7 @@ func void reset_level(void)
 		game->e.x[i] = c_spawn_pos.x;
 		game->e.y[i] = c_spawn_pos.y;
 		game->e.jumping[i] = false;
+		game->e.on_ground[i] = false;
 		game->e.vel_y[i] = 0;
 		game->e.jumps_done[i] = 1;
 		handle_instant_movement(i);
