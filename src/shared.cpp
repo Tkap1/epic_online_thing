@@ -66,10 +66,10 @@ func void zero_entity(int index)
 	memset(game->e.flags[index], 0, sizeof(game->e.flags[index]));
 	game->e.x[index] = 0;
 	game->e.y[index] = 0;
-	game->e.sx[index] = 0;
-	game->e.sy[index] = 0;
+	set_size(index, 0, 0);
 	set_speed(index, 0);
 	game->e.speed_curve[index] = zero;
+	game->e.size_curve[index] = zero;
 	game->e.dir_x[index] = 0;
 	game->e.dir_y[index] = 0;
 	game->e.vel_x[index] = 0;
@@ -119,8 +119,8 @@ func void player_bounds_check_system(int start, int count)
 		if(!game->e.active[ii]) { continue; }
 		if(!game->e.flags[ii][e_entity_flag_player_bounds_check]) { continue; }
 
-		float half_x = game->e.sx[ii] * 0.5f;
-		float half_y = game->e.sy[ii] * 0.5f;
+		float half_x = game->e.modified_sx[ii] * 0.5f;
+		float half_y = game->e.modified_sy[ii] * 0.5f;
 		if(game->e.x[ii] - half_x < 0) { game->e.x[ii] = half_x; }
 		if(game->e.x[ii] + half_x > c_base_res.x) { game->e.x[ii] = c_base_res.x - half_x; }
 		if(game->e.y[ii] - half_y < 0) { game->e.y[ii] = half_y; }
@@ -142,7 +142,7 @@ func void projectile_bounds_check_system(int start, int count)
 		if(!game->e.active[ii]) { continue; }
 		if(!game->e.flags[ii][e_entity_flag_projectile_bounds_check]) { continue; }
 
-		float radius = game->e.sx[ii];
+		float radius = game->e.modified_sx[ii];
 		if(
 			game->e.x[ii] + radius < -c_projectile_out_of_bounds_offset ||
 			game->e.y[ii] + radius < -c_projectile_out_of_bounds_offset ||
@@ -162,8 +162,7 @@ func int make_player(u32 player_id, b8 dead, s_v4 color)
 	game->e.x[entity] = c_spawn_pos.x;
 	game->e.y[entity] = c_spawn_pos.y;
 	handle_instant_movement(entity);
-	game->e.sx[entity] = 32;
-	game->e.sy[entity] = 64;
+	set_size(entity, 32, 64);
 	handle_instant_resize(entity);
 	game->e.player_id[entity] = player_id;
 	set_speed(entity, 400);
@@ -187,11 +186,10 @@ func int make_player(u32 player_id, b8 dead, s_v4 color)
 	return entity;
 }
 
-func int make_projectile(s_float_curve speed_curve)
+func int make_projectile()
 {
 	int entity = make_entity();
 	assert(entity != c_invalid_entity);
-	game->e.speed_curve[entity] = speed_curve;
 	game->e.type[entity] = e_entity_type_projectile;
 	game->e.flags[entity][e_entity_flag_move] = true;
 	game->e.flags[entity][e_entity_flag_draw_circle] = true;
@@ -200,6 +198,7 @@ func int make_projectile(s_float_curve speed_curve)
 	game->e.flags[entity][e_entity_flag_projectile_bounds_check] = true;
 	game->e.flags[entity][e_entity_flag_increase_time_lived] = true;
 	game->e.flags[entity][e_entity_flag_modify_speed] = true;
+	game->e.flags[entity][e_entity_flag_modify_size] = true;
 
 
 	return entity;
@@ -216,7 +215,7 @@ func void spawn_system(s_level level)
 		{
 			spawn_timer[spawn_i] -= data.delay;
 
-			int entity = make_projectile(data.speed_curve);
+			int entity = make_projectile();
 			switch(data.type)
 			{
 				case e_projectile_type_top_basic:
@@ -225,7 +224,7 @@ func void spawn_system(s_level level)
 					game->e.y[entity] = -c_projectile_spawn_offset;
 					game->e.dir_y[entity] = 1;
 					set_speed(entity, randf_range(&game->rng, 400, 500));
-					game->e.sx[entity] = randf_range(&game->rng, 48, 56);
+					set_size(entity, randf_range(&game->rng, 48, 56), 0);
 					game->e.color[entity] = v4(0.9f, 0.1f, 0.1f, 1.0f);
 
 					if(data.x_override != c_max_f32)
@@ -244,7 +243,7 @@ func void spawn_system(s_level level)
 					game->e.y[entity] = c_base_res.y + c_projectile_spawn_offset * 2;
 					game->e.dir_y[entity] = -1;
 					set_speed(entity, randf_range(&game->rng, 400, 500));
-					game->e.sx[entity] = randf_range(&game->rng, 48, 56);
+					set_size(entity, randf_range(&game->rng, 48, 56), 0);
 					game->e.color[entity] = v4(0.9f, 0.1f, 0.1f, 1.0f);
 
 					if(data.x_override != c_max_f32)
@@ -325,7 +324,7 @@ func void spawn_system(s_level level)
 
 					game->e.x[entity] = x;
 					game->e.y[entity] = y;
-					game->e.sx[entity] = 300.0f;
+					set_size(entity, 300.0f, 0);
 					set_speed(entity, randf_range(&game->rng, 125, 455));
 					game->e.dir_x[entity] = 0.0f;
 					game->e.dir_y[entity] = 0.0f;
@@ -339,10 +338,10 @@ func void spawn_system(s_level level)
 
 					for(int shock_proj_i = 0; shock_proj_i < shock_proj_num; shock_proj_i++)
 					{
-						entity = make_projectile(data.speed_curve);
+						entity = make_projectile();
 						game->e.x[entity] = x;
 						game->e.y[entity] = y;
-						game->e.sx[entity] = size;
+						set_size(entity, size, 0);
 						set_speed(entity, speed);
 						game->e.dir_x[entity] = sinf(shock_proj_i * inc * 2 * pi);
 						game->e.dir_y[entity] = cosf(shock_proj_i * inc * 2 * pi);
@@ -361,7 +360,7 @@ func void spawn_system(s_level level)
 
 					game->e.x[entity] = x;
 					game->e.y[entity] = y;
-					game->e.sx[entity] = 66.f;
+					set_size(entity, 66.f, 0);
 					set_speed(entity, randf_range(&game->rng, 125, 455));
 					game->e.dir_x[entity] = 0.0f;
 					game->e.dir_y[entity] = 1.0f;
@@ -377,10 +376,10 @@ func void spawn_system(s_level level)
 
 					for(int shock_proj_i = 0; shock_proj_i < shock_proj_num; shock_proj_i++)
 					{
-						entity = make_projectile(data.speed_curve);
+						entity = make_projectile();
 						game->e.x[entity] = x;
 						game->e.y[entity] = y;
-						game->e.sx[entity] = size;
+						set_size(entity, size, 0);
 						set_speed(entity, speed);
 						game->e.dir_x[entity] = sinf(shock_proj_i * inc * 2 * pi);
 						game->e.dir_y[entity] = cosf(shock_proj_i * inc * 2 * pi);
@@ -421,7 +420,7 @@ func void spawn_system(s_level level)
 
 					game->e.x[entity] = x;
 					game->e.y[entity] = y;
-					game->e.sx[entity] = size;
+					set_size(entity, size, 0);
 					set_speed(entity, speed);
 					game->e.dir_x[entity] = -1.0f;
 					game->e.dir_y[entity] = 0.0f;
@@ -430,10 +429,10 @@ func void spawn_system(s_level level)
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile(data.speed_curve);
+					entity = make_projectile();
 					game->e.x[entity] = x;
 					game->e.y[entity] = y;
-					game->e.sx[entity] = size;
+					set_size(entity, size, 0);
 					set_speed(entity, speed);
 					game->e.dir_x[entity] = 1.0f;
 					game->e.dir_y[entity] = 0.0f;
@@ -442,10 +441,10 @@ func void spawn_system(s_level level)
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile(data.speed_curve);
+					entity = make_projectile();
 					game->e.x[entity] = x;
 					game->e.y[entity] = y;
-					game->e.sx[entity] = size;
+					set_size(entity, size, 0);
 					set_speed(entity, 133);
 					game->e.dir_x[entity] = 0.0f;
 					game->e.dir_y[entity] = -1.0f;
@@ -454,10 +453,10 @@ func void spawn_system(s_level level)
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile(data.speed_curve);
+					entity = make_projectile();
 					game->e.x[entity] = x;
 					game->e.y[entity] = y;
-					game->e.sx[entity] = size;
+					set_size(entity, size, 0);
 					set_speed(entity, 133);
 					game->e.dir_x[entity] = 0.0f;
 					game->e.dir_y[entity] = 1.0f;
@@ -473,7 +472,7 @@ func void spawn_system(s_level level)
 					game->e.y[entity] = c_base_res.y * 0.5f;
 					game->e.dir_x[entity] = 1;
 					set_speed(entity, 300);
-					game->e.sx[entity] = 50;
+					set_size(entity, 50, 0);
 					game->e.color[entity] = v4(0.1f, 0.1f, 0.9f, 1.0f);
 
 					game->e.flags[entity][e_entity_flag_projectile_spawner] = true;
@@ -887,6 +886,20 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_left_basic,
+		.delay = speed(1000),
+		.size_curve = {
+			.start_seconds = {0},
+			.end_seconds = {1.0f},
+			.multiplier = {20, 1, 20},
+		}
+	});
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
+	game->current_level = 30;
+
 
 	// @Note(tkap, 26/06/2023): Blank level to avoid wrapping
 	game->level_count++;
@@ -947,7 +960,7 @@ func void make_diagonal_bottom_projectile(int entity, float x, float angle)
 	s_v2 vel = v2_mul(v2_from_angle(angle), randf_range(&game->rng, 200, 2000));
 	game->e.vel_x[entity] = vel.x;
 	game->e.vel_y[entity] = vel.y;
-	game->e.sx[entity] = randf_range(&game->rng, 38, 46);
+	set_size(entity, randf_range(&game->rng, 38, 46), 0);
 	game->e.color[entity] = v4(0.1f, 0.4f, 0.4f, 1.0f);
 	game->e.flags[entity][e_entity_flag_physics_movement] = true;
 	game->e.flags[entity][e_entity_flag_move] = false;
@@ -966,7 +979,7 @@ func void make_diagonal_top_projectile(int entity, float x, float opposite_x)
 	game->e.dir_x[entity] = dir.x;
 	game->e.dir_y[entity] = dir.y;
 	set_speed(entity, randf_range(&game->rng, 400, 500));
-	game->e.sx[entity] = randf_range(&game->rng, 38, 46);
+	set_size(entity, randf_range(&game->rng, 38, 46), 0);
 	game->e.color[entity] = v4(0.9f, 0.9f, 0.1f, 1.0f);
 }
 
@@ -989,11 +1002,11 @@ func void projectile_spawner_system(int start, int count)
 				{
 					for(int proj_i = 0; proj_i < 2; proj_i++)
 					{
-						int entity = make_projectile(zero);
+						int entity = make_projectile();
 						float angle = randf_range(&game->rng, pi * 0.3f, pi * 0.7f);
 						game->e.x[entity] = game->e.x[ii];
 						game->e.y[entity] = game->e.y[ii];
-						game->e.sx[entity] = game->e.sx[ii] * 0.5f;
+						set_size(entity, game->e.modified_sx[ii] * 0.5f, 0);
 						set_speed(entity, game->e.base_speed[ii] * 0.5f);
 						game->e.dir_x[entity] = cosf(angle);
 						game->e.dir_y[entity] = sinf(angle);
@@ -1005,10 +1018,10 @@ func void projectile_spawner_system(int start, int count)
 
 				case e_particle_spawner_cross:
 				{
-					int entity = make_projectile(zero);
+					int entity = make_projectile();
 					game->e.x[entity] = game->e.x[ii];
 					game->e.y[entity] = game->e.y[ii];
-					game->e.sx[entity] = game->e.sx[ii] * 0.5f;
+					set_size(entity, game->e.modified_sx[ii] * 0.5f, 0);
 					set_speed(entity, game->e.base_speed[ii] * 0.5f);
 					game->e.dir_x[entity] = -1.0f;
 					game->e.dir_y[entity] = 0.0f;
@@ -1016,10 +1029,10 @@ func void projectile_spawner_system(int start, int count)
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile(zero);
+					entity = make_projectile();
 					game->e.x[entity] = game->e.x[ii];
 					game->e.y[entity] = game->e.y[ii];
-					game->e.sx[entity] = game->e.sx[ii] * 0.5f;
+					set_size(entity, game->e.modified_sx[ii] * 0.5f, 0);
 					set_speed(entity, game->e.base_speed[ii] * 0.5f);
 					game->e.dir_x[entity] = 1.0f;
 					game->e.dir_y[entity] = 0.0f;
@@ -1027,10 +1040,10 @@ func void projectile_spawner_system(int start, int count)
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile(zero);
+					entity = make_projectile();
 					game->e.x[entity] = game->e.x[ii];
 					game->e.y[entity] = game->e.y[ii];
-					game->e.sx[entity] = game->e.sx[ii] * 0.5f;
+					set_size(entity, game->e.modified_sx[ii] * 0.5f, 0);
 					set_speed(entity, game->e.base_speed[ii] * 0.5f);
 					game->e.dir_x[entity] = 0.0f;
 					game->e.dir_y[entity] = -1.0f;
@@ -1038,10 +1051,10 @@ func void projectile_spawner_system(int start, int count)
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile(zero);
+					entity = make_projectile();
 					game->e.x[entity] = game->e.x[ii];
 					game->e.y[entity] = game->e.y[ii];
-					game->e.sx[entity] = game->e.sx[ii] * 0.5f;
+					set_size(entity, game->e.modified_sx[ii] * 0.5f, 0);
 					set_speed(entity, game->e.base_speed[ii] * 0.5f);
 					game->e.dir_x[entity] = 0.0f;
 					game->e.dir_y[entity] = 1.0f;
@@ -1052,10 +1065,10 @@ func void projectile_spawner_system(int start, int count)
 
 				case e_particle_spawner_x:
 				{
-					int entity = make_projectile(zero);
+					int entity = make_projectile();
 					game->e.x[entity] = game->e.x[ii];
 					game->e.y[entity] = game->e.y[ii];
-					game->e.sx[entity] = game->e.sx[ii] * 0.5f;
+					set_size(entity, game->e.modified_sx[ii] * 0.5f, 0);
 					set_speed(entity, game->e.base_speed[ii] * 0.5f);
 					game->e.dir_x[entity] = 0.5f;
 					game->e.dir_y[entity] = 0.5f;
@@ -1063,10 +1076,10 @@ func void projectile_spawner_system(int start, int count)
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile(zero);
+					entity = make_projectile();
 					game->e.x[entity] = game->e.x[ii];
 					game->e.y[entity] = game->e.y[ii];
-					game->e.sx[entity] = game->e.sx[ii] * 0.5f;
+					set_size(entity, game->e.modified_sx[ii] * 0.5f, 0);
 					set_speed(entity, game->e.base_speed[ii] * 0.5f);
 					game->e.dir_x[entity] = -0.5f;
 					game->e.dir_y[entity] = -0.5f;
@@ -1074,10 +1087,10 @@ func void projectile_spawner_system(int start, int count)
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile(zero);
+					entity = make_projectile();
 					game->e.x[entity] = game->e.x[ii];
 					game->e.y[entity] = game->e.y[ii];
-					game->e.sx[entity] = game->e.sx[ii] * 0.5f;
+					set_size(entity, game->e.modified_sx[ii] * 0.5f, 0);
 					set_speed(entity, game->e.base_speed[ii] * 0.5f);
 					game->e.dir_x[entity] = -0.5f;
 					game->e.dir_y[entity] = 0.5f;
@@ -1085,10 +1098,10 @@ func void projectile_spawner_system(int start, int count)
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
 
-					entity = make_projectile(zero);
+					entity = make_projectile();
 					game->e.x[entity] = game->e.x[ii];
 					game->e.y[entity] = game->e.y[ii];
-					game->e.sx[entity] = game->e.sx[ii] * 0.5f;
+					set_size(entity, game->e.modified_sx[ii] * 0.5f, 0);
 					set_speed(entity, game->e.base_speed[ii] * 0.5f);
 					game->e.dir_x[entity] = 0.5f;
 					game->e.dir_y[entity] = -0.5f;
@@ -1109,7 +1122,7 @@ func void make_side_projectile(int entity, float x, float x_dir)
 	game->e.y[entity] = randf_range(&game->rng, c_base_res.y * 0.6f, c_base_res.y);
 	game->e.dir_x[entity] = x_dir;
 	set_speed(entity, randf_range(&game->rng, 400, 500));
-	game->e.sx[entity] = randf_range(&game->rng, 38, 46);
+	set_size(entity, randf_range(&game->rng, 38, 46), 0);
 	game->e.color[entity] = v4(0.1f, 0.9f, 0.1f, 1.0f);
 }
 
@@ -1137,16 +1150,30 @@ func void increase_time_lived_system(int start, int count)
 
 func void apply_projectile_modifiers(int entity, s_projectile_spawn_data data)
 {
-	game->e.sx[entity]*= data.size_multiplier;
-	game->e.sy[entity]*= data.size_multiplier;
+	game->e.base_sx[entity] *= data.size_multiplier;
+	game->e.base_sy[entity] *= data.size_multiplier;
+	game->e.modified_sx[entity] *= data.size_multiplier;
+	game->e.modified_sy[entity] *= data.size_multiplier;
+
 	game->e.base_speed[entity] *= data.speed_multiplier;
 	game->e.modified_speed[entity] *= data.speed_multiplier;
+
+	game->e.speed_curve[entity] = data.speed_curve;
+	game->e.size_curve[entity] = data.size_curve;
 }
 
 func void set_speed(int entity, float speed)
 {
 	game->e.base_speed[entity] = speed;
 	game->e.modified_speed[entity] = speed;
+}
+
+func void set_size(int entity, float sx, float sy)
+{
+	game->e.base_sx[entity] = sx;
+	game->e.base_sy[entity] = sy;
+	game->e.modified_sx[entity] = sx;
+	game->e.modified_sy[entity] = sy;
 }
 
 func void modify_speed_system(int start, int count)
@@ -1182,5 +1209,43 @@ func void modify_speed_system(int start, int count)
 		s_float_curve sc = game->e.speed_curve[ii];
 		float p = 1.0f - ilerp(sc.start_seconds[index], sc.end_seconds[index], game->e.time_lived[ii]);
 		game->e.modified_speed[ii] = game->e.base_speed[ii] * (1 + sc.multiplier[index] * p);
+	}
+}
+
+func void modify_size_system(int start, int count)
+{
+	for(int i = 0; i < count; i++)
+	{
+		int ii = start + i;
+		if(!game->e.active[ii]) { continue; }
+		if(!game->e.flags[ii][e_entity_flag_modify_size]) { continue; }
+
+		assert(game->e.flags[ii][e_entity_flag_increase_time_lived]);
+
+		int index = -1;
+		for(int curve_i = 0; curve_i < 4; curve_i++)
+		{
+			s_float_curve curve = game->e.size_curve[ii];
+			if(floats_equal(curve.start_seconds[curve_i], 0) && floats_equal(curve.end_seconds[curve_i], 0))
+			{
+				break;
+			}
+			if(game->e.time_lived[ii] >= curve.start_seconds[curve_i] && game->e.time_lived[ii] <= curve.end_seconds[curve_i])
+			{
+				index = curve_i;
+				break;
+			}
+		}
+		if(index == -1)
+		{
+			game->e.modified_sx[ii] = game->e.base_sx[ii];
+			game->e.modified_sy[ii] = game->e.base_sy[ii];
+			continue;
+		}
+
+		s_float_curve sc = game->e.size_curve[ii];
+		float p = 1.0f - ilerp(sc.start_seconds[index], sc.end_seconds[index], game->e.time_lived[ii]);
+		game->e.modified_sx[ii] = game->e.base_sx[ii] * (1 + sc.multiplier[index] * p);
+		game->e.modified_sy[ii] = game->e.base_sy[ii] * (1 + sc.multiplier[index] * p);
 	}
 }

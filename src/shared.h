@@ -47,6 +47,7 @@ struct s_projectile_spawn_data
 	float speed_multiplier = 1;
 	float size_multiplier = 1;
 	s_float_curve speed_curve;
+	s_float_curve size_curve;
 	float x_override = c_max_f32;
 	float y_override = c_max_f32;
 };
@@ -287,6 +288,7 @@ enum e_entity_flag
 	e_entity_flag_projectile_spawner,
 	e_entity_flag_increase_time_lived,
 	e_entity_flag_modify_speed,
+	e_entity_flag_modify_size,
 	e_entity_flag_count,
 };
 
@@ -317,8 +319,10 @@ struct s_entities
 	float y[c_max_entities];
 	float prev_sx[c_max_entities];
 	float prev_sy[c_max_entities];
-	float sx[c_max_entities];
-	float sy[c_max_entities];
+	float base_sx[c_max_entities];
+	float base_sy[c_max_entities];
+	float modified_sx[c_max_entities];
+	float modified_sy[c_max_entities];
 	float dir_x[c_max_entities];
 	float dir_y[c_max_entities];
 	float vel_x[c_max_entities];
@@ -329,6 +333,7 @@ struct s_entities
 	float duration[c_max_entities];
 	s_particle_spawner particle_spawner[c_max_entities];
 	s_float_curve speed_curve[c_max_entities];
+	s_float_curve size_curve[c_max_entities];
 	s_v4 color[c_max_entities];
 	s_small_str name[c_max_entities];
 };
@@ -352,3 +357,4 @@ func void init_levels(void);
 
 func void apply_projectile_modifiers(int entity, s_projectile_spawn_data data);
 func void set_speed(int entity, float speed);
+func void set_size(int entity, float sx, float sy);

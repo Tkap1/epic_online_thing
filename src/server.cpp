@@ -89,6 +89,7 @@ func void update(void)
 	for(int i = 0; i < c_num_threads; i++)
 	{
 		modify_speed_system(i * c_entities_per_thread, c_entities_per_thread);
+		modify_size_system(i * c_entities_per_thread, c_entities_per_thread);
 		gravity_system(i * c_entities_per_thread, c_entities_per_thread);
 	}
 	for(int i = 0; i < c_num_threads; i++)

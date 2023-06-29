@@ -145,8 +145,8 @@ m_update_game(update_game)
 		game->update_timer -= c_update_delay;
 		memcpy(game->e.prev_x, game->e.x, sizeof(game->e.x));
 		memcpy(game->e.prev_y, game->e.y, sizeof(game->e.y));
-		memcpy(game->e.prev_sx, game->e.sx, sizeof(game->e.sx));
-		memcpy(game->e.prev_sy, game->e.sy, sizeof(game->e.sy));
+		memcpy(game->e.prev_sx, game->e.modified_sx, sizeof(game->e.modified_sx));
+		memcpy(game->e.prev_sy, game->e.modified_sy, sizeof(game->e.modified_sy));
 		update(game->config);
 
 		for(int k_i = 0; k_i < c_max_keys; k_i++)
@@ -229,6 +229,7 @@ func void update(s_config config)
 			for(int i = 0; i < c_num_threads; i++)
 			{
 				modify_speed_system(i * c_entities_per_thread, c_entities_per_thread);
+				modify_size_system(i * c_entities_per_thread, c_entities_per_thread);
 				gravity_system(i * c_entities_per_thread, c_entities_per_thread);
 			}
 			for(int i = 0; i < c_num_threads; i++)
@@ -420,7 +421,7 @@ func void render(float dt)
 				{
 					s_v2 pos = v2(
 						game->e.x[entity],
-						game->e.y[entity] - game->e.sy[entity] * 2
+						game->e.y[entity] - game->e.modified_sy[entity] * 2
 					);
 					draw_text(game->my_chat_msg.data, pos, 1, v41f(1), e_font_small, true, zero);
 				}
@@ -437,7 +438,7 @@ func void render(float dt)
 						{
 							s_v2 pos = v2(
 								game->e.x[entity],
-								game->e.y[entity] - game->e.sy[entity] * 2
+								game->e.y[entity] - game->e.modified_sy[entity] * 2
 							);
 							draw_text(game->chat_messages[msg_i].data, pos, 1, v41f(1), e_font_small, true, zero);
 						}
@@ -604,8 +605,8 @@ func void draw_system(int start, int count, float dt)
 		float x = lerp(game->e.prev_x[ii], game->e.x[ii], dt);
 		float y = lerp(game->e.prev_y[ii], game->e.y[ii], dt);
 
-		float sx = lerp(game->e.prev_sx[ii], game->e.sx[ii], dt);
-		float sy = lerp(game->e.prev_sy[ii], game->e.sy[ii], dt);
+		float sx = lerp(game->e.prev_sx[ii], game->e.modified_sx[ii], dt);
+		float sy = lerp(game->e.prev_sy[ii], game->e.modified_sy[ii], dt);
 
 		b8 this_character_is_me = game->e.player_id[ii] == game->my_id;
 
@@ -652,7 +653,7 @@ func void draw_circle_system(int start, int count, float dt)
 
 		float x = lerp(game->e.prev_x[ii], game->e.x[ii], dt);
 		float y = lerp(game->e.prev_y[ii], game->e.y[ii], dt);
-		float radius = lerp(game->e.prev_sx[ii], game->e.sx[ii], dt);
+		float radius = lerp(game->e.prev_sx[ii], game->e.modified_sx[ii], dt);
 
 		s_v4 light_color = game->e.color[ii];
 		light_color.w *= 0.2f;
@@ -889,7 +890,10 @@ func void collision_system(int start, int count)
 			if(game->e.player_id[j] != game->my_id) { continue; }
 
 			if(
-				rect_collides_circle(v2(game->e.x[j], game->e.y[j]), v2(game->e.sx[j], game->e.sy[j]), v2(game->e.x[ii], game->e.y[ii]), game->e.sx[ii] * 0.48f)
+				rect_collides_circle(
+					v2(game->e.x[j], game->e.y[j]), v2(game->e.modified_sx[j], game->e.modified_sy[j]),
+					v2(game->e.x[ii], game->e.y[ii]), game->e.modified_sx[ii] * 0.48f
+				)
 			)
 			{
 				game->e.dead[j] = true;
@@ -1123,8 +1127,8 @@ func void handle_instant_movement_(int entity)
 func void handle_instant_resize_(int entity)
 {
 	assert(entity != c_invalid_entity);
-	game->e.prev_sx[entity] = game->e.sx[entity];
-	game->e.prev_sy[entity] = game->e.sy[entity];
+	game->e.prev_sx[entity] = game->e.modified_sx[entity];
+	game->e.prev_sy[entity] = game->e.modified_sy[entity];
 }
 
 func s_config read_config_or_make_default(s_lin_arena* arena, s_rng* in_rng)
