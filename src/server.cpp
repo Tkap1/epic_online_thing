@@ -381,6 +381,20 @@ m_parse_packet(parse_packet)
 			reset_level();
 			revive_every_player();
 		} break;
+
+		case e_packet_cheat_last_level:
+		{
+			game->attempt_count_on_current_level = 0;
+			game->current_level = game->level_count - 2;
+
+			s_cheat_last_level_from_server data = zero;
+			data.current_level = game->current_level;
+			data.seed = game->rng.seed;
+			broadcast_packet(e_packet_cheat_last_level, data, ENET_PACKET_FLAG_RELIABLE);
+
+			reset_level();
+			revive_every_player();
+		} break;
 		#endif // m_debug
 
 		case e_packet_chat_msg:
