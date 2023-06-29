@@ -881,7 +881,7 @@ func void init_levels(void)
 		.type = e_projectile_type_left_basic,
 		.delay = speed(1000),
 		.speed_multiplier = 3.0f,
-		.size_multiplier = 6.5f,
+		.size_multiplier = 6.0f,
 		.y_override = c_base_res.y * 0.9f,
 	});
 	game->level_count++;
