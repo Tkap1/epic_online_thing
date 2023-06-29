@@ -1,7 +1,4 @@
 
-size curve, just like speed curve
-make server send level data so no pulling/pushhing necessary just for levels?
-
 show time spent on level
 
 server remembering players (is this possible without accounts? maybe connectID is consistent? but surely it wont on ip change)

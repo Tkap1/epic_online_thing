@@ -7,6 +7,7 @@ struct s_game
 	int level_count;
 	int current_level;
 	int attempt_count_on_current_level;
+	float time_on_current_level;
 	float time_alive_packet_timer;
 	f64 update_timer;
 	s_rng rng;

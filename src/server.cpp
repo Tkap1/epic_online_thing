@@ -121,6 +121,7 @@ func void update(void)
 		}
 	}
 	level_timer += delta;
+	game->time_on_current_level += delta;
 	if(level_timer >= levels[game->current_level].duration && at_least_one_player_alive)
 	{
 		s_beat_level_from_server data = zero;
@@ -133,6 +134,7 @@ func void update(void)
 		game->current_level += 1;
 
 		game->attempt_count_on_current_level = 0;
+		game->time_on_current_level = 0;
 
 		// @Note(tkap, 25/06/2023): Reset if we go past all levels
 		if(game->current_level >= game->level_count)
@@ -193,6 +195,10 @@ func void update(void)
 				s_update_time_lived_from_server data = zero;
 				data.id = peer;
 				data.time_lived = game->e.time_lived[entity];
+
+				// @Note(tkap, 29/06/2023): Very bad place for this. We probably want a system to auto share variables on a delay.
+				data.time_on_current_level = game->time_on_current_level;
+
 				broadcast_packet(e_packet_update_time_lived, data, 0);
 			}
 		}
@@ -361,6 +367,7 @@ m_parse_packet(parse_packet)
 			broadcast_packet(e_packet_beat_level, data, ENET_PACKET_FLAG_RELIABLE);
 
 			game->attempt_count_on_current_level = 0;
+			game->time_on_current_level = 0;
 			game->current_level += 1;
 			reset_level();
 			revive_every_player();
@@ -372,6 +379,7 @@ m_parse_packet(parse_packet)
 			if(game->current_level <= 0) { break; }
 
 			game->attempt_count_on_current_level = 0;
+			game->time_on_current_level = 0;
 			game->current_level -= 1;
 
 			s_cheat_previous_level_from_server data = zero;
@@ -386,6 +394,7 @@ m_parse_packet(parse_packet)
 		case e_packet_cheat_last_level:
 		{
 			game->attempt_count_on_current_level = 0;
+			game->time_on_current_level = 0;
 			game->current_level = game->level_count - 2;
 
 			s_cheat_last_level_from_server data = zero;

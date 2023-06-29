@@ -71,8 +71,9 @@ struct s_game
 	int level_count;
 	int current_level;
 	u32 my_id;
-	float total_time;
 	int attempt_count_on_current_level;
+	float total_time;
+	float time_on_current_level;
 	f64 update_timer;
 	s_config config;
 	s_rng rng;

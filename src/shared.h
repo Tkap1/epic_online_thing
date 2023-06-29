@@ -245,6 +245,7 @@ struct s_update_time_lived_from_server
 {
 	u32 id;
 	float time_lived;
+	float time_on_current_level;
 };
 
 struct s_update_levels_from_server

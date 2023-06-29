@@ -944,6 +944,24 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_left_basic,
+		.delay = speed(3000),
+		.size_multiplier = 0.1f,
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_right_basic,
+		.delay = speed(3000),
+		.size_multiplier = 0.1f,
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_top_basic,
+		.delay = speed(6000),
+		.size_multiplier = 0.1f,
+	});
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
 	// @Note(tkap, 26/06/2023): Blank level to avoid wrapping
 	game->level_count++;
 

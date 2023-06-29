@@ -150,3 +150,8 @@ func float ilerp(float start, float end, float val)
 	if(floats_equal(b, 0)) { return val; }
 	return (val - start) / b;
 }
+
+func int floorfi(float x)
+{
+	return (int)floorf(x);
+}
