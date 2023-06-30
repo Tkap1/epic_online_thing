@@ -1,11 +1,14 @@
 #!/bin/sh
 cc="clang++"
+warn="-Werror -Wall -Wno-char-subscripts -Wno-unused-function -Wno-switch -Wno-sign-compare"
 if [ $cc = "g++" ] ; then
 	diag="-fno-diagnostics-show-caret"
+	warn="$warn -Wno-write-strings -Wno-class-memaccess"
 else
 	diag="-fno-caret-diagnostics"
+	warn="$warn -Wno-writable-strings"
 fi
-warn="-Werror -Wall -Wno-char-subscripts -Wno-unused-function -Wno-switch -Wno-class-memaccess -Wno-sign-compare"
+
 serverdef="-Dm_server -Dm_app"
 clientdef="-Dm_client -Dm_app"
 opt_debug="-std=c++17 -Isrc/ -g -Dm_debug"
