@@ -321,7 +321,7 @@ func void spawn_system(s_level level)
 				case e_projectile_type_right_full_height:
 				{
 					game->e.x[entity] = c_base_res.x + c_projectile_spawn_offset;
-					game->e.y[entity] = (randf_range(&game->rng, 0, c_base_res.y) / 8 ) * 8;
+					game->e.y[entity] = randf_range(&game->rng, 0, c_base_res.y);
 					game->e.dir_x[entity] = -1;
 					set_speed(entity, randf_range(&game->rng, 400, 500));
 					set_size(entity, randf_range(&game->rng, 38, 46), 0);
@@ -490,7 +490,7 @@ func void spawn_system(s_level level)
 				case e_projectile_type_ground_shot:
 				{
 					float x = c_base_res.x + c_projectile_spawn_offset;
-					float y = (randf_range(&game->rng, c_base_res.y - 250, c_base_res.y)/16)*16;
+					float y = randf_range(&game->rng, c_base_res.y - 250, c_base_res.y);
 
 					game->e.x[entity] = x;
 					game->e.y[entity] = y;
@@ -507,7 +507,7 @@ func void spawn_system(s_level level)
 
 				case e_projectile_type_air_shot:
 				{
-					float x = (randf_range(&game->rng, 0, c_base_res.x*2)/32)*32;
+					float x = randf_range(&game->rng, 0, c_base_res.x * 2);
 					float y = -c_projectile_spawn_offset;
 
 					game->e.x[entity] = x;
