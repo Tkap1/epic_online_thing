@@ -1,7 +1,6 @@
 
 
 global constexpr s_v2 c_base_res = {1366, 768};
-global constexpr s_v2 c_spawn_pos = {c_base_res.x * 0.5f, c_base_res.y * 0.5f};
 
 global constexpr int c_num_channels = 2;
 global constexpr int c_sample_rate = 44100;

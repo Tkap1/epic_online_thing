@@ -17,11 +17,13 @@ enum e_projectile_type
 	e_projectile_type_diagonal_right,
 	e_projectile_type_diagonal_bottom_left,
 	e_projectile_type_diagonal_bottom_right,
+	e_projectile_type_right_full_height,
 	e_projectile_type_corner_shot,
 	e_projectile_type_shockwave,
 	e_projectile_type_cross,
 	e_projectile_type_ground_shot,
 	e_projectile_type_air_shot,
+	e_projectile_type_spiral,
 	e_projectile_type_spawner,
 	e_projectile_type_count,
 };
@@ -52,11 +54,16 @@ struct s_projectile_spawn_data
 	s_float_curve size_curve;
 	float x_override = c_max_f32;
 	float y_override = c_max_f32;
+	float spiral_multiplier = 1;
+	s_v4 color_overide = v4(c_max_f32, c_max_f32, c_max_f32, c_max_f32);
+	b8 collide_ground_only = false;
+	b8 collide_air_only = false;
 };
 
 
 struct s_level
 {
+	s_v2 spawn_pos;
 	b8 infinite_jumps;
 	int duration;
 	s_sarray<s_projectile_spawn_data, c_max_spawns_per_level> spawn_data;

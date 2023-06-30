@@ -160,9 +160,11 @@ func void projectile_bounds_check_system(int start, int count)
 
 func int make_player(u32 player_id, b8 dead, s_v4 color)
 {
+	s_level level = levels[game->current_level];
+
 	int entity = make_entity();
-	game->e.x[entity] = c_spawn_pos.x;
-	game->e.y[entity] = c_spawn_pos.y;
+	game->e.x[entity] = level.spawn_pos.x;
+	game->e.y[entity] = level.spawn_pos.y;
 	handle_instant_movement(entity);
 	set_size(entity, 32, 64);
 	handle_instant_resize(entity);
@@ -311,6 +313,23 @@ func void spawn_system(s_level level)
 				{
 					float angle = pi * -0.75f;
 					make_diagonal_bottom_projectile(entity, c_base_res.x, angle);
+					apply_projectile_modifiers(entity, data);
+					handle_instant_movement(entity);
+					handle_instant_resize(entity);
+				} break;
+
+				case e_projectile_type_right_full_height:
+				{
+					game->e.x[entity] = c_base_res.x + c_projectile_spawn_offset;
+					game->e.y[entity] = randf_range(&game->rng, 0, c_base_res.y);
+					game->e.dir_x[entity] = -1;
+					set_speed(entity, randf_range(&game->rng, 400, 500));
+					set_size(entity, randf_range(&game->rng, 38, 46), 0);
+					game->e.color[entity] = v4(0.1f, 0.9f, 0.1f, 1.0f);
+					if(data.y_override != c_max_f32)
+					{
+						game->e.y[entity] = data.y_override;
+					}
 					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
@@ -471,7 +490,7 @@ func void spawn_system(s_level level)
 				case e_projectile_type_ground_shot:
 				{
 					float x = c_base_res.x + c_projectile_spawn_offset;
-					float y = (randf_range(&game->rng, c_base_res.y - 250, c_base_res.y)/16)*16;
+					float y = randf_range(&game->rng, c_base_res.y - 250, c_base_res.y);
 
 					game->e.x[entity] = x;
 					game->e.y[entity] = y;
@@ -488,7 +507,7 @@ func void spawn_system(s_level level)
 
 				case e_projectile_type_air_shot:
 				{
-					float x = (randf_range(&game->rng, 0, c_base_res.x*2)/32)*32;
+					float x = randf_range(&game->rng, 0, c_base_res.x * 2);
 					float y = -c_projectile_spawn_offset;
 
 					game->e.x[entity] = x;
@@ -499,6 +518,24 @@ func void spawn_system(s_level level)
 					game->e.dir_y[entity] = 0.5f;
 					game->e.color[entity] = v4(1.0f, 0.0f, 1.0f, 1.0f);
 					game->e.flags[entity][e_entity_flag_collide_air_only] = true;
+					apply_projectile_modifiers(entity, data);
+					handle_instant_movement(entity);
+					handle_instant_resize(entity);
+				} break;
+
+				case e_projectile_type_spiral:
+				{
+					float x = c_base_res.x / 2;
+					float y = c_base_res.y / 2;
+					float t = (level_timer - (long)level_timer) * data.spiral_multiplier * 2 * pi;
+
+					game->e.x[entity] = x;
+					game->e.y[entity] = y;
+					set_size(entity, 22, 0);
+					set_speed(entity, 300);
+					game->e.dir_x[entity] = sinf(t);
+					game->e.dir_y[entity] = cosf(t);
+					game->e.color[entity] = v4(1.0f, 1.0f, 0.0f, 1.0f);
 					apply_projectile_modifiers(entity, data);
 					handle_instant_movement(entity);
 					handle_instant_resize(entity);
@@ -535,8 +572,11 @@ func void init_levels(void)
 
 	#define speed(val) (1000.0f / val)
 
+	s_v2 default_spawn_position = v2(c_base_res.x * 0.5f, c_base_res.y * 0.5f);
+
 	for(int level_i = 0; level_i < c_max_levels; level_i++)
 	{
+		levels[level_i].spawn_pos = default_spawn_position;
 		levels[level_i].duration = c_level_duration;
 		levels[level_i].infinite_jumps = false;
 	}
@@ -961,6 +1001,70 @@ func void init_levels(void)
 	});
 	game->level_count++;
 	// -----------------------------------------------------------------------------
+	levels[game->level_count].spawn_pos = v2(c_base_res.x * 0.75f, c_base_res.y);
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_spiral,
+		.delay = speed(7777),
+		.spiral_multiplier = 1,
+		.color_overide = v4(1.0f, 1.0f, 0.0f, 1.0f)
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_left_basic,
+		.delay = speed(2222),
+		.size_multiplier = 0.35f,
+		.color_overide = v4(1.0f, 0.1f, 0.1f, 1.0f)
+	});
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+	levels[game->level_count].infinite_jumps = true;
+	levels[game->level_count].spawn_pos = v2(c_base_res.x * 0.25f, c_base_res.y);
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_spiral,
+		.delay = speed(12500),
+		.spiral_multiplier = 1,
+		.color_overide = v4(1.0f, 1.0f, 0.0f, 1.0f)
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_spiral,
+		.delay = speed(12500),
+		.spiral_multiplier = -1,
+		.color_overide = v4(1.0f, 1.0f, 1.0f, 1.0f)
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_right_full_height,
+		.delay = speed(3111),
+		.size_multiplier = 0.5f,
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_right_full_height,
+		.delay = speed(444),
+		.size_multiplier = 1.0f,
+		.color_overide = v4(1.0f, 0.0f, 0.0f, 1.0f)
+	});
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+	levels[game->level_count].infinite_jumps = true;
+	levels[game->level_count].spawn_pos = v2(c_base_res.x * 0.25f, c_base_res.y);
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_spiral,
+		.delay = speed(125000),
+		.spiral_multiplier = 1,
+		.color_overide = v4(1.0f, 0.0f, 1.0f, 1.0f),
+		.collide_ground_only = true
+	});
+	levels[game->level_count].spawn_data.add({
+		.type = e_projectile_type_top_basic,
+		.delay = speed(23555),
+		.speed_multiplier = 0.45f,
+		.size_multiplier = 0.275f,
+		.speed_curve = {
+			.start_seconds = {0.1f},
+			.end_seconds = {0.5f},
+			.multiplier = {3},
+		},
+	});
+	game->level_count++;
+	// -----------------------------------------------------------------------------
 
 	// @Note(tkap, 26/06/2023): Blank level to avoid wrapping
 	game->level_count++;
@@ -983,14 +1087,16 @@ func void reset_level(void)
 		}
 	}
 
+	s_level level = levels[game->current_level];
+
 	// @Note(tkap, 23/06/2023): Place every player at the spawn position
 	for(int i = 0; i < c_max_entities; i++)
 	{
 		if(!game->e.active[i]) { continue; }
 		if(!game->e.player_id[i]) { continue; }
 
-		game->e.x[i] = c_spawn_pos.x;
-		game->e.y[i] = c_spawn_pos.y;
+		game->e.x[i] = level.spawn_pos.x;
+		game->e.y[i] = level.spawn_pos.y;
 		game->e.jumping[i] = false;
 		game->e.on_ground[i] = false;
 		game->e.vel_y[i] = 0;
@@ -1222,6 +1328,24 @@ func void apply_projectile_modifiers(int entity, s_projectile_spawn_data data)
 
 	game->e.speed_curve[entity] = data.speed_curve;
 	game->e.size_curve[entity] = data.size_curve;
+
+	if (data.color_overide.x != c_max_f32)
+		game->e.color[entity].x = data.color_overide.x;
+
+	if (data.color_overide.y != c_max_f32)
+		game->e.color[entity].y = data.color_overide.y;
+
+	if (data.color_overide.z != c_max_f32)
+		game->e.color[entity].z = data.color_overide.z;
+
+	if (data.color_overide.w != c_max_f32)
+		game->e.color[entity].w = data.color_overide.w;
+
+	if (data.collide_ground_only)
+		game->e.flags[entity][e_entity_flag_collide_ground_only] = true;
+
+	if (data.collide_air_only)
+		game->e.flags[entity][e_entity_flag_collide_air_only] = true;
 }
 
 func void set_speed(int entity, float speed)
