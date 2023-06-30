@@ -81,7 +81,7 @@ void main()
 		color.rgb = col;
 		color.a *= smoothstep(0.499, 0.45, pow(d, 0.4));
 	}
-	else if(t.do_background != 0)
+	else if(t.background_id == 1)
 	{
 		vec2 uv = v_local_uv;
 		vec3 col = vec3(0);

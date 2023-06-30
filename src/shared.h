@@ -61,12 +61,19 @@ struct s_projectile_spawn_data
 };
 
 
+enum e_background
+{
+	e_background_invalid,
+	e_background_default,
+};
+
 struct s_level
 {
 	s_v2 spawn_pos;
 	b8 infinite_jumps;
 	int duration;
 	s_sarray<s_projectile_spawn_data, c_max_spawns_per_level> spawn_data;
+	e_background background;
 };
 
 

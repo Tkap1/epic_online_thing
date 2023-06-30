@@ -580,6 +580,7 @@ func void init_levels(void)
 		levels[level_i].spawn_pos = default_spawn_position;
 		levels[level_i].duration = c_level_duration;
 		levels[level_i].infinite_jumps = false;
+		levels[level_i].background = e_background_default;
 	}
 
 	// -----------------------------------------------------------------------------
@@ -985,23 +986,6 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	levels[game->level_count].spawn_data.add({
-		.type = e_projectile_type_left_basic,
-		.delay = speed(3000),
-		.size_multiplier = 0.1f,
-	});
-	levels[game->level_count].spawn_data.add({
-		.type = e_projectile_type_right_basic,
-		.delay = speed(3000),
-		.size_multiplier = 0.1f,
-	});
-	levels[game->level_count].spawn_data.add({
-		.type = e_projectile_type_top_basic,
-		.delay = speed(6000),
-		.size_multiplier = 0.1f,
-	});
-	game->level_count++;
-	// -----------------------------------------------------------------------------
 	levels[game->level_count].spawn_pos = v2(c_base_res.x * 0.75f, c_base_res.y);
 	levels[game->level_count].spawn_data.add({
 		.type = e_projectile_type_spiral,
@@ -1017,6 +1001,7 @@ func void init_levels(void)
 	});
 	game->level_count++;
 	// -----------------------------------------------------------------------------
+
 	levels[game->level_count].infinite_jumps = true;
 	levels[game->level_count].spawn_pos = v2(c_base_res.x * 0.25f, c_base_res.y);
 	levels[game->level_count].spawn_data.add({

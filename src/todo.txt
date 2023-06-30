@@ -1,6 +1,4 @@
 
-show time spent on level
-
 server remembering players (is this possible without accounts? maybe connectID is consistent? but surely it wont on ip change)
 	i would be nice to know how many maps each player has survived
 more levels

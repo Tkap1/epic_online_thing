@@ -461,7 +461,10 @@ func void render(float dt)
 		} break;
 	}
 
-	draw_rect(g_window.center, 0, g_window.size, v41f(1), {.do_background = true});
+	if(levels[game->current_level].background != e_background_invalid)
+	{
+		draw_rect(g_window.center, 0, g_window.size, v41f(1), {.background_id = levels[game->current_level].background});
+	}
 
 	{
 		glUseProgram(game->program);
