@@ -88,7 +88,7 @@ enum e_packet
 	e_packet_cheat_previous_level,
 	e_packet_cheat_last_level,
 	e_packet_all_levels_beat,
-	e_packet_update_time_lived,
+	e_packet_periodic_data,
 	e_packet_update_levels,
 	e_packet_chat_msg,
 
@@ -248,11 +248,14 @@ struct s_cheat_last_level_from_server
 	u32 seed;
 };
 
-struct s_update_time_lived_from_server
+struct s_periodic_data_from_server
 {
 	u32 id;
-	float time_lived;
 	float time_on_current_level;
+
+	// @Note(tkap, 30/06/2023): These are player specific
+	float time_lived;
+	float best_time_on_level;
 };
 
 struct s_update_levels_from_server
@@ -351,6 +354,7 @@ struct s_entities
 	float modified_speed[c_max_entities];
 	float time_lived[c_max_entities];
 	float duration[c_max_entities];
+	float best_time_on_level[c_max_entities];
 	s_particle_spawner particle_spawner[c_max_entities];
 	s_float_curve speed_curve[c_max_entities];
 	s_float_curve size_curve[c_max_entities];

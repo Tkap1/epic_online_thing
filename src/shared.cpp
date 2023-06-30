@@ -86,6 +86,7 @@ func void zero_entity(int index)
 	game->e.particle_spawner[index].spawn_delay = 0;
 	game->e.name[index] = zero;
 	game->e.drawn_last_render[index] = false;
+	game->e.best_time_on_level[index] = 0;
 }
 
 func int find_player_by_id(u32 id)
@@ -527,7 +528,7 @@ func void spawn_system(s_level level)
 				{
 					float x = c_base_res.x / 2;
 					float y = c_base_res.y / 2;
-					float t = (level_timer - (long)level_timer) * data.spiral_multiplier * 2 * pi;
+					float t = fract(level_timer) * data.spiral_multiplier * 2 * pi;
 
 					game->e.x[entity] = x;
 					game->e.y[entity] = y;
@@ -1313,6 +1314,8 @@ func void increase_time_lived_system(int start, int count)
 		if(!game->e.flags[ii][e_entity_flag_increase_time_lived]) { continue; }
 
 		game->e.time_lived[ii] += delta;
+
+		game->e.best_time_on_level[ii] = at_least(game->e.best_time_on_level[ii], level_timer);
 	}
 }
 

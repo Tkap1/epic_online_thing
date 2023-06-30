@@ -4,7 +4,6 @@ static constexpr int ENET_PACKET_FLAG_RELIABLE = 1;
 #include "external/glcorearb.h"
 
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
 // @Note(tkap, 24/06/2023): We don't want this Madeg
 #include <windows.h>
 
@@ -415,7 +414,7 @@ func void render(float dt)
 				for(int pat_i = 0; pat_i < player_and_time_arr.count; pat_i++)
 				{
 					s_player_and_time pat = player_and_time_arr[pat_i];
-					char* text = format_text("%s: %i", game->e.name[pat.index].data, roundfi(pat.time));
+					char* text = format_text("%s: %i (%i)", game->e.name[pat.index].data, roundfi(pat.time), floorfi(game->e.best_time_on_level[pat.index]));
 					draw_text(text, pos, 1, v41f(1), e_font_medium, false, zero);
 					pos.y += game->font_arr[e_font_medium].size;
 				}
@@ -827,16 +826,20 @@ m_parse_packet(parse_packet)
 			revive_every_player();
 		} break;
 
-		case e_packet_update_time_lived:
+		case e_packet_periodic_data:
 		{
-			s_update_time_lived_from_server data = *(s_update_time_lived_from_server*)cursor;
+			s_periodic_data_from_server data = *(s_periodic_data_from_server*)cursor;
 			game->time_on_current_level = data.time_on_current_level;
 
 			int entity = find_player_by_id(data.id);
 			if(entity != c_invalid_entity)
 			{
 				game->e.time_lived[entity] = data.time_lived;
+				game->e.best_time_on_level[entity] = data.best_time_on_level;
 			}
+
+
+
 		} break;
 
 		case e_packet_update_levels:

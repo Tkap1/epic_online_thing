@@ -25,3 +25,5 @@ func void broadcast_simple_packet(e_packet packet_id, int flag);
 
 #define send_packet(peer_id, packet_id, data, flag) send_packet_(peer_id, packet_id, &data, sizeof(data), flag)
 func void send_packet_(u32 peer_id, e_packet packet_id, void* data, size_t size, int flag);
+
+func void reset_best_time_on_level();

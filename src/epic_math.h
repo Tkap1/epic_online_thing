@@ -155,3 +155,8 @@ func int floorfi(float x)
 {
 	return (int)floorf(x);
 }
+
+func float fract(float x)
+{
+	return x - (int)x;
+}

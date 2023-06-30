@@ -132,6 +132,7 @@ func void update(void)
 		log("Level %i beaten", game->current_level + 1);
 
 		game->current_level += 1;
+		reset_best_time_on_level();
 
 		game->attempt_count_on_current_level = 0;
 		game->time_on_current_level = 0;
@@ -140,6 +141,7 @@ func void update(void)
 		if(game->current_level >= game->level_count)
 		{
 			game->current_level = 0;
+			reset_best_time_on_level();
 			broadcast_simple_packet(e_packet_all_levels_beat, ENET_PACKET_FLAG_RELIABLE);
 
 			// @Note(tkap, 27/06/2023): Reset time_lived for each player
@@ -151,7 +153,6 @@ func void update(void)
 					game->e.time_lived[entity] = 0;
 				}
 			}
-
 		}
 		reset_level();
 		revive_every_player();
@@ -192,14 +193,13 @@ func void update(void)
 			int entity = find_player_by_id(peer);
 			if(entity != c_invalid_entity)
 			{
-				s_update_time_lived_from_server data = zero;
+				s_periodic_data_from_server data = zero;
 				data.id = peer;
 				data.time_lived = game->e.time_lived[entity];
-
-				// @Note(tkap, 29/06/2023): Very bad place for this. We probably want a system to auto share variables on a delay.
+				data.best_time_on_level = game->e.best_time_on_level[entity];
 				data.time_on_current_level = game->time_on_current_level;
 
-				broadcast_packet(e_packet_update_time_lived, data, 0);
+				broadcast_packet(e_packet_periodic_data, data, 0);
 			}
 		}
 	}
@@ -369,6 +369,7 @@ m_parse_packet(parse_packet)
 			game->attempt_count_on_current_level = 0;
 			game->time_on_current_level = 0;
 			game->current_level += 1;
+			reset_best_time_on_level();
 			reset_level();
 			revive_every_player();
 		} break;
@@ -387,6 +388,7 @@ m_parse_packet(parse_packet)
 			data.seed = game->rng.seed;
 			broadcast_packet(e_packet_cheat_previous_level, data, ENET_PACKET_FLAG_RELIABLE);
 
+			reset_best_time_on_level();
 			reset_level();
 			revive_every_player();
 		} break;
@@ -402,6 +404,7 @@ m_parse_packet(parse_packet)
 			data.seed = game->rng.seed;
 			broadcast_packet(e_packet_cheat_last_level, data, ENET_PACKET_FLAG_RELIABLE);
 
+			reset_best_time_on_level();
 			reset_level();
 			revive_every_player();
 		} break;
@@ -474,4 +477,9 @@ func void send_packet_(u32 peer_id, e_packet packet_id, void* data, size_t size,
 	buffer_write(&cursor, &packet_id, sizeof(packet_id));
 	buffer_write(&cursor, data, size);
 	g_network->out_packets.add(packet);
+}
+
+func void reset_best_time_on_level()
+{
+	memset(game->e.best_time_on_level, 0, sizeof(game->e.best_time_on_level));
 }
