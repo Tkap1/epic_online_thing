@@ -5,7 +5,7 @@ if [ $cc = "g++" ] ; then
 else
 	diag="-fno-caret-diagnostics"
 fi
-warn="-Werror -Wall -Wno-char-subscripts -Wno-unused-function -Wno-switch"
+warn="-Werror -Wall -Wno-char-subscripts -Wno-unused-function -Wno-switch -Wno-class-memaccess -Wno-sign-compare"
 serverdef="-Dm_server -Dm_app"
 clientdef="-Dm_client -Dm_app"
 opt_debug="-std=c++17 -Isrc/ -g -Dm_debug"
@@ -42,7 +42,7 @@ else
 	compile_server=1
 fi
 
-if [ $debug = 0 ] ; then
+if [ $debug = 1 ] ; then
 	opt=$opt_debug
 else
 	opt=$opt_release

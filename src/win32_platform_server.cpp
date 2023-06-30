@@ -58,6 +58,7 @@ int main(int argc, char** argv)
 	void* game_memory = null;
 	HMODULE dll = null;
 	s_platform_data platform_data = zero;
+	s_lin_arena frame_arena = zero;
 
 	{
 		s_lin_arena all = zero;
@@ -69,7 +70,8 @@ int main(int argc, char** argv)
 		game_memory = la_get(&all, c_game_memory);
 		game_network.read_arena = make_lin_arena_from_memory(1 * c_mb, la_get(&all, 1 * c_mb));
 		game_network.write_arena = make_lin_arena_from_memory(1 * c_mb, la_get(&all, 1 * c_mb));
-		platform_data.frame_arena = make_lin_arena_from_memory(5 * c_mb, la_get(&all, 5 * c_mb));
+		frame_arena = make_lin_arena_from_memory(5 * c_mb, la_get(&all, 5 * c_mb));
+		platform_data.frame_arena = &frame_arena;
 	}
 
 	f64 time_passed = 0;
