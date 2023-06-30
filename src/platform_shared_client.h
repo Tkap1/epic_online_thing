@@ -231,7 +231,7 @@ struct s_platform_data
 	f64 time_passed;
 	s_input* input;
 	s_sarray<s_char_event, 1024>* char_event_arr;
-	s_lin_arena frame_arena;
+	s_lin_arena* frame_arena;
 };
 
 struct s_platform_funcs

@@ -1,24 +1,25 @@
 #define m_client 1
 static constexpr int ENET_PACKET_FLAG_RELIABLE = 1;
 
+#include "external/glcorearb.h"
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 // @Note(tkap, 24/06/2023): We don't want this Madeg
 #include <windows.h>
 
 #include <GL/gl.h>
-#include "external/glcorearb.h"
 #include "external/wglext.h"
 #include <stdlib.h>
 #define m_dll_export __declspec(dllexport)
 #else
 #include<X11/X.h>
 #include<X11/Xlib.h>
-#include<GL/gl.h>
 #include<GL/glx.h>
-#include<GL/glext.h>
-#include <x86intrin.h>
 #include <string.h>
+#ifdef __GNUC__
+#define __rdtsc __builtin_ia32_rdtsc
+#endif
 #include <stdarg.h>
 #include <unistd.h>
 #define m_dll_export
@@ -79,7 +80,7 @@ m_update_game(update_game)
 	static_assert(c_game_memory >= sizeof(s_game));
 	static_assert((c_max_entities % c_num_threads) == 0);
 	game = (s_game*)game_memory;
-	frame_arena = &platform_data.frame_arena;
+	frame_arena = platform_data.frame_arena;
 	g_platform_funcs = platform_funcs;
 	g_platform_data = platform_data;
 	g_network = game_network;
@@ -211,15 +212,15 @@ func void update(s_config config)
 
 			// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		cheats, for testing start		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 			#ifdef m_debug
-			if(is_key_pressed(c_key_add))
+			if(is_key_pressed(c_key_add) && !game->chatting)
 			{
 				send_simple_packet(e_packet_cheat_next_level, ENET_PACKET_FLAG_RELIABLE);
 			}
-			if(is_key_pressed(c_key_subtract))
+			if(is_key_pressed(c_key_subtract) && !game->chatting)
 			{
 				send_simple_packet(e_packet_cheat_previous_level, ENET_PACKET_FLAG_RELIABLE);
 			}
-			if(is_key_pressed(c_key_f1))
+			if(is_key_pressed(c_key_f1) && !game->chatting)
 			{
 				send_simple_packet(e_packet_cheat_last_level, ENET_PACKET_FLAG_RELIABLE);
 			}

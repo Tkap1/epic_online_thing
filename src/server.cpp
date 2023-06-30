@@ -48,7 +48,7 @@ m_update_game(update_game)
 {
 	static_assert(c_game_memory >= sizeof(s_game));
 
-	frame_arena = &platform_data.frame_arena;
+	frame_arena = platform_data.frame_arena;
 	g_network = game_network;
 	game = (s_game*)game_memory;
 	if(disgusting_recompile_hack) { return ; }

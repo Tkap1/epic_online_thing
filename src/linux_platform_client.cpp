@@ -1,8 +1,7 @@
 #define m_client 1
 
-#include<GL/gl.h>
-#include<GL/glx.h>
-#include<GL/glext.h>
+#include "external/glcorearb.h"
+#include <GL/glx.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -190,24 +189,37 @@ func b8 handle_input_events(void)
 			xkey = &ev.xkey;
 			s_char_event char_event = zero;
 			KeySym sym = XLookupKeysym(xkey, 0);
-			switch(sym) {
-			case XK_KP_Add: sym = c_key_add; break;
-			case XK_KP_Subtract: sym = c_key_subtract; break;
-			case XK_w: sym = c_key_w; break;
-			case XK_a: sym = c_key_a; break;
-			case XK_s: sym = c_key_s; break;
-			case XK_d: sym = c_key_d; break;
-			case XK_Home: sym = c_key_home; break;
-			case XK_Left: sym = c_key_left; break;
-			case XK_Up: sym = c_key_up; break;
-			case XK_Right: sym = c_key_right; break;
-			case XK_Down: sym = c_key_down; break;
-			case XK_End: sym = c_key_end; break;
-			case XK_Delete: sym = c_key_delete; break;
-			case XK_Return: sym = c_key_enter; break;
-			case XK_Tab: sym = c_key_tab; break;
-			case XK_BackSpace: sym = c_key_backspace; break;
-			case XK_Escape: sym = c_key_escape; running = 0; break;
+			if (sym >= XK_a && sym <= XK_z)
+			{
+				sym = c_key_a + (sym - XK_a);
+			}
+			else if (sym >= XK_F1 && sym <= XK_F12)
+			{
+				sym = c_key_f1 + (sym - XK_F1);
+			}
+			else
+			{
+				switch(sym)
+				{
+				case XK_KP_Add: sym = c_key_add; break;
+				case XK_KP_Subtract: sym = c_key_subtract; break;
+				case XK_Home: sym = c_key_home; break;
+				case XK_Left: sym = c_key_left; break;
+				case XK_Up: sym = c_key_up; break;
+				case XK_Right: sym = c_key_right; break;
+				case XK_Down: sym = c_key_down; break;
+				case XK_End: sym = c_key_end; break;
+				case XK_Delete: sym = c_key_delete; break;
+				case XK_Return: sym = c_key_enter; break;
+				case XK_Tab: sym = c_key_tab; break;
+				case XK_BackSpace: sym = c_key_backspace; break;
+				case XK_Escape: sym = c_key_escape; break;
+				}
+			}
+			// quit with alt+f4 or with ctrl+q
+			if ((sym == c_key_f4 && (xkey->state & Mod1Mask)) || (sym == c_key_q && (xkey->state & ControlMask)))
+			{
+				running = 0;
 			}
 			b8 is_down = ev.type == KeyPress;
 			if (sym < c_max_keys) {
@@ -317,9 +329,10 @@ int main(void)
 	s_game_network game_network = zero;
 	s_platform_network platform_network = zero;
 	s_platform_data platform_data = zero;
-	game_network.read_arena = make_lin_arena_from_memory(1 * c_mb, la_get(&all, 1*c_mb));
-	game_network.write_arena = make_lin_arena_from_memory(1 * c_mb, la_get(&all, 1*c_mb));
-	platform_data.frame_arena = make_lin_arena_from_memory(5 * c_mb, la_get(&all, 5*c_mb));
+	game_network.read_arena = make_lin_arena_from_memory(1 * c_mb, la_get(&all, 1 * c_mb));
+	game_network.write_arena = make_lin_arena_from_memory(1 * c_mb, la_get(&all, 1 * c_mb));
+	s_lin_arena frame_arena = make_lin_arena_from_memory(5 * c_mb, la_get(&all, 5 * c_mb));
+	platform_data.frame_arena = &frame_arena;
 	glXSwapIntervalEXTProc = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddress((const GLubyte*)"glXSwapIntervalEXT");
 
 	s_platform_funcs platform_funcs = zero;

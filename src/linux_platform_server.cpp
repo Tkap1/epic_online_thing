@@ -57,9 +57,10 @@ int main(void)
 	void *game_memory = la_get(&all, 1 * c_mb);
 	s_game_network game_network = zero;
 	s_platform_data platform_data = zero;
-	game_network.read_arena = make_lin_arena_from_memory(1 * c_mb, la_get(&all, 1*c_mb));
-	game_network.write_arena = make_lin_arena_from_memory(1 * c_mb, la_get(&all, 1*c_mb));
-	platform_data.frame_arena = make_lin_arena_from_memory(5 * c_mb, la_get(&all, 5*c_mb));
+	game_network.read_arena = make_lin_arena_from_memory(1 * c_mb, la_get(&all, 1 * c_mb));
+	game_network.write_arena = make_lin_arena_from_memory(1 * c_mb, la_get(&all, 1 * c_mb));
+	s_lin_arena frame_arena = make_lin_arena_from_memory(5 * c_mb, la_get(&all, 5 * c_mb));
+	platform_data.frame_arena = &frame_arena;
 
 	f64 time_passed = 0;
 	b8 need_so_reload = true;
