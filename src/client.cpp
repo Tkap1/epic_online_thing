@@ -539,13 +539,20 @@ func b8 check_for_shader_errors(u32 id, char* out_error)
 
 func void input_system(int start, int count)
 {
+	s_level level = levels[game->current_level];
+
 	b8 go_left = (is_key_down(c_key_a) || is_key_down(c_key_left)) && !game->chatting;
 	b8 go_right = (is_key_down(c_key_d) || is_key_down(c_key_right)) && !game->chatting;
 	b8 go_down = (is_key_pressed(c_key_s) || is_key_pressed(c_key_down)) && !game->chatting;
 	b8 jump = (is_key_pressed(c_key_space) || is_key_pressed(c_key_w) || is_key_pressed(c_key_up)) && !game->chatting;
 	b8 jump_released = is_key_released(c_key_space) || is_key_released(c_key_w) || is_key_released(c_key_up);
 
-	s_level level = levels[game->current_level];
+	if(level.reversed_controls)
+	{
+		b8 temp = go_left;
+		go_left = go_right;
+		go_right = temp;
+	}
 
 	for(int i = 0; i < count; i++)
 	{
