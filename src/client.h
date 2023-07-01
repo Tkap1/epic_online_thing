@@ -126,6 +126,7 @@ func b8 is_key_pressed(int key);
 func b8 is_key_released(int key);
 func s_char_event get_char_event();
 void gl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam);
+func void sine_alpha_system(int start, int count);
 
 #define send_packet(packet_id, data, flag) send_packet_(packet_id, &data, sizeof(data), flag)
 func void send_simple_packet(e_packet packet_id, int flag);

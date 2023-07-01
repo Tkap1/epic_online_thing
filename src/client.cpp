@@ -355,6 +355,10 @@ func void render(float dt)
 				draw_system(i * c_entities_per_thread, c_entities_per_thread, dt);
 				draw_circle_system(i * c_entities_per_thread, c_entities_per_thread, dt);
 			}
+			for(int i = 0; i < c_num_threads; i++)
+			{
+				sine_alpha_system(i * c_entities_per_thread, c_entities_per_thread);
+			}
 
 			// @Note(tkap, 23/06/2023): Display how many seconds left to beat the level
 			{
@@ -672,9 +676,13 @@ func void draw_circle_system(int start, int count, float dt)
 
 		s_v4 light_color = game->e.color[ii];
 		light_color.w *= 0.2f;
+		s_v4 inner_color = game->e.color[ii];
+		inner_color.x = 0.8f;
+		inner_color.y = 0.8f;
+		inner_color.z = 0.8f;
 		draw_light(v2(x, y), 0, radius * 8.0f, light_color, zero);
 		draw_circle(v2(x, y), 1, radius, game->e.color[ii], zero);
-		draw_circle(v2(x, y), 2, radius * 0.7f, v41f(0.8f), zero);
+		draw_circle(v2(x, y), 2, radius * 0.7f, inner_color, zero);
 	}
 }
 
@@ -1426,4 +1434,20 @@ func e_string_input_result handle_string_input(T* str)
 		}
 	}
 	return result;
+}
+
+
+func void sine_alpha_system(int start, int count)
+{
+	for(int i = 0; i < count; i++)
+	{
+		int ii = start + i;
+		if(!game->e.active[ii]) { continue; }
+		if(!game->e.flags[ii][e_entity_flag_sine_alpha]) { continue; }
+
+		float s = sinf2(game->e.time_lived[ii] * 5);
+		float a = at_least(0, lerp(-2, 1, s));
+		game->e.color[ii].w = a;
+
+	}
 }

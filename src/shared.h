@@ -67,6 +67,7 @@ struct s_projectile_spawn_data
 	float spiral_offset;
 	b8 collide_ground_only;
 	b8 collide_air_only;
+	b8 sine_alpha;
 
 	e_on_spawn on_spawn;
 
@@ -356,6 +357,7 @@ enum e_entity_flag
 	e_entity_flag_increase_time_lived,
 	e_entity_flag_modify_speed,
 	e_entity_flag_modify_size,
+	e_entity_flag_sine_alpha,
 	e_entity_flag_count,
 };
 

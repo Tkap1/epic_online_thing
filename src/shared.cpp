@@ -612,6 +612,12 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	data = make_basic_top_projectile(10000, e_side_top);
+	data.sine_alpha = true;
+	levels[game->level_count].spawn_data.add(data);
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
 	// @Note(tkap, 26/06/2023): Blank level to avoid wrapping
 	game->level_count++;
 }
@@ -828,6 +834,11 @@ func void apply_projectile_modifiers(int entity, s_projectile_spawn_data data)
 	game->e.size_curve[entity] = data.size_curve;
 
 	game->e.out_of_bounds_offset[entity] = data.out_of_bounds_offset;
+
+	if(data.sine_alpha)
+	{
+		game->e.flags[entity][e_entity_flag_sine_alpha] = true;
+	}
 
 	if(data.collide_ground_only)
 		game->e.flags[entity][e_entity_flag_collide_ground_only] = true;
