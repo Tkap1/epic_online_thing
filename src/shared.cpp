@@ -147,10 +147,10 @@ func void projectile_bounds_check_system(int start, int count)
 
 		float radius = game->e.modified_sx[ii];
 		if(
-			game->e.x[ii] + radius < -c_projectile_out_of_bounds_offset ||
-			game->e.y[ii] + radius < -c_projectile_out_of_bounds_offset ||
-			game->e.x[ii] - radius > c_base_res.x + c_projectile_out_of_bounds_offset ||
-			game->e.y[ii] - radius > c_base_res.y + c_projectile_out_of_bounds_offset
+			game->e.x[ii] + radius < -game->e.out_of_bounds_offset[ii] ||
+			game->e.y[ii] + radius < -game->e.out_of_bounds_offset[ii] ||
+			game->e.x[ii] - radius > c_base_res.x + game->e.out_of_bounds_offset[ii] ||
+			game->e.y[ii] - radius > c_base_res.y + game->e.out_of_bounds_offset[ii]
 		)
 		{
 			game->e.active[ii] = false;
@@ -266,47 +266,42 @@ func void init_levels(void)
 	// @Note(tkap, 01/07/2023): Just for convenience, so we can just say "data = ..." instead of "s_projectile_spawn_data data = ..."
 	s_projectile_spawn_data data = zero;
 
-	levels[game->level_count].spawn_data.add(make_basic_top_projectile(4000, 0));
+	levels[game->level_count].spawn_data.add(make_basic_top_projectile(4000, e_side_top));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	levels[game->level_count].spawn_data.add(make_basic_side_projectile(2000, 0));
+	levels[game->level_count].spawn_data.add(make_basic_side_projectile(2000, e_side_left));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	// MARK: here
-	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(3000, 1));
+	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(3000, e_side_right));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1000, 1));
+	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1000, e_side_right));
 	levels[game->level_count].spawn_data.add(make_ground_shot_projectile(3500));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(2800, 0));
+	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(2800, e_side_left));
 	levels[game->level_count].spawn_data.add(make_air_shot_projectile(10000));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(2800, 1));
+	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(2800, e_side_right));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	// @Fixme(tkap, 01/07/2023):
-	// levels[game->level_count].spawn_data.add({
-	// 	.type = e_projectile_type_spawner,
-	// 	.delay = speed(1000),
-	// });
-	// game->level_count++;
-	// -----------------------------------------------------------------------------
-
-	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(3300, 0));
+	levels[game->level_count].spawn_data.add(make_spawner_projectile(1000, e_side_left));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1000, 0));
-	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1000, 1));
+	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(3300, e_side_left));
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
+	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1000, e_side_left));
+	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1000, e_side_right));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
@@ -314,75 +309,56 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	levels[game->level_count].spawn_data.add(make_basic_top_projectile(3000, 0));
-	levels[game->level_count].spawn_data.add(make_basic_side_projectile(2500, 0));
+	levels[game->level_count].spawn_data.add(make_basic_top_projectile(3000, e_side_top));
+	levels[game->level_count].spawn_data.add(make_basic_side_projectile(2500, e_side_left));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(3500, 0));
-	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(2500, 1));
+	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(3500, e_side_left));
+	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(2500, e_side_right));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	levels[game->level_count].spawn_data.add(make_basic_top_projectile(2000, 0));
-	// @Fixme(tkap, 01/07/2023):
-	// levels[game->level_count].spawn_data.add({
-	// 	.type = e_projectile_type_spawner,
-	// 	.delay = speed(1500),
-	// });
+	levels[game->level_count].spawn_data.add(make_basic_top_projectile(2000, e_side_top));
+	levels[game->level_count].spawn_data.add(make_spawner_projectile(1500, e_side_left));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	levels[game->level_count].spawn_data.add(make_basic_side_projectile(2200, 1));
-	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(1000, 0));
+	levels[game->level_count].spawn_data.add(make_basic_side_projectile(2200, e_side_right));
+	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(1000, e_side_left));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(4000, 0));
-	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(4000, 1));
+	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(4000, e_side_left));
+	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(4000, e_side_right));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	levels[game->level_count].spawn_data.add(make_basic_top_projectile(4000, 0));
-	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1200, 0));
-	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1200, 1));
+	levels[game->level_count].spawn_data.add(make_basic_top_projectile(4000, e_side_top));
+	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1200, e_side_left));
+	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1200, e_side_right));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(2200, 0));
-	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(2200, 1));
+	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(2200, e_side_left));
+	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(2200, e_side_right));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	// @Fixme(tkap, 01/07/2023):
-	// levels[game->level_count].spawn_data.add({
-	// 	.type = e_projectile_type_corner_shot,
-	// 	.delay = speed(3333),
-	// });
-	// game->level_count++;
+	levels[game->level_count].spawn_data.add(make_corner_shot_projectile(3333));
+	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	// @Fixme(tkap, 01/07/2023):
-	// levels[game->level_count].spawn_data.add({
-	// 	.type = e_projectile_type_shockwave,
-	// 	.delay = speed(2777),
-	// });
-	// game->level_count++;
-	// -----------------------------------------------------------------------------
-
-	levels[game->level_count].spawn_data.add(make_cross_projectile(1000));
-	// @Fixme(tkap, 01/07/2023):
-	// levels[game->level_count].spawn_data.add({
-	// 	.type = e_projectile_type_shockwave,
-	// 	.delay = speed(2000),
-	// });
+	levels[game->level_count].spawn_data.add(make_shockwave_projectile(2777));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
 	// @Note(tkap, 25/06/2023): Maze
-	data = make_basic_top_projectile(25000, 0);
-	data.speed_multiplier = 0.33f;
-	data.size_multiplier = 0.25f;
+	data = make_basic_top_projectile(25000, e_side_top);
+	data.speed[0] *= 0.33f;
+	data.speed[1] *= 0.33f;
+	data.size[0] *= 0.25f;
+	data.size[1] *= 0.25f;
 	data.speed_curve = {
 		.start_seconds = {0},
 		.end_seconds = {1},
@@ -392,12 +368,12 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	data = make_basic_side_projectile(2000, 0);
+	data = make_basic_side_projectile(2000, e_side_left);
 	data.speed[0] *= 1.5f;
 	data.speed[1] *= 1.5f;
 	levels[game->level_count].spawn_data.add(data);
 
-	data = make_basic_side_projectile(1400, 1);
+	data = make_basic_side_projectile(1400, e_side_right);
 	data.speed[0] *= 0.25f;
 	data.speed[1] *= 0.25f;
 	levels[game->level_count].spawn_data.add(data);
@@ -406,24 +382,24 @@ func void init_levels(void)
 
 	// @Note(tkap, 26/06/2023): Can't be on bottom, infinite jump
 	levels[game->level_count].infinite_jumps = true;
-	data = make_basic_side_projectile(3000, 0);
+	data = make_basic_side_projectile(3000, e_side_left);
 	data.speed[0] *= 2.0f;
 	data.speed[1] *= 2.0f;
 	data.y[0] = c_base_res.y * 0.96f;
 	data.y[1] = c_base_res.y * 0.96f;
 	levels[game->level_count].spawn_data.add(data);
 
-	data = make_basic_side_projectile(3000, 1);
+	data = make_basic_side_projectile(3000, e_side_right);
 	data.speed[0] *= 2.0f;
 	data.speed[1] *= 2.0f;
 	data.y[0] = c_base_res.y * 0.96f;
 	data.y[1] = c_base_res.y * 0.96f;
 	levels[game->level_count].spawn_data.add(data);
 
-	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1000, 0));
-	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1000, 1));
+	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1000, e_side_left));
+	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1000, e_side_right));
 
-	data = make_basic_top_projectile(8000, 0);
+	data = make_basic_top_projectile(8000, e_side_top);
 	data.size[0] *= 0.9f;
 	data.size[1] *= 0.9f;
 	levels[game->level_count].spawn_data.add(data);
@@ -431,47 +407,49 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	// @Fixme(tkap, 01/07/2023):
-	// levels[game->level_count].spawn_data.add({
-	// 	.type = e_projectile_type_spawner,
-	// 	.delay = speed(2500),
-	// 	.speed_curve = {
-	// 		.start_seconds = {0, 1},
-	// 		.end_seconds = {0.5f, 1.5f},
-	// 		.multiplier = {5, 5},
-	// 	},
-	// });
-
-	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(2000, 0));
-	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(2000, 1));
-	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1000, 0));
+	levels[game->level_count].spawn_data.add(make_cross_projectile(1000));
+	levels[game->level_count].spawn_data.add(make_shockwave_projectile(2000));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(2000, 0));
-	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(2000, 1));
-	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1000, 0));
-	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1000, 1));
-	levels[game->level_count].spawn_data.add(make_basic_top_projectile(1000, 0));
+	data = make_spawner_projectile(2500, e_side_left);
+	data.speed_curve = {
+		.start_seconds = {0, 1},
+		.end_seconds = {0.5f, 1.5f},
+		.multiplier = {5, 5},
+	};
+	levels[game->level_count].spawn_data.add(data);
+
+	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(2000, e_side_left));
+	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(2000, e_side_right));
+	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1000, e_side_left));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	data = make_top_diagonal_projectile(1500, 0);
+	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(2000, e_side_left));
+	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(2000, e_side_right));
+	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1000, e_side_left));
+	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1000, e_side_right));
+	levels[game->level_count].spawn_data.add(make_basic_top_projectile(1000, e_side_top));
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
+	data = make_top_diagonal_projectile(1500, e_side_left);
 	data.size[0] *= 0.25f;
 	data.size[1] *= 0.25f;
 	levels[game->level_count].spawn_data.add(data);
 
-	data = make_top_diagonal_projectile(1500, 1);
+	data = make_top_diagonal_projectile(1500, e_side_right);
 	data.size[0] *= 0.25f;
 	data.size[1] *= 0.25f;
 	levels[game->level_count].spawn_data.add(data);
 
-	data = make_basic_side_projectile(2000, 0);
+	data = make_basic_side_projectile(2000, e_side_left);
 	data.size[0] *= 0.25f;
 	data.size[1] *= 0.25f;
 	levels[game->level_count].spawn_data.add(data);
 
-	data = make_basic_side_projectile(2000, 1);
+	data = make_basic_side_projectile(2000, e_side_right);
 	data.size[0] *= 0.25f;
 	data.size[1] *= 0.25f;
 	levels[game->level_count].spawn_data.add(data);
@@ -481,14 +459,14 @@ func void init_levels(void)
 
 	levels[game->level_count].infinite_jumps = true;
 
-	data = make_basic_side_projectile(1000, 1);
+	data = make_basic_side_projectile(1000, e_side_right);
 	data.y[0] = c_base_res.y;
 	data.y[1] = c_base_res.y;
 	levels[game->level_count].spawn_data.add(data);
 
 	for(int i = 0; i < 5; i++)
 	{
-		data = make_basic_top_projectile(800, 0);
+		data = make_basic_top_projectile(800, e_side_top);
 		data.x[0] = c_base_res.x * (i / 4.0f);
 		data.x[1] = c_base_res.x * (i / 4.0f);
 		data.size[0] *= 2.6f;
@@ -497,7 +475,7 @@ func void init_levels(void)
 	}
 	for(int i = 0; i < 5; i++)
 	{
-		data = make_basic_top_projectile(300, 0);
+		data = make_basic_top_projectile(300, e_side_top);
 		data.x[0] = c_base_res.x * (i / 4.0f) + c_base_res.x * 0.12f;
 		data.x[1] = c_base_res.x * (i / 4.0f) + c_base_res.x * 0.12f;
 		data.size[0] *= 2.6f;
@@ -508,129 +486,119 @@ func void init_levels(void)
 	// -----------------------------------------------------------------------------
 
 	levels[game->level_count].infinite_jumps = true;
-	levels[game->level_count].spawn_data.add(make_basic_top_projectile(20000, 1));
+	levels[game->level_count].spawn_data.add(make_basic_top_projectile(20000, e_side_bottom));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	// @Fixme(tkap, 01/07/2023):
-	#if 0
 	levels[game->level_count].duration = 25;
-	levels[game->level_count].spawn_data.add({
-		.type = e_projectile_type_left_basic,
-		.delay = speed(3000),
-		.speed_multiplier = 0.25f,
-		.size_multiplier = 0.25f,
-		.speed_curve = {
-			.start_seconds = {0},
-			.end_seconds = {0.5f},
-			.multiplier = {20},
-		},
-	});
-	levels[game->level_count].spawn_data.add({
-		.type = e_projectile_type_top_basic,
-		.delay = speed(3000),
-		.speed_multiplier = 2.0f,
-		.size_multiplier = 4.0f,
-		.x_override = 0.2f * c_base_res.x,
-	});
-	levels[game->level_count].spawn_data.add({
-		.type = e_projectile_type_top_basic,
-		.delay = speed(3000),
-		.speed_multiplier = 2.0f,
-		.size_multiplier = 4.0f,
-		.x_override = 0.8f * c_base_res.x,
-	});
+	data = make_basic_side_projectile(3000, e_side_left);
+	data.speed[0] *= 0.25f;
+	data.speed[1] *= 0.25f;
+	data.size[0] *= 0.25f;
+	data.size[1] *= 0.25f;
+	data.speed_curve = {
+		.start_seconds = {0},
+		.end_seconds = {0.5f},
+		.multiplier = {20},
+	};
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_top_projectile(3000, e_side_top);
+	data.speed[0] *= 2.0f;
+	data.speed[1] *= 2.0f;
+	data.size[0] *= 4.0f;
+	data.size[1] *= 4.0f;
+	data.x[0] = c_base_res.x * 0.2f;
+	data.x[1] = c_base_res.x * 0.2f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data.x[0] = c_base_res.x * 0.8f;
+	data.x[1] = c_base_res.x * 0.8f;
+	levels[game->level_count].spawn_data.add(data);
+
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
 	// @Note(tkap, 29/06/2023): Giant green balls
-	levels[game->level_count].spawn_data.add({
-		.type = e_projectile_type_left_basic,
-		.delay = speed(1000),
-		.speed_multiplier = 3.0f,
-		.size_multiplier = 6.0f,
-		.y_override = c_base_res.y * 0.9f,
-	});
+	data = make_basic_side_projectile(1000, e_side_left);
+	data.speed[0] *= 3.0f;
+	data.speed[1] *= 3.0f;
+	data.size[0] *= 6.0f;
+	data.size[1] *= 6.0f;
+	data.y[0] = c_base_res.y * 0.9f;
+	data.y[1] = c_base_res.y * 0.9f;
+	levels[game->level_count].spawn_data.add(data);
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	levels[game->level_count].spawn_data.add({
-		.type = e_projectile_type_air_shot,
-		.delay = speed(6000),
-	});
-	levels[game->level_count].spawn_data.add({
-		.type = e_projectile_type_ground_shot,
-		.delay = speed(4444),
-	});
+	levels[game->level_count].spawn_data.add(make_air_shot_projectile(6000));
+	levels[game->level_count].spawn_data.add(make_ground_shot_projectile(4444));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
 	levels[game->level_count].spawn_pos = v2(c_base_res.x * 0.75f, c_base_res.y);
-	levels[game->level_count].spawn_data.add({
-		.type = e_projectile_type_spiral,
-		.delay = speed(7777),
-		.spiral_multiplier = 1,
-		.color_overide = v4(1.0f, 1.0f, 0.0f, 1.0f)
-	});
-	levels[game->level_count].spawn_data.add({
-		.type = e_projectile_type_left_basic,
-		.delay = speed(2222),
-		.size_multiplier = 0.35f,
-		.color_overide = v4(1.0f, 0.1f, 0.1f, 1.0f)
-	});
+	data = make_spiral_projectile(7777);
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_side_projectile(2222, e_side_left);
+	data.size[0] *= 0.35f;
+	data.size[1] *= 0.35f;
+	levels[game->level_count].spawn_data.add(data);
+
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
 	levels[game->level_count].infinite_jumps = true;
 	levels[game->level_count].spawn_pos = v2(c_base_res.x * 0.25f, c_base_res.y);
-	levels[game->level_count].spawn_data.add({
-		.type = e_projectile_type_spiral,
-		.delay = speed(12500),
-		.spiral_multiplier = 1,
-		.color_overide = v4(1.0f, 1.0f, 0.0f, 1.0f)
-	});
-	levels[game->level_count].spawn_data.add({
-		.type = e_projectile_type_spiral,
-		.delay = speed(12500),
-		.spiral_multiplier = -1,
-		.color_overide = v4(1.0f, 1.0f, 1.0f, 1.0f)
-	});
-	levels[game->level_count].spawn_data.add({
-		.type = e_projectile_type_right_full_height,
-		.delay = speed(3111),
-		.size_multiplier = 0.5f,
-	});
-	levels[game->level_count].spawn_data.add({
-		.type = e_projectile_type_right_full_height,
-		.delay = speed(444),
-		.size_multiplier = 1.0f,
-		.color_overide = v4(1.0f, 0.0f, 0.0f, 1.0f)
-	});
+	levels[game->level_count].spawn_data.add(make_spiral_projectile(12500));
+
+	data = make_spiral_projectile(12500);
+	data.spiral_multiplier = -1;
+	data.b[0] = 1;
+	data.b[1] = 1;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_side_projectile(3111, e_side_right);
+	data.y[0] = 0;
+	data.size[0] *= 0.5f;
+	data.size[1] *= 0.5f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_side_projectile(444, e_side_right);
+	data.y[0] = 0;
+	data.r[0] = 1;
+	data.r[1] = 1;
+	data.g[0] = 0;
+	data.g[1] = 0;
+	data.b[0] = 0;
+	data.b[1] = 0;
+	levels[game->level_count].spawn_data.add(data);
+
 	game->level_count++;
 	// -----------------------------------------------------------------------------
+
 	levels[game->level_count].infinite_jumps = true;
 	levels[game->level_count].spawn_pos = v2(c_base_res.x * 0.25f, c_base_res.y);
-	levels[game->level_count].spawn_data.add({
-		.type = e_projectile_type_spiral,
-		.delay = speed(125000),
-		.spiral_multiplier = 1,
-		.color_overide = v4(1.0f, 0.0f, 1.0f, 1.0f),
-		.collide_ground_only = true
-	});
-	levels[game->level_count].spawn_data.add({
-		.type = e_projectile_type_top_basic,
-		.delay = speed(23555),
-		.speed_multiplier = 0.45f,
-		.size_multiplier = 0.275f,
-		.speed_curve = {
-			.start_seconds = {0.1f},
-			.end_seconds = {0.5f},
-			.multiplier = {3},
-		},
-	});
+
+	data = make_spiral_projectile(125000);
+	data.set_non_random_color(1, 0, 1, 1);
+	data.collide_ground_only = true;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_top_projectile(23555, e_side_top);
+	data.speed[0] *= 0.45f;
+	data.speed[1] *= 0.45f;
+	data.size[0] *= 0.275f;
+	data.size[1] *= 0.275f;
+	data.speed_curve = {
+		.start_seconds = {0.1f},
+		.end_seconds = {0.5f},
+		.multiplier = {3},
+	};
+	levels[game->level_count].spawn_data.add(data);
+
 	game->level_count++;
 	// -----------------------------------------------------------------------------
-	#endif
 
 	// @Note(tkap, 26/06/2023): Blank level to avoid wrapping
 	game->level_count++;
@@ -844,17 +812,10 @@ func void increase_time_lived_system(int start, int count)
 
 func void apply_projectile_modifiers(int entity, s_projectile_spawn_data data)
 {
-	game->e.base_sx[entity] *= data.size_multiplier;
-	game->e.base_sy[entity] *= data.size_multiplier;
-	game->e.modified_sx[entity] *= data.size_multiplier;
-	game->e.modified_sy[entity] *= data.size_multiplier;
-
-	game->e.base_speed[entity] *= data.speed_multiplier;
-	game->e.modified_speed[entity] *= data.speed_multiplier;
-
 	game->e.speed_curve[entity] = data.speed_curve;
 	game->e.size_curve[entity] = data.size_curve;
 
+	game->e.out_of_bounds_offset[entity] = data.out_of_bounds_offset;
 
 	if(data.collide_ground_only)
 		game->e.flags[entity][e_entity_flag_collide_ground_only] = true;
@@ -951,10 +912,10 @@ func void modify_size_system(int start, int count)
 	}
 }
 
-func s_projectile_spawn_data make_basic_top_projectile(float speed, int side)
+func s_projectile_spawn_data make_basic_top_projectile(float speed, e_side side)
 {
-	float y = side == 0 ? -c_projectile_spawn_offset : c_base_res.y + c_projectile_spawn_offset;
-	float angle = side == 0 ? 0.25f : -0.25f;
+	float y = side == e_side_top ? -c_projectile_spawn_offset : c_base_res.y + c_projectile_spawn_offset;
+	float angle = side == e_side_top ? 0.25f : -0.25f;
 	return {
 		.delay = m_speed(speed),
 		.x = {0, c_base_res.x},
@@ -969,10 +930,58 @@ func s_projectile_spawn_data make_basic_top_projectile(float speed, int side)
 	};
 }
 
-func s_projectile_spawn_data make_basic_side_projectile(float speed, int side)
+func s_projectile_spawn_data make_spiral_projectile(float speed)
 {
-	float x = side == 0 ? -c_projectile_spawn_offset : c_base_res.x + c_projectile_spawn_offset;
-	float angle = side == 0 ? 0 : 0.5f;
+	return {
+		.delay = m_speed(speed),
+		.x = m_twice(c_base_res.x / 2),
+		.y = m_twice(c_base_res.y / 2),
+		.speed = m_twice(300),
+		.size = m_twice(22),
+		.r = m_twice(1),
+		.g = m_twice(1),
+		.b = m_twice(0),
+		.a = m_twice(1),
+		.spiral_multiplier = 1,
+		.on_spawn = e_on_spawn_spiral,
+	};
+}
+
+func s_projectile_spawn_data make_shockwave_projectile(float speed)
+{
+	return {
+		.delay = m_speed(speed),
+		.x = {0, c_base_res.x},
+		.y = {0, c_base_res.y / 3},
+		.speed = {125, 455},
+		.size = m_twice(66),
+		.angle = m_twice(0.25f),
+		.r = {0.05f, 1.0f},
+		.g = {0.85f, 1.0f},
+		.b = {0.05f, 1.0f},
+		.a = m_twice(1),
+		.on_spawn = e_on_spawn_shockwave,
+	};
+}
+
+func s_projectile_spawn_data make_corner_shot_projectile(float speed)
+{
+	return {
+		.delay = m_speed(speed),
+		.y = m_twice(0),
+		.size = m_twice(300),
+		.r = {0.775f, 1.0f},
+		.g = m_twice(0),
+		.b = m_twice(0),
+		.a = m_twice(1),
+		.on_spawn = e_on_spawn_corner_shot,
+	};
+}
+
+func s_projectile_spawn_data make_basic_side_projectile(float speed, e_side side)
+{
+	float x = side == e_side_left ? -c_projectile_spawn_offset : c_base_res.x + c_projectile_spawn_offset;
+	float angle = side == e_side_left ? 0 : 0.5f;
 	return {
 		.delay = m_speed(speed),
 		.x = {x, x},
@@ -987,13 +996,32 @@ func s_projectile_spawn_data make_basic_side_projectile(float speed, int side)
 	};
 }
 
-func s_projectile_spawn_data make_top_diagonal_projectile(float speed, int side)
+func s_projectile_spawn_data make_spawner_projectile(float speed, e_side side)
+{
+	float x = side == e_side_left ? -c_projectile_spawn_offset : c_base_res.x + c_projectile_spawn_offset;
+	float angle = side == e_side_left ? 0 : 0.5f;
+	return {
+		.delay = m_speed(speed),
+		.x = m_twice(x),
+		.y = m_twice(c_base_res.y * 0.5f),
+		.speed = m_twice(300),
+		.size = m_twice(50),
+		.angle = m_twice(angle),
+		.r = m_twice(0.1f),
+		.g = m_twice(0.1f),
+		.b = m_twice(0.9f),
+		.a = m_twice(1),
+		.on_spawn = e_on_spawn_spawner,
+	};
+}
+
+func s_projectile_spawn_data make_top_diagonal_projectile(float speed, e_side side)
 {
 	s_v2 pos = v2(
-		side == 0 ? 0 : c_base_res.x,
+		side == e_side_left ? 0 : c_base_res.x,
 		0
 	);
-	float opposite_x = side == 0 ? c_base_res.x : 0;
+	float opposite_x = side == e_side_left ? c_base_res.x : 0;
 	s_v2 a = v2(opposite_x, c_base_res.y * 0.7f) - pos;
 	s_v2 b = v2(pos.x, c_base_res.y) - pos;
 
@@ -1011,10 +1039,10 @@ func s_projectile_spawn_data make_top_diagonal_projectile(float speed, int side)
 	};
 }
 
-func s_projectile_spawn_data make_bottom_diagonal_projectile(float speed, int side)
+func s_projectile_spawn_data make_bottom_diagonal_projectile(float speed, e_side side)
 {
-	float angle = side == 0 ? -0.125f : 0.625f;
-	float x = side == 0 ? 0 : c_base_res.x;
+	float angle = side == e_side_left ? -0.125f : 0.625f;
+	float x = side == e_side_left ? 0 : c_base_res.x;
 
 	return {
 		.delay = m_speed(speed),
@@ -1050,8 +1078,6 @@ func s_projectile_spawn_data make_ground_shot_projectile(float speed)
 
 func s_projectile_spawn_data make_air_shot_projectile(float speed)
 {
-	// @Fixme(tkap, 01/07/2023): Projectiles too far offscreen get deleted. We either increase the value
-	// or make an exception for some projectiles
 	return {
 		.delay = m_speed(speed),
 		.x = {0, c_base_res.x * 2},
@@ -1064,9 +1090,9 @@ func s_projectile_spawn_data make_air_shot_projectile(float speed)
 		.b = {1, 1},
 		.a = {1, 1},
 		.collide_air_only = true,
+		.out_of_bounds_offset = 2000,
 	};
 }
-
 
 func s_projectile_spawn_data make_cross_projectile(float speed)
 {
@@ -1088,7 +1114,7 @@ func void on_spawn(int entity, s_projectile_spawn_data data)
 	{
 		case e_on_spawn_spiral:
 		{
-			float angle = data.spiral_offset + level_timer * data.spiral_multiplier;
+			float angle = data.spiral_offset + level_timer * data.spiral_multiplier * tau;
 			s_v2 dir = v2_from_angle(angle);
 			game->e.dir_x[entity] = dir.x;
 			game->e.dir_y[entity] = dir.y;
@@ -1152,6 +1178,71 @@ func void on_spawn(int entity, s_projectile_spawn_data data)
 			game->e.vel_x[entity] = vel.x;
 			game->e.vel_y[entity] = vel.y;
 
+		} break;
+
+		case e_on_spawn_spawner:
+		{
+			game->e.flags[entity][e_entity_flag_projectile_spawner] = true;
+			game->e.particle_spawner[entity].type = e_particle_spawner_default;
+			game->e.particle_spawner[entity].spawn_delay = 1.0f;
+		} break;
+
+		case e_on_spawn_corner_shot:
+		{
+			float size = chance100(&game->rng, 6) ? 200.f : randf_range(&game->rng, 45, 65);
+			float speed = randf_range(&game->rng, 166, 311);
+
+			int shock_proj_num = rand_range_ii(&game->rng, 7, 14);
+			float inc = tau / shock_proj_num;
+
+			float x = rand_bool(&game->rng) ? 0 : c_base_res.x;
+			game->e.x[entity] = x;
+			handle_instant_movement(entity);
+
+			float y = game->e.y[entity];
+			s_v4 color = game->e.color[entity];
+
+			for(int shock_proj_i = 0; shock_proj_i < shock_proj_num; shock_proj_i++)
+			{
+				int new_entity = make_projectile();
+				game->e.x[new_entity] = x;
+				game->e.y[new_entity] = y;
+				set_size(new_entity, size, 0);
+				set_speed(new_entity, speed);
+				game->e.dir_x[new_entity] = sinf(shock_proj_i * inc * tau);
+				game->e.dir_y[new_entity] = cosf(shock_proj_i * inc * tau);
+				game->e.color[new_entity] = color;
+				apply_projectile_modifiers(new_entity, data);
+				handle_instant_movement(new_entity);
+				handle_instant_resize(new_entity);
+			}
+		} break;
+
+		case e_on_spawn_shockwave:
+		{
+			int shock_proj_num = rand_range_ii(&game->rng, 7, 14);
+			float inc = tau / shock_proj_num;
+			float size = randf_range(&game->rng, 15, 55);
+			float speed = randf_range(&game->rng, 166, 311);
+
+			float x = game->e.x[entity];
+			float y = game->e.y[entity];
+			s_v4 color = game->e.color[entity];
+
+			for(int shock_proj_i = 0; shock_proj_i < shock_proj_num; shock_proj_i++)
+			{
+				int new_entity = make_projectile();
+				game->e.x[new_entity] = x;
+				game->e.y[new_entity] = y;
+				set_size(new_entity, size, 0);
+				set_speed(new_entity, speed);
+				game->e.dir_x[new_entity] = sinf(shock_proj_i * inc * 2 * pi);
+				game->e.dir_y[new_entity] = cosf(shock_proj_i * inc * 2 * pi);
+				game->e.color[new_entity] = color;
+				apply_projectile_modifiers(new_entity, data);
+				handle_instant_movement(new_entity);
+				handle_instant_resize(new_entity);
+			}
 		} break;
 
 		invalid_default_case;

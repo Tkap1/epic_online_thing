@@ -76,3 +76,8 @@ func b8 rand_bool(s_rng* rng)
 {
 	return randu(rng) & 1;
 }
+
+func b8 chance100(s_rng* rng, int chance)
+{
+	return rand_range_ii(rng, 1, 100) <= chance;
+}

@@ -9,6 +9,16 @@
 
 #define m_speed(val) (1000.0f / val)
 
+#define m_twice(expr) {(expr), (expr)}
+
+enum e_side
+{
+	e_side_left,
+	e_side_right,
+	e_side_top,
+	e_side_bottom,
+};
+
 enum e_curve_type
 {
 	e_curve_type_linear,
@@ -30,6 +40,9 @@ enum e_on_spawn
 	e_on_spawn_spiral,
 	e_on_spawn_cross,
 	e_on_spawn_bottom_diagonal,
+	e_on_spawn_spawner,
+	e_on_spawn_corner_shot,
+	e_on_spawn_shockwave,
 };
 
 struct s_projectile_spawn_data
@@ -48,19 +61,28 @@ struct s_projectile_spawn_data
 	float b[2];
 	float a[2];
 
-	// @Fixme(tkap, 30/06/2023): probably dont want this now
-	float speed_multiplier = 1;
-	float size_multiplier = 1;
-
 	s_float_curve speed_curve;
 	s_float_curve size_curve;
 	float spiral_multiplier = 1;
 	float spiral_offset;
-	s_v4 color_overide = v4(c_max_f32, c_max_f32, c_max_f32, c_max_f32);
 	b8 collide_ground_only;
 	b8 collide_air_only;
 
 	e_on_spawn on_spawn;
+
+	float out_of_bounds_offset = c_projectile_out_of_bounds_offset;
+
+	void set_non_random_color(float in_r, float in_g, float in_b, float in_a)
+	{
+		r[0] = in_r;
+		r[1] = in_r;
+		g[0] = in_g;
+		g[1] = in_g;
+		b[0] = in_b;
+		b[1] = in_b;
+		a[0] = in_a;
+		a[1] = in_a;
+	}
 };
 
 
@@ -365,6 +387,7 @@ struct s_entities
 	float time_lived[c_max_entities];
 	float duration[c_max_entities];
 	float best_time_on_level[c_max_entities];
+	float out_of_bounds_offset[c_max_entities];
 	s_particle_spawner particle_spawner[c_max_entities];
 	s_float_curve speed_curve[c_max_entities];
 	s_float_curve size_curve[c_max_entities];
@@ -390,13 +413,16 @@ func void apply_projectile_modifiers(int entity, s_projectile_spawn_data data);
 func void set_speed(int entity, float speed);
 func void set_size(int entity, float sx, float sy);
 func s_projectile_spawn_data make_basic_top_projectile(float speed);
-func s_projectile_spawn_data make_basic_side_projectile(float speed, int side);
-func s_projectile_spawn_data make_top_diagonal_projectile(float speed, int side);
+func s_projectile_spawn_data make_basic_side_projectile(float speed, e_side side);
+func s_projectile_spawn_data make_top_diagonal_projectile(float speed, e_side side);
 func s_projectile_spawn_data make_cross_projectile(float speed);
 func s_projectile_spawn_data make_ground_shot_projectile(float speed);
 func s_projectile_spawn_data make_air_shot_projectile(float speed);
-func s_projectile_spawn_data make_bottom_diagonal_projectile(float speed, int side);
-func s_projectile_spawn_data make_basic_top_projectile(float speed, int side);
-
+func s_projectile_spawn_data make_bottom_diagonal_projectile(float speed, e_side side);
+func s_projectile_spawn_data make_basic_top_projectile(float speed, e_side side);
+func s_projectile_spawn_data make_spawner_projectile(float speed, e_side side);
+func s_projectile_spawn_data make_corner_shot_projectile(float speed);
+func s_projectile_spawn_data make_shockwave_projectile(float speed);
+func s_projectile_spawn_data make_spiral_projectile(float speed);
 
 func void on_spawn(int entity, s_projectile_spawn_data data);
