@@ -669,7 +669,7 @@ func void draw_circle_system(int start, int count, float dt)
 		light_color.w *= 0.2f;
 		draw_light(v2(x, y), 0, radius * 8.0f, light_color, zero);
 		draw_circle(v2(x, y), 1, radius, game->e.color[ii], zero);
-		draw_circle(v2(x, y), 2, radius * 0.7f, v41f(1), zero);
+		draw_circle(v2(x, y), 2, radius * 0.7f, v41f(0.8f), zero);
 	}
 }
 

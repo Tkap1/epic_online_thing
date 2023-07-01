@@ -1,5 +1,6 @@
 
-#define pi (3.141f)
+global constexpr float pi =  3.1415926f;
+global constexpr float tau = 6.283185f;
 global constexpr float epsilon = 0.000001f;
 
 struct s_v2
@@ -159,4 +160,12 @@ func int floorfi(float x)
 func float fract(float x)
 {
 	return x - (int)x;
+}
+
+func s_v2 operator-(s_v2 a, s_v2 b)
+{
+	s_v2 result;
+	result.x = a.x - b.x;
+	result.y = a.y - b.y;
+	return result;
 }

@@ -71,3 +71,8 @@ func float randf_range(s_rng* rng, float min_val, float max_val)
 	float r = (float)randf(rng);
 	return min_val + (max_val - min_val) * r;
 }
+
+func b8 rand_bool(s_rng* rng)
+{
+	return randu(rng) & 1;
+}

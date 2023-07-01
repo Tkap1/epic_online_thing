@@ -7,27 +7,7 @@
 #define handle_instant_resize(entity)
 #endif
 
-enum e_projectile_type
-{
-	e_projectile_type_top_basic,
-	e_projectile_type_bottom_basic,
-	e_projectile_type_left_basic,
-	e_projectile_type_right_basic,
-	e_projectile_type_diagonal_left,
-	e_projectile_type_diagonal_right,
-	e_projectile_type_diagonal_bottom_left,
-	e_projectile_type_diagonal_bottom_right,
-	e_projectile_type_right_full_height,
-	e_projectile_type_corner_shot,
-	e_projectile_type_shockwave,
-	e_projectile_type_cross,
-	e_projectile_type_ground_shot,
-	e_projectile_type_air_shot,
-	e_projectile_type_spiral,
-	e_projectile_type_spawner,
-	e_projectile_type_count,
-};
-
+#define m_speed(val) (1000.0f / val)
 
 enum e_curve_type
 {
@@ -44,20 +24,43 @@ struct s_float_curve
 };
 
 
+enum e_on_spawn
+{
+	e_on_spawn_invalid,
+	e_on_spawn_spiral,
+	e_on_spawn_cross,
+	e_on_spawn_bottom_diagonal,
+};
+
 struct s_projectile_spawn_data
 {
-	e_projectile_type type;
 	float delay;
+	float x[2];
+	float y[2];
+	float speed[2];
+	float size[2];
+
+	// @Note(tkap, 30/06/2023): We store this as "turns", meaning that 1 is equal to "pi * 2", 0.5f is equal to "pi", and so on
+	float angle[2];
+
+	float r[2];
+	float g[2];
+	float b[2];
+	float a[2];
+
+	// @Fixme(tkap, 30/06/2023): probably dont want this now
 	float speed_multiplier = 1;
 	float size_multiplier = 1;
+
 	s_float_curve speed_curve;
 	s_float_curve size_curve;
-	float x_override = c_max_f32;
-	float y_override = c_max_f32;
 	float spiral_multiplier = 1;
+	float spiral_offset;
 	s_v4 color_overide = v4(c_max_f32, c_max_f32, c_max_f32, c_max_f32);
-	b8 collide_ground_only = false;
-	b8 collide_air_only = false;
+	b8 collide_ground_only;
+	b8 collide_air_only;
+
+	e_on_spawn on_spawn;
 };
 
 
@@ -379,9 +382,6 @@ func void gravity_system(int start, int count);
 func int make_player(u32 player_id, b8 dead, s_v4 color);
 func void init_levels(void);
 func void expire_system(int start, int count);
-func void make_diagonal_bottom_projectile(int entity, float x, float angle);
-func void make_diagonal_top_projectile(int entity, float x, float opposite_x);
-func void make_side_projectile(int entity, float x, float x_dir);
 func s_small_str str_to_name(char* str);
 func int make_entity(void);
 func void init_levels(void);
@@ -389,3 +389,14 @@ func void init_levels(void);
 func void apply_projectile_modifiers(int entity, s_projectile_spawn_data data);
 func void set_speed(int entity, float speed);
 func void set_size(int entity, float sx, float sy);
+func s_projectile_spawn_data make_basic_top_projectile(float speed);
+func s_projectile_spawn_data make_basic_side_projectile(float speed, int side);
+func s_projectile_spawn_data make_top_diagonal_projectile(float speed, int side);
+func s_projectile_spawn_data make_cross_projectile(float speed);
+func s_projectile_spawn_data make_ground_shot_projectile(float speed);
+func s_projectile_spawn_data make_air_shot_projectile(float speed);
+func s_projectile_spawn_data make_bottom_diagonal_projectile(float speed, int side);
+func s_projectile_spawn_data make_basic_top_projectile(float speed, int side);
+
+
+func void on_spawn(int entity, s_projectile_spawn_data data);
