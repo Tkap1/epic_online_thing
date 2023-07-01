@@ -379,6 +379,8 @@ struct s_entities
 	b8 on_ground[c_max_entities];
 	b8 dead[c_max_entities];
 	b8 drawn_last_render[c_max_entities];
+	b8 dashing[c_max_entities];
+	b8 can_dash[c_max_entities];
 	e_entity_type type[c_max_entities];
 	int id[c_max_entities];
 	int jumps_done[c_max_entities];
@@ -403,6 +405,8 @@ struct s_entities
 	float duration[c_max_entities];
 	float best_time_on_level[c_max_entities];
 	float out_of_bounds_offset[c_max_entities];
+	float dash_timer[c_max_entities];
+	float dash_dir[c_max_entities];
 	s_particle_spawner particle_spawner[c_max_entities];
 	s_float_curve speed_curve[c_max_entities];
 	s_float_curve size_curve[c_max_entities];
@@ -423,6 +427,8 @@ func void expire_system(int start, int count);
 func s_small_str str_to_name(char* str);
 func int make_entity(void);
 func void init_levels(void);
+func void start_dash(int entity);
+func void cancel_dash(int entity);
 
 func void apply_projectile_modifiers(int entity, s_projectile_spawn_data data);
 func void set_speed(int entity, float speed);

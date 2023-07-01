@@ -35,8 +35,8 @@ struct s_voice : IXAudio2VoiceCallback
 		// assert(sound.sample_count > 0);
 		// assert(sound.samples);
 		// free(sound.samples);
-		InterlockedExchange((LONG*)&playing, false);
 		voice->Stop();
+		InterlockedExchange((LONG*)&playing, false);
 	}
 
 	void OnBufferStart(void * pBufferContext)

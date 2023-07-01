@@ -550,6 +550,7 @@ func void input_system(int start, int count)
 	b8 go_down = (is_key_pressed(c_key_s) || is_key_pressed(c_key_down)) && !game->chatting;
 	b8 jump = (is_key_pressed(c_key_space) || is_key_pressed(c_key_w) || is_key_pressed(c_key_up)) && !game->chatting;
 	b8 jump_released = is_key_released(c_key_space) || is_key_released(c_key_w) || is_key_released(c_key_up);
+	b8 dash = (is_key_pressed(c_key_f) || is_key_pressed(c_key_left_shift)) && !game->chatting;
 
 	if(level.reversed_controls)
 	{
@@ -563,18 +564,23 @@ func void input_system(int start, int count)
 		if(!game->e.flags[ii][e_entity_flag_input]) { continue; }
 
 		game->e.dir_x[ii] = 0;
-		if(go_right)
+		if(go_right && !game->e.dashing[ii])
 		{
 			game->e.dir_x[ii] += 1;
 		}
-		if(go_left)
+		if(go_left && !game->e.dashing[ii])
 		{
 			game->e.dir_x[ii] -= 1;
+		}
+		if(!floats_equal(game->e.dir_x[ii], 0))
+		{
+			game->e.dash_dir[ii] = game->e.dir_x[ii];
 		}
 
 		if(go_down)
 		{
 			game->e.vel_y[ii] = max(game->e.vel_y[ii], c_fast_fall_speed);
+			cancel_dash(ii);
 		}
 
 		b8 can_jump = game->e.jumps_done[ii] < 2;
@@ -598,10 +604,17 @@ func void input_system(int start, int count)
 			game->e.jumping[ii] = true;
 			game->e.on_ground[ii] = false;
 			game->e.jumps_done[ii] += 1;
+
+			cancel_dash(ii);
 		}
 		else if(game->e.jumping[ii] && jump_released && game->e.vel_y[ii] < 0)
 		{
 			game->e.vel_y[ii] *= 0.5f;
+		}
+
+		if(dash && game->e.can_dash[ii] && !game->e.on_ground[ii])
+		{
+			start_dash(ii);
 		}
 	}
 }
@@ -939,6 +952,7 @@ func void collision_system(int start, int count)
 			)
 			{
 				game->e.dead[j] = true;
+				cancel_dash(j);
 				s_player_got_hit_from_client data = zero;
 				send_packet(e_packet_player_got_hit, data, ENET_PACKET_FLAG_RELIABLE);
 			}

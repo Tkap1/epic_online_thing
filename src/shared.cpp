@@ -11,10 +11,24 @@ func void player_movement_system(int start, int count)
 		if(!game->e.active[ii]) { continue; }
 		if(!game->e.flags[ii][e_entity_flag_player_movement]) { continue; }
 
-		game->e.x[ii] += game->e.dir_x[ii] * game->e.modified_speed[ii] * delta;
-		game->e.y[ii] += game->e.vel_y[ii] * delta;
+		if(game->e.dashing[ii])
+		{
+			game->e.x[ii] += game->e.dash_dir[ii] * c_dash_speed * delta;
+			game->e.dash_timer[ii] += delta;
+			game->e.vel_y[ii] = 0;
 
-		if(game->e.vel_y[ii] >= 0) { game->e.jumping[ii] = false; }
+			if(game->e.dash_timer[ii] >= c_dash_duration)
+			{
+				cancel_dash(ii);
+			}
+		}
+		else
+		{
+			game->e.x[ii] += game->e.dir_x[ii] * game->e.modified_speed[ii] * delta;
+			game->e.y[ii] += game->e.vel_y[ii] * delta;
+
+			if(game->e.vel_y[ii] >= 0) { game->e.jumping[ii] = false; }
+		}
 	}
 }
 
@@ -87,6 +101,9 @@ func void zero_entity(int index)
 	game->e.name[index] = zero;
 	game->e.drawn_last_render[index] = false;
 	game->e.best_time_on_level[index] = 0;
+
+	game->e.dash_timer[index] = 0;
+	game->e.dashing[index] = false;
 }
 
 func int find_player_by_id(u32 id)
@@ -128,6 +145,7 @@ func void player_bounds_check_system(int start, int count)
 		if(game->e.y[ii] - half_y < 0) { game->e.y[ii] = half_y; }
 		if(game->e.y[ii] + half_y > c_base_res.y)
 		{
+			game->e.can_dash[ii] = true;
 			game->e.jumping[ii] = false;
 			game->e.on_ground[ii] = true;
 			game->e.jumps_done[ii] = 0;
@@ -176,6 +194,8 @@ func int make_player(u32 player_id, b8 dead, s_v4 color)
 	game->e.flags[entity][e_entity_flag_increase_time_lived] = true;
 	game->e.type[entity] = e_entity_type_player;
 	game->e.color[entity] = color;
+	game->e.can_dash[entity] = true;
+	game->e.dash_dir[entity] = 1;
 
 	#ifdef m_client
 	if(player_id == game->my_id)
@@ -1270,4 +1290,19 @@ func void on_spawn(int entity, s_projectile_spawn_data data)
 
 		invalid_default_case;
 	}
+}
+
+
+
+func void start_dash(int entity)
+{
+	game->e.can_dash[entity] = false;
+	game->e.dashing[entity] = true;
+	game->e.dash_timer[entity] = 0;
+}
+
+func void cancel_dash(int entity)
+{
+	game->e.dashing[entity] = false;
+	game->e.dash_timer[entity] = 0;
 }
