@@ -259,8 +259,6 @@ func void init_levels(void)
 	{
 		levels[level_i].spawn_pos = default_spawn_position;
 		levels[level_i].duration = c_level_duration;
-		levels[level_i].infinite_jumps = false;
-		levels[level_i].reversed_controls = false;
 		levels[level_i].background = e_background_default;
 	}
 
@@ -587,10 +585,8 @@ func void init_levels(void)
 	levels[game->level_count].spawn_data.add(data);
 
 	data = make_basic_top_projectile(23555, e_side_top);
-	data.speed[0] *= 0.45f;
-	data.speed[1] *= 0.45f;
-	data.size[0] *= 0.275f;
-	data.size[1] *= 0.275f;
+	data.multiply_speed(0.45f);
+	data.multiply_size(0.275f);
 	data.speed_curve = {
 		.start_seconds = {0.1f},
 		.end_seconds = {0.5f},
@@ -603,17 +599,15 @@ func void init_levels(void)
 
 	levels[game->level_count].reversed_controls = true;
 	levels[game->level_count].spawn_data.add(make_basic_top_projectile(1234, e_side_top));
-	data = make_basic_side_projectile(3350, e_side_left);
-	data.speed[0] *= 0.66f;
-	data.speed[1] *= 0.66f;
-	data.size[0] *= 0.5f;
-	data.size[1] *= 0.5f;
+
+	data = make_basic_side_projectile(2850, e_side_left);
+	data.multiply_speed(0.8f);
+	data.multiply_size(0.5f);
 	levels[game->level_count].spawn_data.add(data);
+
 	data = make_basic_side_projectile(1270, e_side_right);
-	data.speed[0] *= 0.33f;
-	data.speed[1] *= 0.33f;
-	data.size[0] *= 0.2f;
-	data.size[1] *= 0.2f;
+	data.multiply_speed(0.5f);
+	data.multiply_size(0.2f);
 	levels[game->level_count].spawn_data.add(data);
 	game->level_count++;
 	// -----------------------------------------------------------------------------

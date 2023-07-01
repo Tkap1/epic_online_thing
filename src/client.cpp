@@ -549,9 +549,7 @@ func void input_system(int start, int count)
 
 	if(level.reversed_controls)
 	{
-		b8 temp = go_left;
-		go_left = go_right;
-		go_right = temp;
+		swap(&go_left, &go_right);
 	}
 
 	for(int i = 0; i < count; i++)

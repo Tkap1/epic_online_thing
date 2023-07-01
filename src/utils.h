@@ -271,5 +271,12 @@ struct s_sarray
 			}
 		}
 	}
-
 };
+
+template <typename T>
+func void swap(T* a, T* b)
+{
+	T temp = *a;
+	*a = *b;
+	*b = temp;
+}

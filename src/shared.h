@@ -83,6 +83,18 @@ struct s_projectile_spawn_data
 		a[0] = in_a;
 		a[1] = in_a;
 	}
+
+	void multiply_speed(float in_x)
+	{
+		speed[0] *= in_x;
+		speed[1] *= in_x;
+	}
+
+	void multiply_size(float in_x)
+	{
+		size[0] *= in_x;
+		size[1] *= in_x;
+	}
 };
 
 
