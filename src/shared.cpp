@@ -260,6 +260,7 @@ func void init_levels(void)
 		levels[level_i].spawn_pos = default_spawn_position;
 		levels[level_i].duration = c_level_duration;
 		levels[level_i].infinite_jumps = false;
+		levels[level_i].reversed_controls = false;
 		levels[level_i].background = e_background_default;
 	}
 
@@ -597,6 +598,23 @@ func void init_levels(void)
 	};
 	levels[game->level_count].spawn_data.add(data);
 
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
+	levels[game->level_count].reversed_controls = true;
+	levels[game->level_count].spawn_data.add(make_basic_top_projectile(1234, e_side_top));
+	data = make_basic_side_projectile(3350, e_side_left);
+	data.speed[0] *= 0.66f;
+	data.speed[1] *= 0.66f;
+	data.size[0] *= 0.5f;
+	data.size[1] *= 0.5f;
+	levels[game->level_count].spawn_data.add(data);
+	data = make_basic_side_projectile(1270, e_side_right);
+	data.speed[0] *= 0.33f;
+	data.speed[1] *= 0.33f;
+	data.size[0] *= 0.2f;
+	data.size[1] *= 0.2f;
+	levels[game->level_count].spawn_data.add(data);
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
