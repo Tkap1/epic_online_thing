@@ -73,6 +73,8 @@ global s_shader_paths shader_paths[e_shader_count] = {
 	},
 };
 
+s_sarray<s_trail_point, 4096> points;
+
 
 #define X(type, name) type name = null;
 m_gl_funcs
@@ -145,19 +147,22 @@ m_update_game(update_game)
 		glGenBuffers(1, &game->trail_vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, game->trail_vbo);
 
-		int stride = sizeof(float) * 3;
+		int stride = sizeof(float) * 7;
 		u8* offset = 0;
 
 		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, stride, offset);
 		glEnableVertexAttribArray(0);
 		offset += sizeof(float) * 2;
 
+		// @Note(tkap, 02/07/2023): Trail length
 		glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, stride, offset);
 		glEnableVertexAttribArray(1);
 		offset += sizeof(float) * 1;
 
-		// glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, offset);
-		// glEnableVertexAttribArray(1);
+		// @Note(tkap, 02/07/2023): Color
+		glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, stride, offset);
+		glEnableVertexAttribArray(2);
+		offset += sizeof(float) * 4;
 
 		// @Fixme(tkap, 02/07/2023): Not safe
 		glBufferData(GL_ARRAY_BUFFER, 100 * c_kb, null, GL_DYNAMIC_DRAW);
@@ -284,6 +289,7 @@ func void update(s_config config)
 				move_system(i * c_entities_per_thread, c_entities_per_thread);
 				player_movement_system(i * c_entities_per_thread, c_entities_per_thread);
 				physics_movement_system(i * c_entities_per_thread, c_entities_per_thread);
+				trail_timer_system(i * c_entities_per_thread, c_entities_per_thread);
 			}
 			for(int i = 0; i < c_num_threads; i++)
 			{
@@ -542,7 +548,6 @@ func void render(float dt)
 		for(int font_i = 0; font_i < e_font_count; font_i++)
 		{
 			glBindVertexArray(game->default_vao);
-			glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 			if(text_arr[font_i].count > 0)
 			{
 				s_font* font = &game->font_arr[font_i];
@@ -558,23 +563,6 @@ func void render(float dt)
 		// @Note(tkap, 02/07/2023): Trails
 		{
 
-			struct s_trail_point
-			{
-				float time;
-				s_v2 a;
-				s_v2 b;
-			};
-
-			struct s_trail_point_gpu
-			{
-				float x;
-				float y;
-				float distance_to_head;
-			};
-
-
-			static s_sarray<s_trail_point, 4096> points;
-
 			constexpr float trail_duration = 0.5f;
 
 			glUseProgram(game->programs[e_shader_trail]);
@@ -586,6 +574,8 @@ func void render(float dt)
 			int count = 0;
 			s_trail_point_gpu data[4096 * 2];
 
+			// MARK: here
+
 			float distance = 0;
 			s_v2 previous_middle = zero;
 			for(int point_i = points.count - 1; point_i >= 0; point_i--)
@@ -594,6 +584,12 @@ func void render(float dt)
 				s_trail_point* point = &points[point_i];
 				s_v2 middle = (point->a + point->b) * 0.5f;
 
+				float percent2 = 1;
+				if(points.count > 1)
+				{
+					percent2 = point_i / (float)(points.count - 1);
+				}
+
 				if(point_i != points.count - 1)
 				{
 					distance += v2_length(middle - previous_middle);
@@ -601,15 +597,18 @@ func void render(float dt)
 				previous_middle = middle;
 
 				float percent = at_most(1, point->time / trail_duration);
+				percent = powf(percent, 0.9f);
 				s_v2 a_new = lerp(point->a, middle, percent);
 				s_v2 b_new = lerp(point->b, middle, percent);
 
 				data[count * 2].x = a_new.x;
 				data[count * 2].y = a_new.y;
 				data[count * 2].distance_to_head = distance;
+				data[count * 2].color = point->color;
 				data[count * 2 + 1].x = b_new.x;
 				data[count * 2 + 1].y = b_new.y;
 				data[count * 2 + 1].distance_to_head = distance;
+				data[count * 2 + 1].color = point->color;
 				count += 1;
 
 				point->time += delta;
@@ -624,36 +623,8 @@ func void render(float dt)
 				glUniform1fv(location, 1, &distance);
 			}
 
-			float size = 32;
-
-			{
-				s_v2 a = previous_mouse;
-				s_v2 b = g_platform_data.mouse;
-
-				if(v2_length(b - a) > 0.1f)
-				{
-					float dir_angle = v2_angle(b - a);
-					for(int i = 0; i < 10; i++)
-					{
-						float percent = i / 9.0f;
-						s_v2 p = lerp(a, b, percent);
-
-						s_v2 a_new = v2(
-							cosf(dir_angle - pi / 2) * size,
-							sinf(dir_angle - pi / 2) * size
-						);
-
-						s_v2 b_new = v2(
-							cosf(dir_angle + pi / 2) * size,
-							sinf(dir_angle + pi / 2) * size
-						);
-
-						points.add({.a = p + a_new, .b = p + b_new});
-					}
-				}
-			}
-
 			glEnable(GL_DEPTH_TEST);
+			glEnable(GL_BLEND);
 			glBlendFunc(GL_ONE, GL_ONE);
 			glBindVertexArray(game->trail_vao);
 			glBindBuffer(GL_ARRAY_BUFFER, game->trail_vbo);
@@ -792,6 +763,16 @@ func void draw_system(int start, int count, float dt)
 		float sy = lerp(game->e.prev_sy[ii], game->e.modified_sy[ii], dt);
 
 		b8 this_character_is_me = game->e.player_id[ii] == game->my_id;
+
+		if(this_character_is_me && game->e.trail_timer[ii] > 0)
+		{
+			s_v2 a = v2(game->e.prev_x[ii], game->e.prev_y[ii]);
+			s_v2 b = v2(x, y);
+			if(v2_length(b - a) > 0.1f)
+			{
+				add_trail(a, b, v2(sx / 2, sy / 2), game->e.color[ii]);
+			}
+		}
 
 		s_v4 color = game->e.color[ii];
 		if(game->e.dead[ii])
@@ -1621,3 +1602,54 @@ func void sine_alpha_system(int start, int count)
 
 	}
 }
+
+func void trail_timer_system(int start, int count)
+{
+	for(int i = 0; i < count; i++)
+	{
+		int ii = start + i;
+		if(!game->e.active[ii]) { continue; }
+		game->e.trail_timer[ii] -= delta;
+	}
+}
+
+func void add_trail(s_v2 a, s_v2 b, s_v2 in_size, s_v4 color)
+{
+	// MARK: here
+	float dir_angle = v2_angle(b - a);
+
+	if(dir_angle < 0)
+	{
+		dir_angle += pi;
+	}
+
+	float temp = 0;
+	if(dir_angle > pi / 2)
+	{
+		temp = range_lerp(dir_angle, pi / 2, pi, 1, 0);
+	}
+	else
+	{
+		temp = range_lerp(dir_angle, 0, pi / 2, 0, 1);
+	}
+	float size = lerp(in_size.y, in_size.x, temp);
+
+	for(int i = 0; i < 10; i++)
+	{
+		float percent = i / 9.0f;
+		s_v2 p = lerp(a, b, percent);
+
+		s_v2 a_new = v2(
+			cosf(dir_angle - pi / 2) * size,
+			sinf(dir_angle - pi / 2) * size
+		);
+
+		s_v2 b_new = v2(
+			cosf(dir_angle + pi / 2) * size,
+			sinf(dir_angle + pi / 2) * size
+		);
+
+		points.add({.a = p + a_new, .b = p + b_new, .color = color});
+	}
+}
+

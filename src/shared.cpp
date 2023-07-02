@@ -101,6 +101,7 @@ func void zero_entity(int index)
 	game->e.name[index] = zero;
 	game->e.drawn_last_render[index] = false;
 	game->e.best_time_on_level[index] = 0;
+	game->e.trail_timer[index] = 0;
 
 	game->e.dash_timer[index] = 0;
 	game->e.dashing[index] = false;
@@ -1299,6 +1300,7 @@ func void start_dash(int entity)
 	game->e.can_dash[entity] = false;
 	game->e.dashing[entity] = true;
 	game->e.dash_timer[entity] = 0;
+	game->e.trail_timer[entity] = c_dash_duration * 4.0f;
 }
 
 func void cancel_dash(int entity)

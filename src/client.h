@@ -86,6 +86,22 @@ struct s_shader_paths
 	char* fragment_path;
 };
 
+struct s_trail_point
+{
+	float time;
+	s_v2 a;
+	s_v2 b;
+	s_v4 color;
+};
+
+struct s_trail_point_gpu
+{
+	float x;
+	float y;
+	float distance_to_head;
+	s_v4 color;
+};
+
 
 struct s_game
 {
@@ -167,3 +183,5 @@ func e_string_input_result handle_string_input(T* str);
 func void hot_reload_shaders(void);
 #endif // m_debug
 
+func void add_trail(s_v2 a, s_v2 b, s_v2 in_size, s_v4 color);
+func void trail_timer_system(int start, int count);

@@ -203,3 +203,8 @@ func float v2_length(s_v2 a)
 {
 	return sqrtf(a.x * a.x + a.y * a.y);
 }
+
+func float range_lerp(float input_val, float input_start, float input_end, float output_start, float output_end)
+{
+	return output_start + ((output_end - output_start) / (input_end - input_start)) * (input_val - input_start);
+}

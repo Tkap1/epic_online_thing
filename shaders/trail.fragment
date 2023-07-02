@@ -4,6 +4,7 @@ layout(origin_upper_left) in vec4 gl_FragCoord;
 
 in float v_distance_to_head;
 in vec2 v_pos;
+in vec4 v_color;
 
 out vec4 out_color;
 
@@ -19,8 +20,9 @@ void main()
 {
 	float d = v_distance_to_head;
 	float a = 1.0 - (d / trail_length);
-	vec4 col = vec4(1,0,0,1);
-	col.rgb *= a;
+	a *= v_color.a;
+	vec4 col = v_color;
+	col *= a;
 	out_color = col;
 }
 

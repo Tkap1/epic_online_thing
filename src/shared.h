@@ -407,6 +407,7 @@ struct s_entities
 	float out_of_bounds_offset[c_max_entities];
 	float dash_timer[c_max_entities];
 	float dash_dir[c_max_entities];
+	float trail_timer[c_max_entities];
 	s_particle_spawner particle_spawner[c_max_entities];
 	s_float_curve speed_curve[c_max_entities];
 	s_float_curve size_curve[c_max_entities];
