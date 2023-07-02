@@ -1,0 +1,26 @@
+
+
+layout(origin_upper_left) in vec4 gl_FragCoord;
+
+in float v_distance_to_head;
+in vec2 v_pos;
+
+out vec4 out_color;
+
+uniform vec2 window_size;
+uniform float trail_length;
+
+vec4 pma(vec4 col)
+{
+	return vec4(col.rgb * col.a, col.a);
+}
+
+void main()
+{
+	float d = v_distance_to_head;
+	float a = 1.0 - (d / trail_length);
+	vec4 col = vec4(1,0,0,1);
+	col.rgb *= a;
+	out_color = col;
+}
+

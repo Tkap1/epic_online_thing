@@ -1,0 +1,21 @@
+
+layout (location = 0) in vec2 vertices;
+layout (location = 1) in float distance_to_head;
+
+uniform vec2 window_size;
+
+out float v_distance_to_head;
+out vec2 v_pos;
+
+void main()
+{
+	vec2 pos = vertices * (2 / window_size) - 1;
+	pos.y *= -1;
+
+	v_pos = vertices;
+	v_distance_to_head = distance_to_head;
+
+	// v_uv = uv;
+
+	gl_Position = vec4(pos, 0.9, 1);
+}

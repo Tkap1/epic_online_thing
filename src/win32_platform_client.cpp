@@ -132,6 +132,13 @@ int main(int argc, char** argv)
 			update_game(platform_data, platform_funcs, &game_network, game_memory, true);
 		}
 
+
+		POINT p;
+		GetCursorPos(&p);
+		ScreenToClient(g_window.handle, &p);
+		platform_data.mouse.x = (float)p.x;
+		platform_data.mouse.y = (float)p.y;
+
 		if(game_network.connect_to_server)
 		{
 			game_network.connect_to_server = false;
@@ -141,6 +148,7 @@ int main(int argc, char** argv)
 		{
 			enet_loop(platform_network.client, 0, &game_network, parse_packet);
 		}
+
 		update_game(platform_data, platform_funcs, &game_network, game_memory, false);
 		platform_data.recompiled = false;
 

@@ -18,6 +18,7 @@ X(PFNGLVERTEXATTRIBDIVISORPROC, glVertexAttribDivisor) \
 X(PFNGLDRAWARRAYSINSTANCEDPROC, glDrawArraysInstanced) \
 X(PFNGLDEBUGMESSAGECALLBACKPROC, glDebugMessageCallback) \
 X(PFNGLBINDBUFFERBASEPROC, glBindBufferBase) \
+X(PFNGLUNIFORM1FVPROC, glUniform1fv) \
 X(PFNGLUNIFORM2FVPROC, glUniform2fv) \
 X(PFNGLGETUNIFORMLOCATIONPROC, glGetUniformLocation) \
 X(PFNGLUSEPROGRAMPROC, glUseProgram) \
@@ -232,6 +233,7 @@ struct s_platform_data
 	s_input* input;
 	s_sarray<s_char_event, 1024>* char_event_arr;
 	s_lin_arena* frame_arena;
+	s_v2 mouse;
 };
 
 struct s_platform_funcs

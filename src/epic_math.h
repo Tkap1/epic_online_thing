@@ -140,6 +140,11 @@ func float at_least(float a, float b)
 	return a > b ? a : b;
 }
 
+func float at_most(float a, float b)
+{
+	return b > a ? a : b;
+}
+
 func b8 floats_equal(float a, float b)
 {
 	return (a >= b - epsilon && a <= b + epsilon);
@@ -168,4 +173,33 @@ func s_v2 operator-(s_v2 a, s_v2 b)
 	result.x = a.x - b.x;
 	result.y = a.y - b.y;
 	return result;
+}
+
+func s_v2 operator+(s_v2 a, s_v2 b)
+{
+	s_v2 result;
+	result.x = a.x + b.x;
+	result.y = a.y + b.y;
+	return result;
+}
+
+func s_v2 operator*(s_v2 a, float b)
+{
+	s_v2 result;
+	result.x = a.x * b;
+	result.y = a.y * b;
+	return result;
+}
+
+func s_v2 lerp(s_v2 a, s_v2 b, float t)
+{
+	s_v2 result;
+	result.x = lerp(a.x, b.x, t);
+	result.y = lerp(a.y, b.y, t);
+	return result;
+}
+
+func float v2_length(s_v2 a)
+{
+	return sqrtf(a.x * a.x + a.y * a.y);
 }

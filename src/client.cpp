@@ -60,6 +60,20 @@ global s_game_network* g_network;
 
 global s_game* game;
 
+global s_v2 previous_mouse;
+
+global s_shader_paths shader_paths[e_shader_count] = {
+	{
+		.vertex_path = "shaders/vertex.vertex",
+		.fragment_path = "shaders/fragment.fragment",
+	},
+	{
+		.vertex_path = "shaders/trail.vertex",
+		.fragment_path = "shaders/trail.fragment",
+	},
+};
+
+
 #define X(type, name) type name = null;
 m_gl_funcs
 #undef X
@@ -112,17 +126,42 @@ m_update_game(update_game)
 		game->font_arr[e_font_medium] = load_font("assets/consola.ttf", 36, frame_arena);
 		game->font_arr[e_font_big] = load_font("assets/consola.ttf", 72, frame_arena);
 
-		u32 vao;
-		u32 ssbo;
-		game->program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
+		for(int shader_i = 0; shader_i < e_shader_count; shader_i++)
+		{
+			game->programs[shader_i] = load_shader(shader_paths[shader_i].vertex_path, shader_paths[shader_i].fragment_path);
+		}
 
-		glGenVertexArrays(1, &vao);
-		glBindVertexArray(vao);
+		glGenVertexArrays(1, &game->default_vao);
+		glBindVertexArray(game->default_vao);
 
-		glGenBuffers(1, &ssbo);
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo);
+		glGenBuffers(1, &game->default_ssbo);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, game->default_ssbo);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, game->default_ssbo);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(transforms.elements), null, GL_DYNAMIC_DRAW);
+
+		glGenVertexArrays(1, &game->trail_vao);
+		glBindVertexArray(game->trail_vao);
+
+		glGenBuffers(1, &game->trail_vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, game->trail_vbo);
+
+		int stride = sizeof(float) * 3;
+		u8* offset = 0;
+
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, stride, offset);
+		glEnableVertexAttribArray(0);
+		offset += sizeof(float) * 2;
+
+		glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, stride, offset);
+		glEnableVertexAttribArray(1);
+		offset += sizeof(float) * 1;
+
+		// glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, offset);
+		// glEnableVertexAttribArray(1);
+
+		// @Fixme(tkap, 02/07/2023): Not safe
+		glBufferData(GL_ARRAY_BUFFER, 100 * c_kb, null, GL_DYNAMIC_DRAW);
+
 	}
 
 	if(platform_data.recompiled)
@@ -471,7 +510,7 @@ func void render(float dt)
 	}
 
 	{
-		glUseProgram(game->program);
+		glUseProgram(game->programs[e_shader_default]);
 		// glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClearDepth(0.0f);
@@ -481,16 +520,17 @@ func void render(float dt)
 		glDepthFunc(GL_GREATER);
 
 		{
-			int location = glGetUniformLocation(game->program, "window_size");
+			int location = glGetUniformLocation(game->programs[e_shader_default], "window_size");
 			glUniform2fv(location, 1, &g_window.size.x);
 		}
 		{
-			int location = glGetUniformLocation(game->program, "time");
+			int location = glGetUniformLocation(game->programs[e_shader_default], "time");
 			glUniform1f(location, game->total_time);
 		}
 
 		if(transforms.count > 0)
 		{
+			glBindVertexArray(game->default_vao);
 			glEnable(GL_BLEND);
 			// glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 			glBlendFunc(GL_ONE, GL_ONE);
@@ -501,6 +541,7 @@ func void render(float dt)
 
 		for(int font_i = 0; font_i < e_font_count; font_i++)
 		{
+			glBindVertexArray(game->default_vao);
 			glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 			if(text_arr[font_i].count > 0)
 			{
@@ -513,6 +554,116 @@ func void render(float dt)
 				text_arr[font_i].count = 0;
 			}
 		}
+
+		// @Note(tkap, 02/07/2023): Trails
+		{
+
+			struct s_trail_point
+			{
+				float time;
+				s_v2 a;
+				s_v2 b;
+			};
+
+			struct s_trail_point_gpu
+			{
+				float x;
+				float y;
+				float distance_to_head;
+			};
+
+
+			static s_sarray<s_trail_point, 4096> points;
+
+			constexpr float trail_duration = 0.5f;
+
+			glUseProgram(game->programs[e_shader_trail]);
+			{
+				int location = glGetUniformLocation(game->programs[e_shader_trail], "window_size");
+				glUniform2fv(location, 1, &g_window.size.x);
+			}
+
+			int count = 0;
+			s_trail_point_gpu data[4096 * 2];
+
+			float distance = 0;
+			s_v2 previous_middle = zero;
+			for(int point_i = points.count - 1; point_i >= 0; point_i--)
+			// foreach(point_i, point, points)
+			{
+				s_trail_point* point = &points[point_i];
+				s_v2 middle = (point->a + point->b) * 0.5f;
+
+				if(point_i != points.count - 1)
+				{
+					distance += v2_length(middle - previous_middle);
+				}
+				previous_middle = middle;
+
+				float percent = at_most(1, point->time / trail_duration);
+				s_v2 a_new = lerp(point->a, middle, percent);
+				s_v2 b_new = lerp(point->b, middle, percent);
+
+				data[count * 2].x = a_new.x;
+				data[count * 2].y = a_new.y;
+				data[count * 2].distance_to_head = distance;
+				data[count * 2 + 1].x = b_new.x;
+				data[count * 2 + 1].y = b_new.y;
+				data[count * 2 + 1].distance_to_head = distance;
+				count += 1;
+
+				point->time += delta;
+				if(point->time >= trail_duration)
+				{
+					points.remove_and_shift(point_i--);
+				}
+			}
+
+			{
+				int location = glGetUniformLocation(game->programs[e_shader_trail], "trail_length");
+				glUniform1fv(location, 1, &distance);
+			}
+
+			float size = 32;
+
+			{
+				s_v2 a = previous_mouse;
+				s_v2 b = g_platform_data.mouse;
+
+				if(v2_length(b - a) > 0.1f)
+				{
+					float dir_angle = v2_angle(b - a);
+					for(int i = 0; i < 10; i++)
+					{
+						float percent = i / 9.0f;
+						s_v2 p = lerp(a, b, percent);
+
+						s_v2 a_new = v2(
+							cosf(dir_angle - pi / 2) * size,
+							sinf(dir_angle - pi / 2) * size
+						);
+
+						s_v2 b_new = v2(
+							cosf(dir_angle + pi / 2) * size,
+							sinf(dir_angle + pi / 2) * size
+						);
+
+						points.add({.a = p + a_new, .b = p + b_new});
+					}
+				}
+			}
+
+			glEnable(GL_DEPTH_TEST);
+			glBlendFunc(GL_ONE, GL_ONE);
+			glBindVertexArray(game->trail_vao);
+			glBindBuffer(GL_ARRAY_BUFFER, game->trail_vbo);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(s_trail_point_gpu) * count * 2, data);
+			glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, count * 2, 1);
+			glDisable(GL_DEPTH_TEST);
+
+			previous_mouse = g_platform_data.mouse;
+		}
+
 	}
 
 	#ifdef m_debug
@@ -1099,27 +1250,32 @@ func s_v2 get_text_size(const char* text, e_font font_id)
 global FILETIME last_write_time = zero;
 func void hot_reload_shaders(void)
 {
-	WIN32_FIND_DATAA find_data = zero;
-	HANDLE handle = FindFirstFileA("shaders/fragment.fragment", &find_data);
-	if(handle == INVALID_HANDLE_VALUE) { return; }
-
-	if(CompareFileTime(&last_write_time, &find_data.ftLastWriteTime) == -1)
+	for(int shader_i = 0; shader_i < e_shader_count; shader_i++)
 	{
-		// @Note(tkap, 23/06/2023): This can fail because text editor may be locking the file, so we check if it worked
-		u32 new_program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
-		if(new_program)
-		{
-			if(game->program)
-			{
-				glUseProgram(0);
-				glDeleteProgram(game->program);
-			}
-			game->program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
-			last_write_time = find_data.ftLastWriteTime;
-		}
-	}
+		s_shader_paths* sp = &shader_paths[shader_i];
 
-	FindClose(handle);
+		WIN32_FIND_DATAA find_data = zero;
+		HANDLE handle = FindFirstFileA(sp->fragment_path, &find_data);
+		if(handle == INVALID_HANDLE_VALUE) { continue; }
+
+		if(CompareFileTime(&sp->last_write_time, &find_data.ftLastWriteTime) == -1)
+		{
+			// @Note(tkap, 23/06/2023): This can fail because text editor may be locking the file, so we check if it worked
+			u32 new_program = load_shader(sp->vertex_path, sp->fragment_path);
+			if(new_program)
+			{
+				if(game->programs[shader_i])
+				{
+					glUseProgram(0);
+					glDeleteProgram(game->programs[shader_i]);
+				}
+				game->programs[shader_i] = load_shader(sp->vertex_path, sp->fragment_path);
+				sp->last_write_time = find_data.ftLastWriteTime;
+			}
+		}
+
+		FindClose(handle);
+	}
 
 }
 #else
@@ -1133,12 +1289,12 @@ func void hot_reload_shaders(void)
 		u32 new_program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
 		if(new_program)
 		{
-			if(game->program)
+			if(game->default_program)
 			{
 				glUseProgram(0);
-				glDeleteProgram(game->program);
+				glDeleteProgram(game->default_program);
 			}
-			game->program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
+			game->default_program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
 			last_write_time = s.st_mtime;
 		}
 	}

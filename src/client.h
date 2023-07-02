@@ -65,6 +65,28 @@ struct s_config
 	s_v4 color;
 };
 
+
+enum e_shader
+{
+	e_shader_default,
+	e_shader_trail,
+	e_shader_count,
+};
+
+struct s_shader_paths
+{
+	#ifdef m_debug
+	#ifdef _WIN32
+	FILETIME last_write_time;
+	#else // _WIN32
+	ARUSEUS_FIX_THIS last_write_time;
+	#endif
+	#endif // m_debug
+	char* vertex_path;
+	char* fragment_path;
+};
+
+
 struct s_game
 {
 	b8 initialized;
@@ -80,7 +102,14 @@ struct s_game
 	e_state state;
 	s_font font_arr[e_font_count];
 	s_main_menu main_menu;
-	u32 program;
+
+	u32 default_vao;
+	u32 default_ssbo;
+
+	u32 programs[e_shader_count];
+
+	u32 trail_vao;
+	u32 trail_vbo;
 	s_entities e;
 
 	s_sound big_dog_sound;
@@ -96,8 +125,6 @@ struct s_game
 	float chat_message_times[c_max_peers];
 	s_medium_str chat_messages[c_max_peers];
 };
-
-
 
 func void update(s_config config);
 func void render(float dt);
