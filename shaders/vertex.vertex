@@ -14,9 +14,9 @@ uniform float time;
 
 vec3 hsv_2_rgb(vec3 color)
 {
-	vec4 k = vec4( 1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0 );
-	vec3 p = abs( fract( color.xxx + k.xyz ) * 6.0 - k.www );
-	return color.z * mix( k.xxx, clamp( p - k.xxx, 0.0, 1.0 ), color.y );
+	vec4 k = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+	vec3 p = abs(fract(color.xxx + k.xyz) * 6.0 - k.www);
+	return color.z * mix(k.xxx, clamp(p - k.xxx, 0.0, 1.0), color.y);
 }
 
 float range_lerp(float val, float amin, float amax, float bmin, float bmax)
