@@ -3,6 +3,7 @@
 layout(origin_upper_left) in vec4 gl_FragCoord;
 
 in flat s_transform v_t;
+in flat vec3 v_color;
 in vec2 v_uv;
 in vec2 v_local_uv;
 
@@ -97,6 +98,40 @@ void main()
 			col += circle(rand_pos, uv, sin2(time * 0.5 + a) * 0.15 + 0.1) * vec3(0.1, 0.4, 1.0);
 		}
 		color.rgb = col * 0.1;
+	}
+	else if(t.background_id == 2)
+	{
+		vec2 uv = v_local_uv;
+		vec3 col = vec3(0);
+
+		float r = 1.0;
+		uv *= r;
+
+		for(int i = 0; i < 50; i += 1)
+		{
+			int a = (i*3+1234);
+			vec2 seed = vec2(a, (i*6+123) * 3);
+			vec2 rand_pos = n22(seed) * r;
+			col += circle(rand_pos, uv, sin2(time * 4.0 + a) * 0.15 + 0.1) * vec3(1.0, 0.25, 0.15);
+		}
+		color.rgb = col * 0.12;
+	}
+	else if(t.background_id == 3)
+	{
+		vec2 uv = v_local_uv;
+		vec3 col = vec3(0);
+
+		float r = 1.0;
+		uv *= r;
+
+		for(int i = 0; i < 50; i += 1)
+		{
+			int a = (i*3+1234);
+			vec2 seed = vec2(a, (i*6+123) * 3);
+			vec2 rand_pos = n22(seed) * r;
+			col += circle(rand_pos, uv, sin2(time * 4.0 + a) * 0.15 + 0.1) * v_color;
+		}
+		color.rgb = col * 0.12;
 	}
 	color = pma(color);
 

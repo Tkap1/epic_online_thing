@@ -56,6 +56,8 @@ struct s_projectile_spawn_data
 	// @Note(tkap, 30/06/2023): We store this as "turns", meaning that 1 is equal to "pi * 2", 0.5f is equal to "pi", and so on
 	float angle[2];
 
+	b8 hsv_colour;
+	b8 rainbow_hue;
 	float r[2];
 	float g[2];
 	float b[2];
@@ -103,6 +105,8 @@ enum e_background
 {
 	e_background_invalid,
 	e_background_default,
+	e_background_reversed_controls,
+	e_background_rainbow,
 };
 
 struct s_level

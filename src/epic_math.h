@@ -9,6 +9,13 @@ struct s_v2
 	float y;
 };
 
+struct s_v3
+{
+	float x;
+	float y;
+	float z;
+};
+
 struct s_v4
 {
 	float x;
@@ -49,6 +56,24 @@ func s_v2 v2_mul(s_v2 a, float b)
 	return result;
 }
 
+func s_v3 v3(float x, float y, float z)
+{
+	s_v3 result;
+	result.x = x;
+	result.y = y;
+	result.z = z;
+	return result;
+}
+
+func s_v3 v3_mul(s_v3 a, float b)
+{
+	s_v3 result;
+	result.x = a.x * b;
+	result.y = a.y * b;
+	result.z = a.z * b;
+	return result;
+}
+
 func s_v4 v4(float x, float y, float z, float w)
 {
 	s_v4 result;
@@ -58,6 +83,7 @@ func s_v4 v4(float x, float y, float z, float w)
 	result.w = w;
 	return result;
 }
+
 func s_v4 v41f(float v)
 {
 	s_v4 result;
@@ -65,6 +91,16 @@ func s_v4 v41f(float v)
 	result.y = v;
 	result.z = v;
 	result.w = v;
+	return result;
+}
+
+func s_v4 v4(s_v3 v, float w)
+{
+	s_v4 result;
+	result.x = v.x;
+	result.y = v.y;
+	result.z = v.z;
+	result.w = w;
 	return result;
 }
 
@@ -207,4 +243,69 @@ func float v2_length(s_v2 a)
 func float range_lerp(float input_val, float input_start, float input_end, float output_start, float output_end)
 {
 	return output_start + ((output_end - output_start) / (input_end - input_start)) * (input_val - input_start);
+}
+
+s_v3 hsv_to_rgb(s_v3 colour)
+{
+	s_v3 rgb;
+
+	if(colour.y <= 0.0f)
+	{
+		rgb.x = colour.z;
+		rgb.y = colour.z;
+		rgb.z = colour.z;
+		return rgb;
+	}
+
+	colour.x *= 360.0f;
+	if(colour.x < 0.0f || colour.x >= 360.0f)
+		colour.x = 0.0f;
+	colour.x /= 60.0f;
+
+	u32 i = (u32)colour.x;
+	float ff = colour.x - i;
+	float p = colour.z * (1.0f - colour.y );
+	float q = colour.z * (1.0f - (colour.y * ff));
+	float t = colour.z * (1.0f - (colour.y * (1.0f - ff)));
+
+	switch(i)
+	{
+	case 0:
+		rgb.x = colour.z;
+		rgb.y = t;
+		rgb.z = p;
+		break;
+
+	case 1:
+		rgb.x = q;
+		rgb.y = colour.z;
+		rgb.z = p;
+		break;
+
+	case 2:
+		rgb.x = p;
+		rgb.y = colour.z;
+		rgb.z = t;
+		break;
+
+	case 3:
+		rgb.x = p;
+		rgb.y = q;
+		rgb.z = colour.z;
+		break;
+
+	case 4:
+		rgb.x = t;
+		rgb.y = p;
+		rgb.z = colour.z;
+		break;
+
+	default:
+		rgb.x = colour.z;
+		rgb.y = p;
+		rgb.z = q;
+		break;
+	}
+
+	return rgb;
 }

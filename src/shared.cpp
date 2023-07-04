@@ -251,12 +251,27 @@ func void spawn_system(s_level level)
 			game->e.dir_y[entity] = dir.y;
 			set_speed(entity, randf_range(&game->rng, data.speed[0], data.speed[1]));
 			set_size(entity, randf_range(&game->rng, data.size[0], data.size[1]), 0);
-			game->e.color[entity] = v4(
-				randf_range(&game->rng, data.r[0], data.r[1]),
-				randf_range(&game->rng, data.g[0], data.g[1]),
-				randf_range(&game->rng, data.b[0], data.b[1]),
-				randf_range(&game->rng, data.a[0], data.a[1])
-			);
+
+			if(data.hsv_colour)
+			{
+				game->e.color[entity] = v4(hsv_to_rgb(v3(
+					data.rainbow_hue ? level_timer * 0.6f : randf_range(&game->rng, data.r[0], data.r[1]),
+					randf_range(&game->rng, data.g[0], data.g[1]),
+					randf_range(&game->rng, data.b[0], data.b[1])
+					)),
+					randf_range(&game->rng, data.a[0], data.a[1])
+				);
+			}
+			else
+			{
+				game->e.color[entity] = v4(
+					randf_range(&game->rng, data.r[0], data.r[1]),
+					randf_range(&game->rng, data.g[0], data.g[1]),
+					randf_range(&game->rng, data.b[0], data.b[1]),
+					randf_range(&game->rng, data.a[0], data.a[1])
+				);
+			}
+
 			if(data.on_spawn != e_on_spawn_invalid)
 			{
 				on_spawn(entity, data);
@@ -619,6 +634,7 @@ func void init_levels(void)
 	// -----------------------------------------------------------------------------
 
 	levels[game->level_count].reversed_controls = true;
+	levels[game->level_count].background = e_background_reversed_controls;
 	levels[game->level_count].spawn_data.add(make_basic_top_projectile(1234, e_side_top));
 
 	data = make_basic_side_projectile(2850, e_side_left);
@@ -635,6 +651,58 @@ func void init_levels(void)
 
 	data = make_basic_top_projectile(10000, e_side_top);
 	data.sine_alpha = true;
+	levels[game->level_count].spawn_data.add(data);
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
+	levels[game->level_count].background = e_background_rainbow;
+
+	data = make_spiral_projectile(5000);
+	data.spiral_multiplier = 0.35f;
+	data.x[0] = data.x[1] = c_base_res.x / 4;
+	data.y[0] = data.y[1] = c_base_res.y / 2;
+	data.hsv_colour = true;
+	data.rainbow_hue = true;
+	data.r[0] = 0;
+	data.r[1] = 1;
+	data.g[0] = data.g[1] = 1;
+	data.b[0] = data.b[1] = 1;
+	data.speed_curve = {
+		.start_seconds = {0.1f},
+		.end_seconds = {0.25f},
+		.multiplier = {2},
+	};
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_spiral_projectile(4777);
+	data.spiral_multiplier = 0.35f;
+	data.x[0] = data.x[1] = c_base_res.x - c_base_res.x / 4;
+	data.y[0] = data.y[1] = c_base_res.y / 2;
+	data.hsv_colour = true;
+	data.rainbow_hue = true;
+	data.r[0] = 0;
+	data.r[1] = 1;
+	data.g[0] = data.g[1] = 1;
+	data.b[0] = data.b[1] = 1;
+	data.multiply_speed(1.07f);
+	data.speed_curve = {
+		.start_seconds = {0.1f},
+		.end_seconds = {0.25f},
+		.multiplier = {1.25},
+	};
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_side_projectile(1777, e_side_left);
+	data.multiply_speed(0.88f);
+	data.multiply_size(0.45f);
+	data.hsv_colour = true;
+	data.rainbow_hue = true;
+	data.r[0] = 0;
+	data.r[1] = 1;
+	data.g[0] = data.g[1] = 1;
+	data.b[0] = data.b[1] = 1;
+	levels[game->level_count].spawn_data.add(data);
+
 	levels[game->level_count].spawn_data.add(data);
 	game->level_count++;
 	// -----------------------------------------------------------------------------
