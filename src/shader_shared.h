@@ -22,9 +22,9 @@ struct s_transform
 	shader_bool do_clip;
 	shader_bool do_circle;
 	shader_bool do_light;
-	shader_bool use_texture;
 	shader_bool flip_x;
 	shader_int layer;
+	shader_int texture_id;
 	shader_int sublayer;
 	shader_int background_id;
 	shader_float mix_weight;

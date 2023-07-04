@@ -322,7 +322,7 @@ int main(void)
 	u64 start_cycles = get_ticks();
 
 	s_lin_arena all = zero;
-	all.capacity = 10 * c_mb;
+	all.capacity = 20 * c_mb;
 	all.memory = calloc(all.capacity, 1);
 
 	void *game_memory = la_get(&all, 1 * c_mb);

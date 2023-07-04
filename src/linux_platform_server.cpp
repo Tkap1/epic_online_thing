@@ -52,7 +52,7 @@ int main(void)
 	void *server_so = null;
 
 	s_lin_arena all = zero;
-	all.capacity = 10 * c_mb;
+	all.capacity = 20 * c_mb;
 	all.memory = calloc(all.capacity, 1);
 	void *game_memory = la_get(&all, 1 * c_mb);
 	s_game_network game_network = zero;
@@ -61,6 +61,8 @@ int main(void)
 	game_network.write_arena = make_lin_arena_from_memory(1 * c_mb, la_get(&all, 1 * c_mb));
 	s_lin_arena frame_arena = make_lin_arena_from_memory(5 * c_mb, la_get(&all, 5 * c_mb));
 	platform_data.frame_arena = &frame_arena;
+	s_lin_arena permanent_arena = make_lin_arena_from_memory(5 * c_mb, la_get(&all, 5 * c_mb));
+	platform_data.permanent_arena = &permanent_arena;
 
 	f64 time_passed = 0;
 	b8 need_so_reload = true;

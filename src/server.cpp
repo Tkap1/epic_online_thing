@@ -32,6 +32,7 @@ static constexpr int ENET_PACKET_FLAG_RELIABLE = 1;
 #include "server.h"
 #include "epic_time.h"
 
+global s_lin_arena* permanent_arena;
 global s_lin_arena* frame_arena;
 global s_game* game;
 global s_game_network* g_network;
@@ -48,6 +49,7 @@ m_update_game(update_game)
 {
 	static_assert(c_game_memory >= sizeof(s_game));
 
+	permanent_arena = platform_data.permanent_arena;
 	frame_arena = platform_data.frame_arena;
 	g_network = game_network;
 	game = (s_game*)game_memory;
@@ -236,6 +238,26 @@ m_parse_packet(parse_packet)
 				data.color = game->e.color[entity];
 				send_packet(packet.from, e_packet_already_connected_player, data, ENET_PACKET_FLAG_RELIABLE);
 				log("Sent already connected data of %u to %u", peer, packet.from);
+
+				// @Note(tkap, 04/07/2023): Send the player texture
+				{
+					s_player_texture texture = game->e.texture[entity];
+					if(texture.size > 0)
+					{
+						s_packet avatar_packet = zero;
+						e_packet avatar_packet_id = e_packet_avatar;
+						avatar_packet.size = (int)(sizeof(avatar_packet_id) + sizeof(packet.from) + sizeof(texture.size) + texture.size);
+						avatar_packet.data = (u8*)la_get(&g_network->write_arena, avatar_packet.size);
+						avatar_packet.target = packet.from;
+						avatar_packet.flag = ENET_PACKET_FLAG_RELIABLE;
+						u8* avatar_cursor = avatar_packet.data;
+						buffer_write(&avatar_cursor, &avatar_packet_id, sizeof(avatar_packet_id));
+						buffer_write(&avatar_cursor, &peer, sizeof(peer));
+						buffer_write(&avatar_cursor, &texture.size, sizeof(texture.size));
+						buffer_write(&avatar_cursor, texture.data, texture.size);
+						g_network->out_packets.add(avatar_packet);
+					}
+				}
 			}
 
 			// @Note(tkap, 22/06/2023): Welcome the new client
@@ -263,6 +285,35 @@ m_parse_packet(parse_packet)
 			}
 
 			make_player(packet.from, true, v41f(1));
+		} break;
+
+		case e_packet_avatar:
+		{
+			size_t file_size = packet.size - sizeof(e_packet);
+			if(file_size > 1 * c_mb) { break; }
+
+			s_packet avatar_packet = zero;
+			e_packet avatar_packet_id = e_packet_avatar;
+			avatar_packet.size = (int)(sizeof(avatar_packet_id) + sizeof(packet.from) + sizeof(file_size) + file_size);
+			avatar_packet.data = (u8*)la_get(&g_network->write_arena, avatar_packet.size);
+			avatar_packet.broadcast = true;
+			avatar_packet.flag = ENET_PACKET_FLAG_RELIABLE;
+			u8* avatar_cursor = avatar_packet.data;
+			buffer_write(&avatar_cursor, &avatar_packet_id, sizeof(avatar_packet_id));
+			buffer_write(&avatar_cursor, &packet.from, sizeof(packet.from));
+			buffer_write(&avatar_cursor, &file_size, sizeof(file_size));
+			buffer_write(&avatar_cursor, cursor, file_size);
+			g_network->out_packets.add(avatar_packet);
+
+			int entity = find_player_by_id(packet.from);
+			assert(entity != c_invalid_entity);
+			if(entity != c_invalid_entity)
+			{
+				game->e.texture[entity].size = file_size;
+				game->e.texture[entity].data = (u8*)la_get(permanent_arena, file_size);
+				memcpy(game->e.texture[entity].data, cursor, file_size);
+			}
+
 		} break;
 
 		case e_packet_disconnect:

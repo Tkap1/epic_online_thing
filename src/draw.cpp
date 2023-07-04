@@ -37,10 +37,10 @@ func void draw_light(s_v2 pos, int layer, float radius, s_v4 color, s_transform 
 	transforms.add(t);
 }
 
-func void draw_texture(s_v2 pos, int layer, s_v2 size, s_v4 color, s_transform t)
+func void draw_texture(s_v2 pos, int layer, s_v2 size, s_v4 color, u32 texture_id, s_transform t)
 {
 	t.layer = layer;
-	t.use_texture = true;
+	t.texture_id = (int)texture_id;
 	t.pos = pos;
 	t.draw_size = size;
 	t.color = color;
@@ -75,7 +75,7 @@ func void draw_text(const char* text, s_v2 in_pos, int layer, s_v4 color, e_font
 		s_v2 glyph_pos = pos;
 		glyph_pos.y += -glyph.y0 * font->scale;
 
-		t.use_texture = true;
+		t.texture_id = font->texture.id;
 		t.pos = glyph_pos;
 		t.draw_size = v2((glyph.x1 - glyph.x0) * font->scale, (glyph.y1 - glyph.y0) * font->scale);
 		// t.draw_size = v2(glyph.width, glyph.height);

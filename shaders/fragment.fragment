@@ -59,7 +59,7 @@ void main()
 	}
 
 	vec4 color;
-	if(t.use_texture != 0)
+	if(t.texture_id != 0)
 	{
 		color = texture(in_texture, v_uv) * pma(t.color);
 	}

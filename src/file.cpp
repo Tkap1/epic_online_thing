@@ -1,4 +1,4 @@
-func char* read_file(const char* path, s_lin_arena* arena)
+func char* read_file(const char* path, s_lin_arena* arena, size_t* out_file_size = null)
 {
 	FILE* file = fopen(path, "rb");
 	if(!file) { return null; }
@@ -11,6 +11,9 @@ func char* read_file(const char* path, s_lin_arena* arena)
 	fread(data, file_size, 1, file);
 	data[file_size] = 0;
 	fclose(file);
+
+	if(out_file_size) { *out_file_size = file_size; }
+
 	return data;
 }
 

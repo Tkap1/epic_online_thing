@@ -25,26 +25,45 @@ static constexpr int ENET_PACKET_FLAG_RELIABLE = 1;
 #define m_dll_export
 #endif // _WIN32
 
+
+
 #include <stdio.h>
 #include <math.h>
 #include "types.h"
 #include "utils.h"
+
+#define STB_TRUETYPE_IMPLEMENTATION
+#define STBTT_assert assert
+#include "external/stb_truetype.h"
+
+#pragma warning(push, 0)
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_assert assert
+#include "external/stb_image.h"
+#pragma warning(pop)
+
 #include "epic_math.h"
 #include "config.h"
 #include "memory.h"
 #include "shared_all.h"
 #include "shared_client_server.h"
 #include "platform_shared_client.h"
+
+
+struct s_texture
+{
+	u32 id;
+	s_v2 size;
+	s_v2 sub_size;
+};
+
+
 #include "shared.h"
 #include "rng.h"
 #include "client.h"
 #include "shader_shared.h"
 #include "str_builder.h"
 #include "audio.h"
-
-#define STB_TRUETYPE_IMPLEMENTATION
-#define STBTT_assert assert
-#include "external/stb_truetype.h"
 
 global s_sarray<s_transform, c_max_entities> transforms;
 global s_sarray<s_transform, c_max_entities> text_arr[e_font_count];
@@ -398,7 +417,6 @@ func void render(float dt)
 		{
 			for(int i = 0; i < c_num_threads; i++)
 			{
-				draw_system(i * c_entities_per_thread, c_entities_per_thread, dt);
 				draw_circle_system(i * c_entities_per_thread, c_entities_per_thread, dt);
 			}
 			for(int i = 0; i < c_num_threads; i++)
@@ -544,6 +562,16 @@ func void render(float dt)
 			glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(*transforms.elements) * transforms.count, transforms.elements);
 			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, transforms.count);
 			transforms.count = 0;
+		}
+
+		// @Note(tkap, 04/07/2023): I don't like this. Players can have textures, and these textures are not inside an atlas
+		// (maybe we should merge them? that's also cringe), so we are going to do separate the drawing of players vs everything else
+		if(game->state == e_state_game)
+		{
+			for(int i = 0; i < c_num_threads; i++)
+			{
+				draw_system(i * c_entities_per_thread, c_entities_per_thread, dt);
+			}
 		}
 
 		for(int font_i = 0; font_i < e_font_count; font_i++)
@@ -778,7 +806,19 @@ func void draw_system(int start, int count, float dt)
 		{
 			color.w *= 0.15f;
 		}
-		draw_rect(v2(x, y), 0, v2(sx, sy), color, zero);
+
+		if(game->e.texture[ii].id)
+		{
+			glBindTexture(GL_TEXTURE_2D, game->e.texture[ii].id);
+			draw_texture(v2(x, y), 0, v2(sx, sy), v4(1, 1, 1, color.w), game->e.texture[ii].id, zero);
+			glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(*transforms.elements) * transforms.count, transforms.elements);
+			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, transforms.count);
+			transforms.count = 0;
+		}
+		else
+		{
+			draw_rect(v2(x, y), 0, v2(sx, sy), color, zero);
+		}
 
 		s_v2 pos = v2(
 			x, y
@@ -844,6 +884,38 @@ m_parse_packet(parse_packet)
 			data.name = game->main_menu.player_name;
 			data.color = game->config.color;
 			send_packet(e_packet_player_appearance, data, ENET_PACKET_FLAG_RELIABLE);
+
+			size_t file_size = 0;
+			u8* file = (u8*)read_file("avatar.png", frame_arena, &file_size);
+			if(file)
+			{
+				s_packet avatar_packet = zero;
+				e_packet avatar_packet_id = e_packet_avatar;
+				avatar_packet.size = (int)(file_size + sizeof(avatar_packet_id));
+				avatar_packet.data = (u8*)la_get(&g_network->write_arena, avatar_packet.size);
+				avatar_packet.flag = ENET_PACKET_FLAG_RELIABLE;
+				u8* avatar_cursor = avatar_packet.data;
+				buffer_write(&avatar_cursor, &avatar_packet_id, sizeof(packet_id));
+				buffer_write(&avatar_cursor, file, file_size);
+				g_network->out_packets.add(avatar_packet);
+			}
+		} break;
+
+		case e_packet_avatar:
+		{
+			u32 id = *(u32*)buffer_read(&cursor, sizeof(id));
+			size_t size_in_bytes = *(size_t*)buffer_read(&cursor, sizeof(size_in_bytes));
+			assert(size_in_bytes <= 1 * c_mb);
+			u8* data = cursor;
+
+			int entity = find_player_by_id(id);
+			if(entity != c_invalid_entity)
+			{
+				int width, height, num_channels;
+				void* decoded_png = stbi_load_from_memory(data, (int)size_in_bytes, &width, &height, &num_channels, 4);
+				game->e.texture[entity] = load_texture_from_data(decoded_png, width, height, GL_NEAREST);
+				stbi_image_free(decoded_png);
+			}
 		} break;
 
 		case e_packet_disconnect:

@@ -59,10 +59,11 @@ int main(int argc, char** argv)
 	HMODULE dll = null;
 	s_platform_data platform_data = zero;
 	s_lin_arena frame_arena = zero;
+	s_lin_arena permanent_arena = zero;
 
 	{
 		s_lin_arena all = zero;
-		all.capacity = 10 * c_mb;
+		all.capacity = 20 * c_mb;
 
 		// @Note(tkap, 26/06/2023): We expect this memory to be zero'd
 		all.memory = VirtualAlloc(null, all.capacity, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
@@ -72,6 +73,9 @@ int main(int argc, char** argv)
 		game_network.write_arena = make_lin_arena_from_memory(1 * c_mb, la_get(&all, 1 * c_mb));
 		frame_arena = make_lin_arena_from_memory(5 * c_mb, la_get(&all, 5 * c_mb));
 		platform_data.frame_arena = &frame_arena;
+
+		permanent_arena = make_lin_arena_from_memory(5 * c_mb, la_get(&all, 5 * c_mb));
+		platform_data.permanent_arena = &permanent_arena;
 	}
 
 	f64 time_passed = 0;

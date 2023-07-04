@@ -32,13 +32,6 @@ struct s_glyph
 	s_v2 uv_max;
 };
 
-struct s_texture
-{
-	u32 id;
-	s_v2 size;
-	s_v2 sub_size;
-};
-
 struct s_font
 {
 	float size;

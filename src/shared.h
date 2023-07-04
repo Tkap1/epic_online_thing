@@ -141,6 +141,7 @@ enum e_packet
 	e_packet_periodic_data,
 	e_packet_update_levels,
 	e_packet_chat_msg,
+	e_packet_avatar,
 
 	e_packet_connect = 9998,
 	e_packet_disconnect = 9999,
@@ -372,6 +373,12 @@ enum e_entity_type
 	e_entity_type_count,
 };
 
+struct s_player_texture
+{
+	size_t size;
+	u8* data;
+};
+
 struct s_entities
 {
 	int count;
@@ -417,6 +424,14 @@ struct s_entities
 	s_float_curve size_curve[c_max_entities];
 	s_v4 color[c_max_entities];
 	s_small_str name[c_max_entities];
+
+	#ifdef m_client
+	s_texture texture[c_max_entities];
+	#endif // m_client
+
+	#ifdef m_server
+	s_player_texture texture[c_max_entities];
+	#endif // m_server
 };
 
 
