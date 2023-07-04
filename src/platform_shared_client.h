@@ -55,6 +55,7 @@ X(PFNGLVERTEXATTRIBDIVISORPROC, glVertexAttribDivisorProc) \
 X(PFNGLDRAWARRAYSINSTANCEDPROC, glDrawArraysInstancedProc) \
 X(PFNGLDEBUGMESSAGECALLBACKPROC, glDebugMessageCallbackProc) \
 X(PFNGLBINDBUFFERBASEPROC, glBindBufferBaseProc) \
+X(PFNGLUNIFORM1FVPROC, glUniform1fvProc) \
 X(PFNGLUNIFORM2FVPROC, glUniform2fvProc) \
 X(PFNGLGETUNIFORMLOCATIONPROC, glGetUniformLocationProc) \
 X(PFNGLUSEPROGRAMPROC, glUseProgramProc) \
@@ -89,6 +90,7 @@ X(PFNGLXSWAPINTERVALEXTPROC, glXSwapIntervalEXTProc)
 #define glDrawArraysInstanced glDrawArraysInstancedProc
 #define glDebugMessageCallback glDebugMessageCallbackProc
 #define glBindBufferBase glBindBufferBaseProc
+#define glUniform1fv glUniform1fvProc
 #define glUniform2fv glUniform2fvProc
 #define glGetUniformLocation glGetUniformLocationProc
 #define glUseProgram glUseProgramProc

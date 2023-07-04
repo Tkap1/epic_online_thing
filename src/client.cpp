@@ -21,6 +21,7 @@ static constexpr int ENET_PACKET_FLAG_RELIABLE = 1;
 #endif
 #include <stdarg.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #define m_dll_export
 #endif // _WIN32
 
@@ -583,12 +584,6 @@ func void render(float dt)
 			{
 				s_trail_point* point = &points[point_i];
 				s_v2 middle = (point->a + point->b) * 0.5f;
-
-				float percent2 = 1;
-				if(points.count > 1)
-				{
-					percent2 = point_i / (float)(points.count - 1);
-				}
 
 				if(point_i != points.count - 1)
 				{
@@ -1228,7 +1223,6 @@ func s_v2 get_text_size(const char* text, e_font font_id)
 
 #ifdef m_debug
 #ifdef _WIN32
-global FILETIME last_write_time = zero;
 func void hot_reload_shaders(void)
 {
 	for(int shader_i = 0; shader_i < e_shader_count; shader_i++)
@@ -1260,23 +1254,27 @@ func void hot_reload_shaders(void)
 
 }
 #else
-#include <sys/stat.h>
-global time_t last_write_time;
 func void hot_reload_shaders(void)
 {
-	struct stat s;
-	stat("shaders/fragment.fragment", &s);
-	if (s.st_mtime > last_write_time) {
-		u32 new_program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
-		if(new_program)
+	for(int shader_i = 0; shader_i < e_shader_count; shader_i++)
+	{
+		s_shader_paths* sp = &shader_paths[shader_i];
+		struct stat s;
+		int rc = stat(sp->fragment_path, &s);
+		if(rc < 0) { continue; }
+		if(s.st_mtime > sp->last_write_time)
 		{
-			if(game->default_program)
+			u32 new_program = load_shader(sp->vertex_path, sp->fragment_path);
+			if(new_program)
 			{
-				glUseProgram(0);
-				glDeleteProgram(game->default_program);
+				if(game->programs[shader_i])
+				{
+					glUseProgram(0);
+					glDeleteProgram(game->programs[shader_i]);
+				}
+				game->programs[shader_i] = load_shader(sp->vertex_path, sp->fragment_path);
+				sp->last_write_time = s.st_mtime;
 			}
-			game->default_program = load_shader("shaders/vertex.vertex", "shaders/fragment.fragment");
-			last_write_time = s.st_mtime;
 		}
 	}
 }

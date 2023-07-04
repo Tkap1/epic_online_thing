@@ -1,4 +1,3 @@
-
 enum e_string_input_result
 {
 	e_string_input_result_none,
@@ -78,9 +77,9 @@ struct s_shader_paths
 	#ifdef m_debug
 	#ifdef _WIN32
 	FILETIME last_write_time;
-	#else // _WIN32
-	ARUSEUS_FIX_THIS last_write_time;
-	#endif
+	#else
+	time_t last_write_time;
+	#endif // _WIN32
 	#endif // m_debug
 	char* vertex_path;
 	char* fragment_path;
