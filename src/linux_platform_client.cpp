@@ -325,7 +325,7 @@ int main(void)
 	all.capacity = 20 * c_mb;
 	all.memory = calloc(all.capacity, 1);
 
-	void *game_memory = la_get(&all, 1 * c_mb);
+	void *game_memory = la_get(&all, c_game_memory);
 	s_game_network game_network = zero;
 	s_platform_network platform_network = zero;
 	s_platform_data platform_data = zero;
