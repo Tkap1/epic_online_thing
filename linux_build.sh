@@ -1,6 +1,6 @@
 #!/bin/sh
 cc="clang++"
-warn="-Werror -Wall -Wno-char-subscripts -Wno-unused-function -Wno-switch -Wno-sign-compare"
+warn="-Werror -Wall -Wno-char-subscripts -Wno-unused-function -Wno-switch -Wno-sign-compare -Wno-unknown-pragmas"
 if [ $cc = "g++" ] ; then
 	diag="-fno-diagnostics-show-caret"
 	warn="$warn -Wno-write-strings -Wno-class-memaccess"

@@ -36,11 +36,13 @@ static constexpr int ENET_PACKET_FLAG_RELIABLE = 1;
 #define STBTT_assert assert
 #include "external/stb_truetype.h"
 
+#undef zero
 #pragma warning(push, 0)
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_assert assert
 #include "external/stb_image.h"
 #pragma warning(pop)
+#define zero {}
 
 #include "epic_math.h"
 #include "config.h"
