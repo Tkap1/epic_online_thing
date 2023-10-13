@@ -121,13 +121,15 @@ func int find_player_by_id(u32 id)
 
 func void gravity_system(int start, int count)
 {
+	float gravity_multiplier = levels[game->current_level].gravity_multiplier;
+
 	for(int i = 0; i < count; i++)
 	{
 		int ii = start + i;
 		if(!game->e.active[ii]) { continue; }
 		if(!game->e.flags[ii][e_entity_flag_gravity]) { continue; }
 
-		game->e.vel_y[ii] += c_gravity * delta;
+		game->e.vel_y[ii] += c_gravity * gravity_multiplier * delta;
 	}
 }
 
@@ -300,6 +302,7 @@ func void init_levels(void)
 	for(int level_i = 0; level_i < c_max_levels; level_i++)
 	{
 		levels[level_i].spawn_pos = default_spawn_position;
+		levels[level_i].gravity_multiplier = 1.f;
 		levels[level_i].duration = c_level_duration;
 		levels[level_i].background = e_background_default;
 	}
@@ -850,6 +853,54 @@ func void init_levels(void)
 	data.multiply_speed(1.25f);
 	data.multiply_size(1.f);
 	data.delay = 1.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
+	set_level_name("Confusion");
+	levels[game->level_count].reversed_controls = true;
+	levels[game->level_count].background = e_background_reversed_controls;
+	levels[game->level_count].gravity_multiplier = -1.f;
+
+	levels[game->level_count].spawn_data.add(make_basic_top_projectile(4000, e_side_bottom));
+
+	data = make_basic_side_projectile(1200, e_side_left);
+	data.y[0] = 0;
+	data.y[1] = c_base_res.y - 100;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_side_projectile(1200, e_side_right);
+	data.y[0] = 0;
+	data.y[1] = c_base_res.y - 100;
+	levels[game->level_count].spawn_data.add(data);
+
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
+	set_level_name("Moon Walk");
+	levels[game->level_count].background = e_background_moon;
+	levels[game->level_count].gravity_multiplier = 0.25f;
+
+	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(3500, e_side_left));
+	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(2500, e_side_right));
+
+	data = make_basic_side_projectile(1200, e_side_left);
+	data.y[0] = c_base_res.y * 0.35f;
+	data.y[1] = c_base_res.y - 35;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_side_projectile(1200, e_side_left);
+	data.y[0] = data.y[1] = c_base_res.y - 35;
+	data.delay = 5.0f;
+	data.frequency = 4.0f;
+	data.multiply_speed(1.25f);
+	data.multiply_size(0.5f);
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_side_projectile(1200, e_side_right);
+	data.y[0] = c_base_res.y * 0.35f;
+	data.y[1] = c_base_res.y - 35;
 	levels[game->level_count].spawn_data.add(data);
 
 	game->level_count++;

@@ -108,6 +108,7 @@ enum e_background
 	e_background_default,
 	e_background_reversed_controls,
 	e_background_rainbow,
+	e_background_moon,
 };
 
 struct s_level
@@ -116,6 +117,7 @@ struct s_level
 	s_v2 spawn_pos;
 	b8 infinite_jumps;
 	b8 reversed_controls;
+	float gravity_multiplier;
 	int duration;
 	s_sarray<s_projectile_spawn_data, c_max_spawns_per_level> spawn_data;
 	e_background background;
