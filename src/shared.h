@@ -112,6 +112,7 @@ enum e_background
 
 struct s_level
 {
+	char name[c_max_level_name];
 	s_v2 spawn_pos;
 	b8 infinite_jumps;
 	b8 reversed_controls;

@@ -284,6 +284,12 @@ func void spawn_system(s_level level)
 	}
 }
 
+func void set_level_name(const char*name)
+{
+	assert(strlen(name) < c_max_level_name);
+	strcpy(levels[game->level_count].name, name);
+}
+
 func void init_levels(void)
 {
 	game->level_count = 0;
@@ -301,59 +307,72 @@ func void init_levels(void)
 	// @Note(tkap, 01/07/2023): Just for convenience, so we can just say "data = ..." instead of "s_projectile_spawn_data data = ..."
 	s_projectile_spawn_data data = zero;
 
+	set_level_name("Beginnings");
 	levels[game->level_count].spawn_data.add(make_basic_top_projectile(4000, e_side_top));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Green Winds");
 	levels[game->level_count].spawn_data.add(make_basic_side_projectile(2000, e_side_left));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Solar Rays");
 	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(3000, e_side_right));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Well Placed Landings");
 	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1000, e_side_right));
 	levels[game->level_count].spawn_data.add(make_ground_shot_projectile(3500));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Boots on Ground!");
 	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(2800, e_side_left));
 	levels[game->level_count].spawn_data.add(make_air_shot_projectile(10000));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Water Sport");
 	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(2800, e_side_right));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Bombings");
 	levels[game->level_count].spawn_data.add(make_spawner_projectile(1000, e_side_left));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Spinkler");
 	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(3300, e_side_left));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Road Crossing");
 	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1000, e_side_left));
 	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1000, e_side_right));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Fireworks!");
 	levels[game->level_count].spawn_data.add(make_cross_projectile(2777));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Crossroads");
 	levels[game->level_count].spawn_data.add(make_basic_top_projectile(3000, e_side_top));
 	levels[game->level_count].spawn_data.add(make_basic_side_projectile(2500, e_side_left));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Sunshine and Rain");
 	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(3500, e_side_left));
 	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(2500, e_side_right));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Air Raid");
 	levels[game->level_count].spawn_data.add(make_basic_top_projectile(2000, e_side_top));
 	levels[game->level_count].spawn_data.add(make_spawner_projectile(1500, e_side_left));
 	game->level_count++;
@@ -364,31 +383,37 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Sunburn");
 	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(4000, e_side_left));
 	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(4000, e_side_right));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("3-Way");
 	levels[game->level_count].spawn_data.add(make_basic_top_projectile(4000, e_side_top));
 	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1200, e_side_left));
 	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1200, e_side_right));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Shower");
 	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(2200, e_side_left));
 	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(2200, e_side_right));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Red Suns");
 	levels[game->level_count].spawn_data.add(make_corner_shot_projectile(3333));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("WTF");
 	levels[game->level_count].spawn_data.add(make_shockwave_projectile(2777));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
 	// @Note(tkap, 25/06/2023): Maze
+	set_level_name("Blood Rain Maze");
 	data = make_basic_top_projectile(25000, e_side_top);
 	data.speed[0] *= 0.33f;
 	data.speed[1] *= 0.33f;
@@ -403,6 +428,7 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Impending Doom");
 	data = make_basic_side_projectile(2000, e_side_left);
 	data.speed[0] *= 1.5f;
 	data.speed[1] *= 1.5f;
@@ -416,6 +442,7 @@ func void init_levels(void)
 	// -----------------------------------------------------------------------------
 
 	// @Note(tkap, 26/06/2023): Can't be on bottom, infinite jump
+	set_level_name("Fly!");
 	levels[game->level_count].infinite_jumps = true;
 	data = make_basic_side_projectile(3000, e_side_left);
 	data.speed[0] *= 2.0f;
@@ -442,11 +469,13 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("C'mon...");
 	levels[game->level_count].spawn_data.add(make_cross_projectile(1000));
 	levels[game->level_count].spawn_data.add(make_shockwave_projectile(2000));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Driveby");
 	data = make_spawner_projectile(2500, e_side_left);
 	data.speed_curve = {
 		.start_seconds = {0, 1},
@@ -461,6 +490,7 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("4-Way");
 	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(2000, e_side_left));
 	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(2000, e_side_right));
 	levels[game->level_count].spawn_data.add(make_basic_side_projectile(1000, e_side_left));
@@ -468,6 +498,8 @@ func void init_levels(void)
 	levels[game->level_count].spawn_data.add(make_basic_top_projectile(1000, e_side_top));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
+
+	set_level_name("Small Balls");
 
 	data = make_top_diagonal_projectile(1500, e_side_left);
 	data.size[0] *= 0.25f;
@@ -493,6 +525,8 @@ func void init_levels(void)
 	// -----------------------------------------------------------------------------
 
 	levels[game->level_count].infinite_jumps = true;
+
+	set_level_name("Takeoff");
 
 	data = make_basic_side_projectile(1000, e_side_right);
 	data.y[0] = c_base_res.y;
@@ -520,10 +554,13 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Volcanic Eruption");
 	levels[game->level_count].infinite_jumps = true;
 	levels[game->level_count].spawn_data.add(make_basic_top_projectile(20000, e_side_bottom));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
+
+	set_level_name("Claustrophobia");
 
 	levels[game->level_count].duration = 25;
 	data = make_basic_side_projectile(3000, e_side_left);
@@ -555,6 +592,7 @@ func void init_levels(void)
 	// -----------------------------------------------------------------------------
 
 	// @Note(tkap, 29/06/2023): Giant green balls
+	set_level_name("Hurdling");
 	data = make_basic_side_projectile(1000, e_side_left);
 	data.speed[0] *= 3.0f;
 	data.speed[1] *= 3.0f;
@@ -566,10 +604,13 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("To jump or not to jump.");
 	levels[game->level_count].spawn_data.add(make_air_shot_projectile(6000));
 	levels[game->level_count].spawn_data.add(make_ground_shot_projectile(4444));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
+
+	set_level_name("Spiral");
 
 	levels[game->level_count].spawn_pos = v2(c_base_res.x * 0.75f, c_base_res.y);
 	data = make_spiral_projectile(7777);
@@ -612,6 +653,8 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Swirling");
+
 	levels[game->level_count].infinite_jumps = true;
 	levels[game->level_count].spawn_pos = v2(c_base_res.x * 0.25f, c_base_res.y);
 
@@ -633,6 +676,8 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Madness!");
+
 	levels[game->level_count].reversed_controls = true;
 	levels[game->level_count].background = e_background_reversed_controls;
 	levels[game->level_count].spawn_data.add(make_basic_top_projectile(1234, e_side_top));
@@ -649,11 +694,14 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Foresight");
 	data = make_basic_top_projectile(10000, e_side_top);
 	data.sine_alpha = true;
 	levels[game->level_count].spawn_data.add(data);
 	game->level_count++;
 	// -----------------------------------------------------------------------------
+
+	set_level_name("Rainbow");
 
 	levels[game->level_count].background = e_background_rainbow;
 
@@ -706,6 +754,8 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Stray Bullet");
+
 	data = make_basic_side_projectile(333, e_side_right);
 	data.r[0] = data.r[1] = 0;
 	data.g[0] = data.g[1] = 0;
@@ -724,6 +774,8 @@ func void init_levels(void)
 
 	game->level_count++;
 	// -----------------------------------------------------------------------------
+
+	set_level_name("Choice");
 
 	data = make_basic_top_projectile(10000, e_side_top);
 	data.x[0] = data.x[1] = c_base_res.x / 2;
