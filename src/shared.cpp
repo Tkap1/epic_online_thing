@@ -803,7 +803,6 @@ func void init_levels(void)
 
 	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(2800, e_side_left));
 
-	levels[game->level_count].spawn_data.add(data);
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
