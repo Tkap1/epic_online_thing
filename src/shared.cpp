@@ -806,6 +806,55 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Focus");
+
+	levels[game->level_count].infinite_jumps = true;
+
+	data = make_basic_side_projectile(5000, e_side_left);
+	data.x[0] = data.x[1] = 0;
+	data.y[0] = data.y[1] = 25;
+	data.multiply_speed(3.f);
+	data.multiply_size(1.25f);
+	data.delay = 1.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	for(int i = 0; i < 6; i++)
+	{
+		data.y[0] = data.y[1] = 25.f + (35 * i);
+		data.delay = 0.85f * i;
+		levels[game->level_count].spawn_data.add(data);
+	}
+
+	data = make_basic_side_projectile(5000, e_side_right);
+	data.x[0] = data.x[1] = c_base_res.x;
+	data.y[0] = data.y[1] = c_base_res.y - 25;
+	data.multiply_speed(3.f);
+	data.multiply_size(1.25f);
+	data.delay = 1.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	for(int i = 0; i < 6; i++)
+	{
+		data.y[0] = data.y[1] = c_base_res.y - (25 + (35 * i));
+		data.delay = 0.85f * i;
+		levels[game->level_count].spawn_data.add(data);
+	}
+
+	data = make_basic_side_projectile(555, e_side_right);
+	data.x[0] = data.x[1] = c_base_res.x;
+	data.y[0] = (c_base_res.y / 2) - 100;
+	data.y[1] = (c_base_res.y / 2) + 100;
+	data.r[0] = data.r[1] = 1;
+	data.g[0] = data.g[1] = 1;
+	data.b[0] = data.b[1] = 0;
+	data.multiply_speed(1.25f);
+	data.multiply_size(1.f);
+	data.delay = 1.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
 	// @Note(tkap, 26/06/2023): Blank level to avoid wrapping
 	game->level_count++;
 }
