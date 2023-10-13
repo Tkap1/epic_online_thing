@@ -237,9 +237,9 @@ func void spawn_system(s_level level)
 	{
 		s_projectile_spawn_data data = level.spawn_data[spawn_i];
 		spawn_timer[spawn_i] += delta;
-		while(spawn_timer[spawn_i] >= data.delay)
+		while(spawn_timer[spawn_i] >= data.delay && spawn_timer[spawn_i] >= data.frequency)
 		{
-			spawn_timer[spawn_i] -= data.delay;
+			spawn_timer[spawn_i] -= data.frequency;
 
 			// MARK: here
 			int entity = make_projectile();
@@ -703,6 +703,54 @@ func void init_levels(void)
 	data.b[0] = data.b[1] = 1;
 	levels[game->level_count].spawn_data.add(data);
 
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
+	data = make_basic_side_projectile(333, e_side_right);
+	data.r[0] = data.r[1] = 0;
+	data.g[0] = data.g[1] = 0;
+	data.b[0] = data.b[1] = 0.2f;
+	data.multiply_speed(3.f);
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_side_projectile(777, e_side_left);
+	data.r[0] = data.r[1] = 0;
+	data.g[0] = data.g[1] = 0.2f;
+	data.b[0] = data.b[1] = 0;
+	data.multiply_speed(.77f);
+	levels[game->level_count].spawn_data.add(data);
+
+	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(2800, e_side_left));
+
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
+	data = make_basic_top_projectile(10000, e_side_top);
+	data.x[0] = data.x[1] = c_base_res.x / 2;
+	data.y[0] = data.y[1] = 0;
+	data.multiply_speed(3.f);
+	data.multiply_size(0.5f);
+	data.delay = 1.5f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_top_projectile(10000, e_side_top);
+	data.x[0] = c_base_res.x / 2;
+	data.x[1] = c_base_res.x;
+	data.y[0] = data.y[1] = 0;
+	data.multiply_speed(0.45f);
+	data.multiply_size(5.f);
+	data.delay = 10.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_side_projectile(777, e_side_left);
+	data.r[0] = data.r[1] = 0;
+	data.g[0] = data.g[1] = 0.2f;
+	data.b[0] = data.b[1] = 0;
+	data.multiply_speed(.77f);
+	levels[game->level_count].spawn_data.add(data);
+
+	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(2800, e_side_left));
+
 	levels[game->level_count].spawn_data.add(data);
 	game->level_count++;
 	// -----------------------------------------------------------------------------
@@ -1029,7 +1077,7 @@ func s_projectile_spawn_data make_basic_top_projectile(float speed, e_side side)
 	float y = side == e_side_top ? -c_projectile_spawn_offset : c_base_res.y + c_projectile_spawn_offset;
 	float angle = side == e_side_top ? 0.25f : -0.25f;
 	return {
-		.delay = m_speed(speed),
+		.frequency = m_speed(speed),
 		.x = {0, c_base_res.x},
 		.y = {y, y},
 		.speed = {400, 500},
@@ -1045,7 +1093,7 @@ func s_projectile_spawn_data make_basic_top_projectile(float speed, e_side side)
 func s_projectile_spawn_data make_spiral_projectile(float speed)
 {
 	return {
-		.delay = m_speed(speed),
+		.frequency = m_speed(speed),
 		.x = m_twice(c_base_res.x / 2),
 		.y = m_twice(c_base_res.y / 2),
 		.speed = m_twice(300),
@@ -1062,7 +1110,7 @@ func s_projectile_spawn_data make_spiral_projectile(float speed)
 func s_projectile_spawn_data make_shockwave_projectile(float speed)
 {
 	return {
-		.delay = m_speed(speed),
+		.frequency = m_speed(speed),
 		.x = {0, c_base_res.x},
 		.y = {0, c_base_res.y / 3},
 		.speed = {125, 455},
@@ -1079,7 +1127,7 @@ func s_projectile_spawn_data make_shockwave_projectile(float speed)
 func s_projectile_spawn_data make_corner_shot_projectile(float speed)
 {
 	return {
-		.delay = m_speed(speed),
+		.frequency = m_speed(speed),
 		.y = m_twice(0),
 		.size = m_twice(300),
 		.r = {0.775f, 1.0f},
@@ -1095,7 +1143,7 @@ func s_projectile_spawn_data make_basic_side_projectile(float speed, e_side side
 	float x = side == e_side_left ? -c_projectile_spawn_offset : c_base_res.x + c_projectile_spawn_offset;
 	float angle = side == e_side_left ? 0 : 0.5f;
 	return {
-		.delay = m_speed(speed),
+		.frequency = m_speed(speed),
 		.x = {x, x},
 		.y = {c_base_res.y * 0.6f, c_base_res.y},
 		.speed = {400, 500},
@@ -1113,7 +1161,7 @@ func s_projectile_spawn_data make_spawner_projectile(float speed, e_side side)
 	float x = side == e_side_left ? -c_projectile_spawn_offset : c_base_res.x + c_projectile_spawn_offset;
 	float angle = side == e_side_left ? 0 : 0.5f;
 	return {
-		.delay = m_speed(speed),
+		.frequency = m_speed(speed),
 		.x = m_twice(x),
 		.y = m_twice(c_base_res.y * 0.5f),
 		.speed = m_twice(300),
@@ -1138,7 +1186,7 @@ func s_projectile_spawn_data make_top_diagonal_projectile(float speed, e_side si
 	s_v2 b = v2(pos.x, c_base_res.y) - pos;
 
 	return {
-		.delay = m_speed(speed),
+		.frequency = m_speed(speed),
 		.x = {pos.x, pos.x},
 		.y = {pos.y, pos.y},
 		.speed = {400, 500},
@@ -1157,7 +1205,7 @@ func s_projectile_spawn_data make_bottom_diagonal_projectile(float speed, e_side
 	float x = side == e_side_left ? 0 : c_base_res.x;
 
 	return {
-		.delay = m_speed(speed),
+		.frequency = m_speed(speed),
 		.x = {x, x},
 		.y = {c_base_res.y, c_base_res.y},
 		.speed = {400, 500},
@@ -1174,7 +1222,7 @@ func s_projectile_spawn_data make_bottom_diagonal_projectile(float speed, e_side
 func s_projectile_spawn_data make_ground_shot_projectile(float speed)
 {
 	return {
-		.delay = m_speed(speed),
+		.frequency = m_speed(speed),
 		.x = {c_base_res.x + c_projectile_spawn_offset, c_base_res.x + c_projectile_spawn_offset},
 		.y = {c_base_res.y - 250, c_base_res.y},
 		.speed = {444, 444},
@@ -1191,7 +1239,7 @@ func s_projectile_spawn_data make_ground_shot_projectile(float speed)
 func s_projectile_spawn_data make_air_shot_projectile(float speed)
 {
 	return {
-		.delay = m_speed(speed),
+		.frequency = m_speed(speed),
 		.x = {0, c_base_res.x * 2},
 		.y = {-c_projectile_spawn_offset, -c_projectile_spawn_offset},
 		.speed = {444, 444},
@@ -1209,7 +1257,7 @@ func s_projectile_spawn_data make_air_shot_projectile(float speed)
 func s_projectile_spawn_data make_cross_projectile(float speed)
 {
 	return {
-		.delay = m_speed(speed),
+		.frequency = m_speed(speed),
 		.speed = {125, 255},
 		.size = {15, 44},
 		.r = {0, 1},
