@@ -39,7 +39,7 @@ struct s_voice : IXAudio2VoiceCallback
 		InterlockedExchange((LONG*)&playing, false);
 	}
 
-	void OnBufferStart(void * pBufferContext) {}
+	void OnBufferStart(void * pBufferContext) { unreferenced(pBufferContext); }
 	void OnVoiceProcessingPassEnd() { }
 	void OnVoiceProcessingPassStart(UINT32 SamplesRequired) { unreferenced(SamplesRequired); }
 	void OnBufferEnd(void * pBufferContext) { unreferenced(pBufferContext); }
