@@ -27,7 +27,8 @@ func void player_movement_system(int start, int count)
 			game->e.x[ii] += game->e.dir_x[ii] * game->e.modified_speed[ii] * delta;
 			game->e.y[ii] += game->e.vel_y[ii] * delta;
 
-			if(game->e.vel_y[ii] >= 0) { game->e.jumping[ii] = false; }
+			if(is_gravity_reversed() && game->e.vel_y[ii] <= 0) { game->e.jumping[ii] = false; }
+			else if(!is_gravity_reversed() && game->e.vel_y[ii] >= 0) { game->e.jumping[ii] = false; }
 		}
 	}
 }
@@ -145,15 +146,29 @@ func void player_bounds_check_system(int start, int count)
 		float half_y = game->e.modified_sy[ii] * 0.5f;
 		if(game->e.x[ii] - half_x < 0) { game->e.x[ii] = half_x; }
 		if(game->e.x[ii] + half_x > c_base_res.x) { game->e.x[ii] = c_base_res.x - half_x; }
-		if(game->e.y[ii] - half_y < 0) { game->e.y[ii] = half_y; }
+		if(game->e.y[ii] - half_y < 0)
+		{
+			game->e.vel_y[ii] = 0;
+			game->e.y[ii] = half_y;
+			if(is_gravity_reversed())
+			{
+				game->e.can_dash[ii] = true;
+				game->e.jumping[ii] = false;
+				game->e.on_ground[ii] = true;
+				game->e.jumps_done[ii] = 0;
+			}
+		}
 		if(game->e.y[ii] + half_y > c_base_res.y)
 		{
-			game->e.can_dash[ii] = true;
-			game->e.jumping[ii] = false;
-			game->e.on_ground[ii] = true;
-			game->e.jumps_done[ii] = 0;
 			game->e.vel_y[ii] = 0;
 			game->e.y[ii] = c_base_res.y - half_y;
+			if(!is_gravity_reversed())
+			{
+				game->e.can_dash[ii] = true;
+				game->e.jumping[ii] = false;
+				game->e.on_ground[ii] = true;
+				game->e.jumps_done[ii] = 0;
+			}
 		}
 	}
 }
@@ -1596,4 +1611,14 @@ func void cancel_dash(int entity)
 {
 	game->e.dashing[entity] = false;
 	game->e.dash_timer[entity] = 0;
+}
+
+func b8 is_gravity_reversed()
+{
+	return levels[game->current_level].gravity_multiplier < 0;
+}
+
+func float get_jump_multiplier_based_on_gravity()
+{
+	return is_gravity_reversed() ? -1.0f : 1.0f;
 }

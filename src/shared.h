@@ -469,5 +469,7 @@ func s_projectile_spawn_data make_spawner_projectile(float speed, e_side side);
 func s_projectile_spawn_data make_corner_shot_projectile(float speed);
 func s_projectile_spawn_data make_shockwave_projectile(float speed);
 func s_projectile_spawn_data make_spiral_projectile(float speed);
+func b8 is_gravity_reversed();
+func float get_jump_multiplier_based_on_gravity();
 
 func void on_spawn(int entity, s_projectile_spawn_data data);

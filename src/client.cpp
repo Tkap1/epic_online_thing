@@ -733,7 +733,7 @@ func void input_system(int start, int count)
 
 		if(go_down)
 		{
-			game->e.vel_y[ii] = max(game->e.vel_y[ii], c_fast_fall_speed);
+			game->e.vel_y[ii] = max(game->e.vel_y[ii], c_fast_fall_speed) * get_jump_multiplier_based_on_gravity();
 			cancel_dash(ii);
 		}
 
@@ -754,7 +754,7 @@ func void input_system(int start, int count)
 				play_sound_if_supported(game->jump2_sound);
 			}
 			float jump_multiplier = game->e.jumps_done[ii] == 0 ? 1.0f : 0.9f;
-			game->e.vel_y[ii] = c_jump_strength * jump_multiplier;
+			game->e.vel_y[ii] = c_jump_strength * jump_multiplier * get_jump_multiplier_based_on_gravity();
 			game->e.jumping[ii] = true;
 			game->e.on_ground[ii] = false;
 			game->e.jumps_done[ii] += 1;
