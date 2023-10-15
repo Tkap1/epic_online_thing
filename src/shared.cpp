@@ -944,6 +944,7 @@ func void init_levels(void)
 	// -----------------------------------------------------------------------------
 
 	set_level_name("Wave Force");
+	levels[game->level_count].background = e_background_rainbow;
 	levels[game->level_count].duration = 20;
 	levels[game->level_count].infinite_jumps = true;
 	levels[game->level_count].spawn_pos = v2(c_base_res.x * 0.25f, c_base_res.y);
