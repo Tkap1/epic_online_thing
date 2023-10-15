@@ -245,7 +245,7 @@ func float range_lerp(float input_val, float input_start, float input_end, float
 	return output_start + ((output_end - output_start) / (input_end - input_start)) * (input_val - input_start);
 }
 
-s_v3 hsv_to_rgb(s_v3 colour)
+func s_v3 hsv_to_rgb(s_v3 colour)
 {
 	s_v3 rgb;
 

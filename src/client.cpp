@@ -36,11 +36,13 @@ static constexpr int ENET_PACKET_FLAG_RELIABLE = 1;
 #define STBTT_assert assert
 #include "external/stb_truetype.h"
 
+#undef zero
 #pragma warning(push, 0)
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_assert assert
 #include "external/stb_image.h"
 #pragma warning(pop)
+#define zero {}
 
 #include "epic_math.h"
 #include "config.h"
@@ -444,9 +446,16 @@ func void render(float dt)
 				draw_text("Infinite jumps!", pos, 1, v41f(1), e_font_small, true, zero);
 			}
 
+			// @Note(azenris, 13/10/2023): Display current level name
+			{
+				s_v2 pos = v2(10, 5);
+				const char *name = levels[game->current_level].name;
+				draw_text(name[0] != '\0' ? name : "Unnamed Level", pos, 1, v4(1,1,0,1), e_font_medium, false, zero);
+			}
+
 			// @Note(tkap, 23/06/2023): Display current level
 			{
-				s_v2 pos = v2(20, 20);
+				s_v2 pos = v2(10, 40);
 				int minutes = floorfi(game->time_on_current_level / 60);
 				float seconds = game->time_on_current_level - minutes * 60;
 				draw_text(format_text("Level %i (%i) (%02i:%02i)", game->current_level + 1, game->attempt_count_on_current_level, minutes, floorfi(seconds)), pos, 1, v41f(1), e_font_medium, false, zero);
@@ -478,7 +487,7 @@ func void render(float dt)
 				}
 				player_and_time_arr.small_sort();
 
-				s_v2 pos = v2(20, 60);
+				s_v2 pos = v2(10, 75);
 				for(int pat_i = 0; pat_i < player_and_time_arr.count; pat_i++)
 				{
 					s_player_and_time pat = player_and_time_arr[pat_i];
