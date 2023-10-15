@@ -48,6 +48,7 @@ enum e_on_spawn
 struct s_projectile_spawn_data
 {
 	float delay;
+	float frequency;
 	float x[2];
 	float y[2];
 	float speed[2];
@@ -107,13 +108,16 @@ enum e_background
 	e_background_default,
 	e_background_reversed_controls,
 	e_background_rainbow,
+	e_background_moon,
 };
 
 struct s_level
 {
+	char name[c_max_level_name];
 	s_v2 spawn_pos;
 	b8 infinite_jumps;
 	b8 reversed_controls;
+	float gravity_multiplier;
 	int duration;
 	s_sarray<s_projectile_spawn_data, c_max_spawns_per_level> spawn_data;
 	e_background background;

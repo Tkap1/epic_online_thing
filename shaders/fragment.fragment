@@ -133,6 +133,26 @@ void main()
 		}
 		color.rgb = col * 0.12;
 	}
+	else if(t.background_id == 4)
+	{
+		vec2 uv = v_local_uv;
+		vec3 col = vec3(0);
+
+		float r = 1.0;
+		uv *= r;
+
+		for(int i = 0; i < 50; i += 1)
+		{
+			int a = (i*3+2137);
+			vec2 seed = vec2(a, (i*7+123) * 2);
+			vec2 rand_pos = n22(seed) * r;
+			col += circle(rand_pos, uv, sin2(time * 0.5 + a) * 0.15 + 0.1) * vec3(0.1, 0.4, 1.0);
+		}
+		color.rgb = col * 0.1;
+
+		float luminance = dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));
+		color.rgb = vec3(luminance, luminance, luminance);
+	}
 	color = pma(color);
 
 	if(color.a <= 0) { discard; }
