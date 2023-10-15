@@ -176,15 +176,24 @@ func b8 handle_input_events(void)
 	b8 running = true;
 	int newwidth = 0;
 	int newheight = 0;
-	XEvent ev;
+	XEvent ev, ev2;
 	char text[32];
 	XKeyEvent *xkey;
 	while(XCheckWindowEvent(g_window.display, g_window.window, EventMask, &ev)) {
 		switch(ev.type) {
 		case Expose:
 			break;
-		case KeyPress:
 		case KeyRelease:
+			// check for fake key repeat events and ignore them.
+			if(ev.type == KeyRelease && XEventsQueued(g_window.display, QueuedAfterReading)) {
+				XPeekEvent(g_window.display, &ev2);
+				if(ev2.type == KeyPress && ev2.xkey.time == ev.xkey.time && ev2.xkey.keycode == ev.xkey.keycode){
+					XNextEvent(g_window.display, &ev2);
+					continue;
+				}
+			}
+			// fallthrough
+		case KeyPress:
 			{
 			xkey = &ev.xkey;
 			s_char_event char_event = zero;
