@@ -48,6 +48,7 @@ enum e_on_spawn
 struct s_projectile_spawn_data
 {
 	float delay;
+	float finish;
 	float frequency;
 	float x[2];
 	float y[2];
