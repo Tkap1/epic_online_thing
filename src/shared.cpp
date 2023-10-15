@@ -923,6 +923,22 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Outer Space");
+	levels[game->level_count].background = e_background_moon;
+	levels[game->level_count].gravity_multiplier = 0;
+
+	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(2555, e_side_left));
+	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(2555, e_side_right));
+	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(2255, e_side_left));
+	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(2255, e_side_right));
+
+	data = make_basic_side_projectile(500, e_side_right);
+	data.y[0] = data.y[1] = c_base_res.y - 35;
+	levels[game->level_count].spawn_data.add(data);
+
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
 	// @Note(tkap, 15/10/2023): Hard last level for a challenge
 	data = make_basic_side_projectile(1500, e_side_left);
 	data.multiply_size(0.25f);
