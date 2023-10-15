@@ -1047,6 +1047,132 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Dash Mash");
+	levels[game->level_count].duration = 30;
+	levels[game->level_count].spawn_pos = v2(c_base_res.x * 0.25f, c_base_res.y);
+
+	data = make_dash_dodgeable_projectile(50000);
+	data.x[0] = data.x[1] = c_base_res.x / 2;
+	data.y[0] = data.y[1] = c_base_res.y;
+	data.multiply_speed(3.f);
+	data.multiply_size(0.5f);
+	levels[game->level_count].spawn_data.add(data);
+
+	// Quarter 1
+	data = make_basic_top_projectile(9000, e_side_top);
+	data.x[0] = 0;
+	data.x[1] = c_base_res.x / 2;
+	data.size[0] = data.size[1] = 50;
+	data.finish = 6.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_top_projectile(3000, e_side_top);
+	data.x[0] = c_base_res.x / 2;
+	data.x[1] = c_base_res.x;
+	data.size[0] = data.size[1] = 45;
+	data.finish = 7.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_side_projectile(1000, e_side_left);
+	data.y[0] = data.y[1] = c_base_res.y - 35;
+	data.multiply_speed(1.2222f);
+	data.finish = 7.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_bottom_diagonal_projectile(750, e_side_left);
+	data.finish = 5.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	// Quarter 2
+	data = make_basic_top_projectile(3555, e_side_top);
+	data.x[0] = 0;
+	data.x[1] = c_base_res.x / 2;
+	data.size[0] = data.size[1] = 45;
+	data.delay = 7.0f;
+	data.finish = 14.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_top_projectile(9500, e_side_top);
+	data.x[0] = c_base_res.x / 2;
+	data.x[1] = c_base_res.x;
+	data.size[0] = data.size[1] = 45;
+	data.delay = 7.0f;
+	data.finish = 13.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_side_projectile(1000, e_side_right);
+	data.y[0] = data.y[1] = c_base_res.y - 35;
+	data.multiply_speed(1.3f);
+	data.delay = 7.0f;
+	data.finish = 14.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_bottom_diagonal_projectile(1100, e_side_right);
+	data.delay = 7.0f;
+	data.finish = 12.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	// Quarter 3
+	data = make_basic_top_projectile(9750, e_side_top);
+	data.x[0] = 0;
+	data.x[1] = c_base_res.x / 2;
+	data.size[0] = data.size[1] = 50;
+	data.delay = 14.0f;
+	data.finish = 20.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_top_projectile(3250, e_side_top);
+	data.x[0] = c_base_res.x / 2;
+	data.x[1] = c_base_res.x;
+	data.size[0] = data.size[1] = 45;
+	data.delay = 14.0f;
+	data.finish = 21.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_side_projectile(1000, e_side_left);
+	data.y[0] = data.y[1] = c_base_res.y - 35;
+	data.multiply_speed(1.2222f);
+	data.delay = 14.0f;
+	data.finish = 21.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_bottom_diagonal_projectile(1350, e_side_left);
+	data.delay = 14.0f;
+	data.finish = 19.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	// Quarter 4
+	data = make_basic_top_projectile(3555, e_side_top);
+	data.x[0] = 0;
+	data.x[1] = c_base_res.x / 2;
+	data.size[0] = data.size[1] = 45;
+	data.delay = 21.5f;
+	data.finish = 28.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_top_projectile(10000, e_side_top);
+	data.x[0] = c_base_res.x / 2;
+	data.x[1] = c_base_res.x;
+	data.size[0] = data.size[1] = 45;
+	data.delay = 21.5f;
+	data.finish = 28.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_side_projectile(1000, e_side_right);
+	data.y[0] = data.y[1] = c_base_res.y - 35;
+	data.multiply_speed(1.3f);
+	data.delay = 21.5f;
+	data.finish = 28.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_bottom_diagonal_projectile(1500, e_side_right);
+	data.delay = 22.0f;
+	data.finish = 25.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
 	// @Note(tkap, 15/10/2023): Hard last level for a challenge
 	set_level_name("Challenge");
 
