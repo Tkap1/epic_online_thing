@@ -934,16 +934,16 @@ m_parse_packet(parse_packet)
 
 		case e_packet_welcome:
 		{
-			s_welcome_from_server* data = (s_welcome_from_server*)cursor;
-			game->my_id = data->id;
-			game->current_level = data->current_level;
-			game->rng.seed = data->seed;
-			game->attempt_count_on_current_level = data->attempt_count_on_current_level;
-			static_assert(sizeof(levels) == sizeof(data->levels));
-			memcpy(levels, data->levels, sizeof(levels));
-			int entity = make_player(data->id, true, game->config.color);
+			s_welcome_from_server data = *(s_welcome_from_server*)cursor;
+			game->my_id = data.id;
+			game->current_level = data.current_level;
+			game->rng.seed = data.seed;
+			game->attempt_count_on_current_level = data.attempt_count_on_current_level;
+			static_assert(sizeof(levels) == sizeof(data.levels));
+			memcpy(levels, data.levels, sizeof(levels));
+			int entity = make_player(data.id, true, game->config.color);
 			game->e.name[entity] = game->main_menu.player_name;
-			log("Got welcome, my id is: %u", data->id);
+			log("Got welcome, my id is: %u", data.id);
 		} break;
 
 		case e_packet_already_connected_player:
@@ -1081,8 +1081,8 @@ m_parse_packet(parse_packet)
 
 		case e_packet_update_levels:
 		{
-			s_update_levels_from_server* data = (s_update_levels_from_server*)cursor;
-			memcpy(levels, data->levels, sizeof(levels));
+			s_update_levels_from_server data = *(s_update_levels_from_server*)cursor;
+			memcpy(levels, data.levels, sizeof(levels));
 			log("Got levels from server");
 		} break;
 

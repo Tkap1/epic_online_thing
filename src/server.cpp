@@ -66,9 +66,9 @@ m_update_game(update_game)
 	{
 		init_levels();
 
-		s_update_levels_from_server* data = (s_update_levels_from_server*)la_get(frame_arena, sizeof(s_update_levels_from_server));
-		memcpy(data->levels, levels, sizeof(levels));
-		broadcast_packet_(e_packet_update_levels, data, sizeof(s_update_levels_from_server), ENET_PACKET_FLAG_RELIABLE);
+		s_update_levels_from_server data = zero;
+		memcpy(data.levels, levels, sizeof(levels));
+		broadcast_packet(e_packet_update_levels, data, ENET_PACKET_FLAG_RELIABLE);
 	}
 
 	game->update_timer += platform_data.time_passed;
@@ -262,14 +262,14 @@ m_parse_packet(parse_packet)
 
 			// @Note(tkap, 22/06/2023): Welcome the new client
 			{
-				s_welcome_from_server* data = (s_welcome_from_server*)la_get(frame_arena, sizeof(s_welcome_from_server));
-				data->id = packet.from;
-				data->current_level = game->current_level;
-				data->seed = game->rng.seed;
-				data->attempt_count_on_current_level = game->attempt_count_on_current_level;
-				static_assert(sizeof(levels) == sizeof(data->levels));
-				memcpy(data->levels, levels, sizeof(levels));
-				send_packet_(packet.from, e_packet_welcome, data, sizeof(s_welcome_from_server), ENET_PACKET_FLAG_RELIABLE);
+				s_welcome_from_server data = zero;
+				data.id = packet.from;
+				data.current_level = game->current_level;
+				data.seed = game->rng.seed;
+				data.attempt_count_on_current_level = game->attempt_count_on_current_level;
+				static_assert(sizeof(levels) == sizeof(data.levels));
+				memcpy(data.levels, levels, sizeof(levels));
+				send_packet(packet.from, e_packet_welcome, data, ENET_PACKET_FLAG_RELIABLE);
 				log("Sent welcome to %u", packet.from);
 			}
 
