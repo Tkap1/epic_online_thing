@@ -362,7 +362,7 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	set_level_name("Spinkler");
+	set_level_name("Sprinkler");
 	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(3300, e_side_left));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
@@ -396,6 +396,7 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Storm");
 	levels[game->level_count].spawn_data.add(make_basic_side_projectile(2200, e_side_right));
 	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(1000, e_side_left));
 	game->level_count++;
@@ -642,6 +643,7 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Dual Spiral");
 	levels[game->level_count].infinite_jumps = true;
 	levels[game->level_count].spawn_pos = v2(c_base_res.x * 0.25f, c_base_res.y);
 	levels[game->level_count].spawn_data.add(make_spiral_projectile(12500));
