@@ -71,6 +71,7 @@ struct s_projectile_spawn_data
 	float spiral_offset;
 	b8 collide_ground_only;
 	b8 collide_air_only;
+	b8 dash_dodgeable;
 	b8 sine_alpha;
 
 	e_on_spawn on_spawn;
@@ -363,6 +364,7 @@ enum e_entity_flag
 	e_entity_flag_collide,
 	e_entity_flag_collide_ground_only,
 	e_entity_flag_collide_air_only,
+	e_entity_flag_dash_dodgeable,
 	e_entity_flag_projectile_spawner,
 	e_entity_flag_increase_time_lived,
 	e_entity_flag_modify_speed,
@@ -464,6 +466,7 @@ func s_projectile_spawn_data make_top_diagonal_projectile(float speed, e_side si
 func s_projectile_spawn_data make_cross_projectile(float speed);
 func s_projectile_spawn_data make_ground_shot_projectile(float speed);
 func s_projectile_spawn_data make_air_shot_projectile(float speed);
+func s_projectile_spawn_data make_dash_dodgeable_projectile(float speed);
 func s_projectile_spawn_data make_bottom_diagonal_projectile(float speed, e_side side);
 func s_projectile_spawn_data make_basic_top_projectile(float speed, e_side side);
 func s_projectile_spawn_data make_spawner_projectile(float speed, e_side side);

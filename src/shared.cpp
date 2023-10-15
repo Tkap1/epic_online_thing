@@ -1299,6 +1299,9 @@ func void apply_projectile_modifiers(int entity, s_projectile_spawn_data data)
 
 	if(data.collide_air_only)
 		game->e.flags[entity][e_entity_flag_collide_air_only] = true;
+
+	if(data.dash_dodgeable)
+		game->e.flags[entity][e_entity_flag_dash_dodgeable] = true;
 }
 
 func void set_speed(int entity, float speed)
@@ -1587,6 +1590,26 @@ func s_projectile_spawn_data make_air_shot_projectile(float speed)
 		.b = {1, 1},
 		.a = {1, 1},
 		.collide_air_only = true,
+		.out_of_bounds_offset = 2000,
+	};
+}
+
+func s_projectile_spawn_data make_dash_dodgeable_projectile(float speed)
+{
+	return {
+		.delay = 0.0f,
+		.finish = 30.0f,
+		.frequency = m_speed(speed),
+		.x = {0, c_base_res.x * 2},
+		.y = {-c_projectile_spawn_offset, -c_projectile_spawn_offset},
+		.speed = {444, 444},
+		.size = {50, 50},
+		.angle = {-0.25f,- 0.25f},
+		.r = {0.95f, 0.95f},
+		.g = {0.55f, 0.55f},
+		.b = {0.25f, 0.25f},
+		.a = {1, 1},
+		.dash_dodgeable = true,
 		.out_of_bounds_offset = 2000,
 	};
 }
