@@ -317,7 +317,7 @@ func void init_levels(void)
 	for(int level_i = 0; level_i < c_max_levels; level_i++)
 	{
 		levels[level_i].spawn_pos = default_spawn_position;
-		levels[level_i].gravity_multiplier = 1.f;
+		levels[level_i].gravity_multiplier = 1.0f;
 		levels[level_i].duration = c_level_duration;
 		levels[level_i].background = e_background_default;
 	}
