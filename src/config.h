@@ -33,7 +33,7 @@ global constexpr int c_max_concurrent_sounds = 8;
 #define c_projectile_spawn_offset (100)
 #define c_projectile_out_of_bounds_offset (200)
 
-global constexpr int c_max_spawns_per_level = 16;
+global constexpr int c_max_spawns_per_level = 32;
 
 global constexpr float c_dash_speed = 1000;
 global constexpr float c_dash_duration = 0.25f;

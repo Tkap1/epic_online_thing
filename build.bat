@@ -11,7 +11,9 @@ if NOT defined VSCMD_ARG_TGT_ARCH (
 if not exist build\NUL mkdir build
 
 set comp=-nologo -std:c++20 -Zc:strictStrings- -W4 -FC -Gm- -GR- -EHa- -wd 4324 -wd 4127 -wd 4505 -D_CRT_SECURE_NO_WARNINGS
-set linker=user32.lib Shell32.lib -INCREMENTAL:NO
+@REM @TODO(tkap, 15/10/2023): We increase stack size because we just use too much. What we actually want is to use an arena for the things
+@REM that are too big for the stack. I tried but ran into problems and I'm too lazy to figure it out.
+set linker=user32.lib Shell32.lib -INCREMENTAL:NO -STACK:0x200000,0x200000
 
 set debug=2
 if %debug%==0 (
