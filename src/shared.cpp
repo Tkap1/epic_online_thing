@@ -906,6 +906,28 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	// @Note(tkap, 15/10/2023): Hard last level for a challenge
+	data = make_basic_side_projectile(1500, e_side_left);
+	data.multiply_size(0.25f);
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_side_projectile(1500, e_side_right);
+	data.multiply_size(0.25f);
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_top_projectile(5000, e_side_top);
+	data.multiply_size(0.25f);
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_top_diagonal_projectile(2500, e_side_left);
+	data.multiply_size(0.25f);
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_top_diagonal_projectile(2500, e_side_right);
+	data.multiply_size(0.25f);
+	levels[game->level_count].spawn_data.add(data);
+	game->level_count++;
+
 	// @Note(tkap, 26/06/2023): Blank level to avoid wrapping
 	game->level_count++;
 }
