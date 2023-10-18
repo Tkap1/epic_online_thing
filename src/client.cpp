@@ -1142,6 +1142,7 @@ func void collision_system(int start, int count)
 
 		bool ground_only_collision = game->e.flags[ii][e_entity_flag_collide_ground_only];
 		bool air_only_collision = game->e.flags[ii][e_entity_flag_collide_air_only];
+		bool dash_dodgeable = game->e.flags[ii][e_entity_flag_dash_dodgeable];
 
 		for(int j = 0; j < c_max_entities; j++)
 		{
@@ -1151,6 +1152,7 @@ func void collision_system(int start, int count)
 			if(game->e.player_id[j] != game->my_id) { continue; }
 			if(ground_only_collision && !game->e.on_ground[j]) { continue; }
 			if(air_only_collision && game->e.on_ground[j]) { continue; }
+			if(dash_dodgeable && game->e.dashing[j]) { continue; }
 
 			if(
 				rect_collides_circle(

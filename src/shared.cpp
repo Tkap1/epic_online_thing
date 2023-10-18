@@ -1,4 +1,5 @@
 
+global float spawn_total_time[c_max_spawns_per_level];
 global float spawn_timer[c_max_spawns_per_level];
 global float level_timer;
 global s_level levels[c_max_levels];
@@ -253,8 +254,11 @@ func void spawn_system(s_level level)
 	for(int spawn_i = 0; spawn_i < level.spawn_data.count; spawn_i++)
 	{
 		s_projectile_spawn_data data = level.spawn_data[spawn_i];
+		spawn_total_time[spawn_i] += delta;
+		if(spawn_total_time[spawn_i] < data.delay || spawn_total_time[spawn_i] >= data.finish)
+			continue;
 		spawn_timer[spawn_i] += delta;
-		while(spawn_timer[spawn_i] >= data.delay && spawn_timer[spawn_i] >= data.frequency)
+		while(spawn_timer[spawn_i] >= data.frequency)
 		{
 			spawn_timer[spawn_i] -= data.frequency;
 
@@ -362,7 +366,7 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
-	set_level_name("Spinkler");
+	set_level_name("Sprinkler");
 	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(3300, e_side_left));
 	game->level_count++;
 	// -----------------------------------------------------------------------------
@@ -396,6 +400,7 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Storm");
 	levels[game->level_count].spawn_data.add(make_basic_side_projectile(2200, e_side_right));
 	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(1000, e_side_left));
 	game->level_count++;
@@ -642,6 +647,7 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Dual Spiral");
 	levels[game->level_count].infinite_jumps = true;
 	levels[game->level_count].spawn_pos = v2(c_base_res.x * 0.25f, c_base_res.y);
 	levels[game->level_count].spawn_data.add(make_spiral_projectile(12500));
@@ -921,7 +927,255 @@ func void init_levels(void)
 	game->level_count++;
 	// -----------------------------------------------------------------------------
 
+	set_level_name("Outer Space");
+	levels[game->level_count].background = e_background_moon;
+	levels[game->level_count].gravity_multiplier = 0;
+
+	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(2555, e_side_left));
+	levels[game->level_count].spawn_data.add(make_top_diagonal_projectile(2555, e_side_right));
+	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(2255, e_side_left));
+	levels[game->level_count].spawn_data.add(make_bottom_diagonal_projectile(2255, e_side_right));
+
+	data = make_basic_side_projectile(500, e_side_right);
+	data.y[0] = data.y[1] = c_base_res.y - 35;
+	levels[game->level_count].spawn_data.add(data);
+
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
+	set_level_name("Wave Force");
+	levels[game->level_count].background = e_background_rainbow;
+	levels[game->level_count].duration = 20;
+	levels[game->level_count].infinite_jumps = true;
+	levels[game->level_count].spawn_pos = v2(c_base_res.x * 0.25f, c_base_res.y);
+
+	{
+		// Falling from sky the whole time
+		data = make_basic_top_projectile(666, e_side_top);
+		data.x[0] = c_base_res.x * 0.25f;
+		data.x[1] = c_base_res.x * 0.75f;
+		data.y[0] = data.y[1] = 0;
+		data.multiply_speed(0.45f);
+		data.multiply_size(0.75f);
+		levels[game->level_count].spawn_data.add(data);
+
+		float inc = 1.f / 18;
+
+		data = make_basic_side_projectile(5000, e_side_right);
+		data.y[0] = data.y[1] = c_base_res.y - 35;
+		data.speed[0] = data.speed[1] = 500;
+		data.size[0] = data.size[1] = 45;
+
+		// Bottom
+		data.delay = 0.0f;
+		data.finish = 3.0f;
+
+		for(int i = 0; i < 6; i++)
+		{
+			data.y[0] = data.y[1] = c_base_res.y - (35 + (50 * i));
+
+			data.r[0] = data.r[1] = 0.25f;
+			data.g[0] = data.g[1]= inc * 2 * i;
+			data.b[0] = data.b[1] = 0.15f + ( inc * 2 * i ) / 4.f;
+			levels[game->level_count].spawn_data.add(data);
+		}
+
+		s_projectile_spawn_data other = make_basic_side_projectile(2000, e_side_right);
+		other.y[0] = 0;
+		other.y[1] = c_base_res.y / 4;
+		other.delay = 0.0f;
+		other.finish = 3.0f;
+		other.multiply_size(0.5f);
+		levels[game->level_count].spawn_data.add(other);
+
+		// Top
+		data.delay = 3.0f;
+		data.finish = 8.0f;
+
+		for(int i = 0; i < 6; i++)
+		{
+			data.y[0] = data.y[1] = (35.0f + (50 * i));
+
+			data.r[0] = data.r[1] = 0.25f;
+			data.g[0] = data.g[1] = inc * i;
+			data.b[0] = data.b[1] = 0.15f + ( inc * i ) / 4.f;
+			levels[game->level_count].spawn_data.add(data);
+		}
+
+		other = make_basic_side_projectile(3000, e_side_right);
+		other.y[0] = c_base_res.y / 2;
+		other.y[1] = c_base_res.y;
+		other.delay = 3.0f;
+		other.finish = 8.0f;
+		other.multiply_size(0.5f);
+		levels[game->level_count].spawn_data.add(other);
+
+		// Spread
+		data.delay = 8.5f;
+		data.finish = 12.0f;
+		data.size[0] = data.size[1] = 45;
+
+		for(int i = 0; i < 6; i++)
+		{
+			data.y[0] = data.y[1] = c_base_res.y - (75 + (225 * i));
+
+			data.r[0] = data.r[1] = 0.25f;
+			data.g[0] = data.g[1] = inc * 3 * i;
+			data.b[0] = data.b[1] = 0.15f + ( inc * 3 * i ) / 4.f;
+			levels[game->level_count].spawn_data.add(data);
+		}
+
+		// Spread #2
+		data.delay = 13.0f;
+		data.finish = 15.0f;
+		data.size[0] = data.size[1] = 50;
+
+		data.r[0] = 0;
+		data.r[1] = 1;
+		data.g[0] = 0;
+		data.g[1] = 1;
+		data.b[0] = 0;
+		data.b[1] = 1;
+
+		for(int i = 0; i < 6; i++)
+		{
+			data.y[0] = data.y[1] = c_base_res.y - (75 + (215 * i));
+			levels[game->level_count].spawn_data.add(data);
+		}
+	}
+
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
+	set_level_name("Dash Mash");
+	levels[game->level_count].duration = 30;
+	levels[game->level_count].spawn_pos = v2(c_base_res.x * 0.25f, c_base_res.y);
+
+	data = make_dash_dodgeable_projectile(50000);
+	data.x[0] = data.x[1] = c_base_res.x / 2;
+	data.y[0] = data.y[1] = c_base_res.y;
+	data.multiply_speed(3.f);
+	data.multiply_size(0.5f);
+	levels[game->level_count].spawn_data.add(data);
+
+	// Quarter 1
+	data = make_basic_top_projectile(9000, e_side_top);
+	data.x[0] = 0;
+	data.x[1] = c_base_res.x / 2;
+	data.size[0] = data.size[1] = 50;
+	data.finish = 6.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_top_projectile(3000, e_side_top);
+	data.x[0] = c_base_res.x / 2;
+	data.x[1] = c_base_res.x;
+	data.size[0] = data.size[1] = 45;
+	data.finish = 7.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_side_projectile(1000, e_side_left);
+	data.y[0] = data.y[1] = c_base_res.y - 35;
+	data.multiply_speed(1.2222f);
+	data.finish = 7.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_bottom_diagonal_projectile(750, e_side_left);
+	data.finish = 5.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	// Quarter 2
+	data = make_basic_top_projectile(3555, e_side_top);
+	data.x[0] = 0;
+	data.x[1] = c_base_res.x / 2;
+	data.size[0] = data.size[1] = 45;
+	data.delay = 7.0f;
+	data.finish = 14.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_top_projectile(9500, e_side_top);
+	data.x[0] = c_base_res.x / 2;
+	data.x[1] = c_base_res.x;
+	data.size[0] = data.size[1] = 45;
+	data.delay = 7.0f;
+	data.finish = 13.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_side_projectile(1000, e_side_right);
+	data.y[0] = data.y[1] = c_base_res.y - 35;
+	data.multiply_speed(1.3f);
+	data.delay = 7.0f;
+	data.finish = 14.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_bottom_diagonal_projectile(1100, e_side_right);
+	data.delay = 7.0f;
+	data.finish = 12.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	// Quarter 3
+	data = make_basic_top_projectile(9750, e_side_top);
+	data.x[0] = 0;
+	data.x[1] = c_base_res.x / 2;
+	data.size[0] = data.size[1] = 50;
+	data.delay = 14.0f;
+	data.finish = 20.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_top_projectile(3250, e_side_top);
+	data.x[0] = c_base_res.x / 2;
+	data.x[1] = c_base_res.x;
+	data.size[0] = data.size[1] = 45;
+	data.delay = 14.0f;
+	data.finish = 21.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_side_projectile(1000, e_side_left);
+	data.y[0] = data.y[1] = c_base_res.y - 35;
+	data.multiply_speed(1.2222f);
+	data.delay = 14.0f;
+	data.finish = 21.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_bottom_diagonal_projectile(1350, e_side_left);
+	data.delay = 14.0f;
+	data.finish = 19.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	// Quarter 4
+	data = make_basic_top_projectile(3555, e_side_top);
+	data.x[0] = 0;
+	data.x[1] = c_base_res.x / 2;
+	data.size[0] = data.size[1] = 45;
+	data.delay = 21.5f;
+	data.finish = 28.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_top_projectile(10000, e_side_top);
+	data.x[0] = c_base_res.x / 2;
+	data.x[1] = c_base_res.x;
+	data.size[0] = data.size[1] = 45;
+	data.delay = 21.5f;
+	data.finish = 28.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_basic_side_projectile(1000, e_side_right);
+	data.y[0] = data.y[1] = c_base_res.y - 35;
+	data.multiply_speed(1.3f);
+	data.delay = 21.5f;
+	data.finish = 28.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	data = make_bottom_diagonal_projectile(1500, e_side_right);
+	data.delay = 22.0f;
+	data.finish = 25.0f;
+	levels[game->level_count].spawn_data.add(data);
+
+	game->level_count++;
+	// -----------------------------------------------------------------------------
+
 	// @Note(tkap, 15/10/2023): Hard last level for a challenge
+	set_level_name("Challenge");
+
 	data = make_basic_side_projectile(1500, e_side_left);
 	data.multiply_size(0.25f);
 	levels[game->level_count].spawn_data.add(data);
@@ -950,6 +1204,7 @@ func void init_levels(void)
 func void reset_level(void)
 {
 	level_timer = 0;
+	memset(spawn_total_time, 0, sizeof(spawn_total_time));
 	memset(spawn_timer, 0, sizeof(spawn_timer));
 
 	// @Note(tkap, 22/06/2023): Remove projectiles
@@ -1170,6 +1425,9 @@ func void apply_projectile_modifiers(int entity, s_projectile_spawn_data data)
 
 	if(data.collide_air_only)
 		game->e.flags[entity][e_entity_flag_collide_air_only] = true;
+
+	if(data.dash_dodgeable)
+		game->e.flags[entity][e_entity_flag_dash_dodgeable] = true;
 }
 
 func void set_speed(int entity, float speed)
@@ -1265,6 +1523,8 @@ func s_projectile_spawn_data make_basic_top_projectile(float speed, e_side side)
 	float y = side == e_side_top ? -c_projectile_spawn_offset : c_base_res.y + c_projectile_spawn_offset;
 	float angle = side == e_side_top ? 0.25f : -0.25f;
 	return {
+		.delay = 0.0f,
+		.finish = 30.0f,
 		.frequency = m_speed(speed),
 		.x = {0, c_base_res.x},
 		.y = {y, y},
@@ -1281,6 +1541,8 @@ func s_projectile_spawn_data make_basic_top_projectile(float speed, e_side side)
 func s_projectile_spawn_data make_spiral_projectile(float speed)
 {
 	return {
+		.delay = 0.0f,
+		.finish = 30.0f,
 		.frequency = m_speed(speed),
 		.x = m_twice(c_base_res.x / 2),
 		.y = m_twice(c_base_res.y / 2),
@@ -1298,6 +1560,8 @@ func s_projectile_spawn_data make_spiral_projectile(float speed)
 func s_projectile_spawn_data make_shockwave_projectile(float speed)
 {
 	return {
+		.delay = 0.0f,
+		.finish = 30.0f,
 		.frequency = m_speed(speed),
 		.x = {0, c_base_res.x},
 		.y = {0, c_base_res.y / 3},
@@ -1315,6 +1579,8 @@ func s_projectile_spawn_data make_shockwave_projectile(float speed)
 func s_projectile_spawn_data make_corner_shot_projectile(float speed)
 {
 	return {
+		.delay = 0.0f,
+		.finish = 30.0f,
 		.frequency = m_speed(speed),
 		.y = m_twice(0),
 		.size = m_twice(300),
@@ -1331,6 +1597,8 @@ func s_projectile_spawn_data make_basic_side_projectile(float speed, e_side side
 	float x = side == e_side_left ? -c_projectile_spawn_offset : c_base_res.x + c_projectile_spawn_offset;
 	float angle = side == e_side_left ? 0 : 0.5f;
 	return {
+		.delay = 0.0f,
+		.finish = 30.0f,
 		.frequency = m_speed(speed),
 		.x = {x, x},
 		.y = {c_base_res.y * 0.6f, c_base_res.y},
@@ -1349,6 +1617,8 @@ func s_projectile_spawn_data make_spawner_projectile(float speed, e_side side)
 	float x = side == e_side_left ? -c_projectile_spawn_offset : c_base_res.x + c_projectile_spawn_offset;
 	float angle = side == e_side_left ? 0 : 0.5f;
 	return {
+		.delay = 0.0f,
+		.finish = 30.0f,
 		.frequency = m_speed(speed),
 		.x = m_twice(x),
 		.y = m_twice(c_base_res.y * 0.5f),
@@ -1374,6 +1644,8 @@ func s_projectile_spawn_data make_top_diagonal_projectile(float speed, e_side si
 	s_v2 b = v2(pos.x, c_base_res.y) - pos;
 
 	return {
+		.delay = 0.0f,
+		.finish = 30.0f,
 		.frequency = m_speed(speed),
 		.x = {pos.x, pos.x},
 		.y = {pos.y, pos.y},
@@ -1393,6 +1665,8 @@ func s_projectile_spawn_data make_bottom_diagonal_projectile(float speed, e_side
 	float x = side == e_side_left ? 0 : c_base_res.x;
 
 	return {
+		.delay = 0.0f,
+		.finish = 30.0f,
 		.frequency = m_speed(speed),
 		.x = {x, x},
 		.y = {c_base_res.y, c_base_res.y},
@@ -1410,6 +1684,8 @@ func s_projectile_spawn_data make_bottom_diagonal_projectile(float speed, e_side
 func s_projectile_spawn_data make_ground_shot_projectile(float speed)
 {
 	return {
+		.delay = 0.0f,
+		.finish = 30.0f,
 		.frequency = m_speed(speed),
 		.x = {c_base_res.x + c_projectile_spawn_offset, c_base_res.x + c_projectile_spawn_offset},
 		.y = {c_base_res.y - 250, c_base_res.y},
@@ -1427,6 +1703,8 @@ func s_projectile_spawn_data make_ground_shot_projectile(float speed)
 func s_projectile_spawn_data make_air_shot_projectile(float speed)
 {
 	return {
+		.delay = 0.0f,
+		.finish = 30.0f,
 		.frequency = m_speed(speed),
 		.x = {0, c_base_res.x * 2},
 		.y = {-c_projectile_spawn_offset, -c_projectile_spawn_offset},
@@ -1442,9 +1720,31 @@ func s_projectile_spawn_data make_air_shot_projectile(float speed)
 	};
 }
 
+func s_projectile_spawn_data make_dash_dodgeable_projectile(float speed)
+{
+	return {
+		.delay = 0.0f,
+		.finish = 30.0f,
+		.frequency = m_speed(speed),
+		.x = {0, c_base_res.x * 2},
+		.y = {-c_projectile_spawn_offset, -c_projectile_spawn_offset},
+		.speed = {444, 444},
+		.size = {50, 50},
+		.angle = {-0.25f,- 0.25f},
+		.r = {0.95f, 0.95f},
+		.g = {0.55f, 0.55f},
+		.b = {0.25f, 0.25f},
+		.a = {1, 1},
+		.dash_dodgeable = true,
+		.out_of_bounds_offset = 2000,
+	};
+}
+
 func s_projectile_spawn_data make_cross_projectile(float speed)
 {
 	return {
+		.delay = 0.0f,
+		.finish = 30.0f,
 		.frequency = m_speed(speed),
 		.speed = {125, 255},
 		.size = {15, 44},
