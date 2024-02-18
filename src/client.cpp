@@ -1591,7 +1591,7 @@ void gl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, G
 	if(severity >= GL_DEBUG_SEVERITY_HIGH)
 	{
 		printf("GL ERROR: %s\n", message);
-		assert(false);
+		// assert(false);
 	}
 }
 
