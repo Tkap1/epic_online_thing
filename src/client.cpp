@@ -1590,8 +1590,10 @@ void gl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, G
 	unreferenced(source);
 	if(severity >= GL_DEBUG_SEVERITY_HIGH)
 	{
+		// @Note(tkap, 18/02/2024): NVIDIA recompile bullshit that shouldn't be a high severity error
+		if(id == 131218) { return; }
 		printf("GL ERROR: %s\n", message);
-		// assert(false);
+		assert(false);
 	}
 }
 
